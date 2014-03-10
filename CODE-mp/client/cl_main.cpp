@@ -1034,11 +1034,6 @@ CL_Connect_f
 void CL_Connect_f( void ) {
 	char	*server;
 
-	if ( !Cvar_VariableValue("fs_restrict") && !Sys_CheckCD() )
-	{
-		Com_Error( ERR_NEED_CD, SP_GetStringTextString("CON_TEXT_NEED_CD") ); //"Game CD not in drive" );		
-	}
-
 	if ( Cmd_Argc() != 2 ) {
 		Com_Printf( "usage: connect [server]\n");
 		return;	
