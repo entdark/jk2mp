@@ -319,8 +319,8 @@ void S_MP3_CalcVols_f( void )
 //
 // returns success/fail
 //
-qboolean MP3_IsValid( const char *psLocalFilename, void *pvData, int iDataLen, qboolean bStereoDesired /* = qfalse */)
-{
+qboolean MP3_IsValid( const char *psLocalFilename, void *pvData, int iDataLen, qboolean bStereoDesired /* = qfalse */) {
+#ifndef SND_MME
 	char *psError = C_MP3_IsValid(pvData, iDataLen, bStereoDesired);
 
 	if (psError)
@@ -329,6 +329,9 @@ qboolean MP3_IsValid( const char *psLocalFilename, void *pvData, int iDataLen, q
 	}
 
 	return psError ? qfalse : qtrue;
+#else
+	return qtrue;
+#endif
 }
 
 

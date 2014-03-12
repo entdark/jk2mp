@@ -4,7 +4,8 @@
 #include "../game/q_shared.h"
 #include "../qcommon/qcommon.h"
 #include "../zlib/zlib.h"
-#include "png.h"
+//#include "png.h"
+#include "rpng.h"
 //#include "../qcommon/memory.h"
 
 // Error returns

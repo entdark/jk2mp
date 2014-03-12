@@ -518,6 +518,7 @@ typedef struct {
 	int			time;				// time in milliseconds for shader effects and other time dependent rendering issues
 	int			frametime;
 	int			rdflags;			// RDF_NOWORLDMODEL, etc
+	float		timeFraction;
 
 	// 1 bits will prevent the associated area from rendering at all
 	byte		areamask[MAX_MAP_AREA_BYTES];
@@ -990,6 +991,8 @@ typedef struct {
 	byte		color2D[4];
 	qboolean	vertexes2D;		// shader needs to be finished
 	trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
+	//mme
+	float			sceneZfar;
 } backEndState_t;
 
 /*
@@ -1112,6 +1115,8 @@ extern cvar_t	*r_verbose;				// used for verbose debug spew
 extern cvar_t	*r_ignoreFastPath;		// allows us to ignore our Tess fast paths
 
 extern cvar_t	*r_znear;				// near Z clip plane
+extern cvar_t	*r_zproj;				// z distance of projection plane
+extern cvar_t	*r_stereoSeparation;	// separation of cameras for stereo capture
 
 extern cvar_t	*r_stencilbits;			// number of desired stencil bits
 extern cvar_t	*r_depthbits;			// number of desired depth bits
@@ -1239,6 +1244,36 @@ Ghoul2 Insert End
 */
 //====================================================================
 
+
+//new MME cvars
+extern cvar_t	*mme_screenShotFormat;
+extern cvar_t	*mme_screenShotGamma;
+extern cvar_t	*mme_screenShotAlpha;
+extern cvar_t	*mme_jpegQuality;
+extern cvar_t	*mme_jpegDownsampleChroma;
+extern cvar_t	*mme_jpegOptimizeHuffman;
+extern cvar_t	*mme_tgaCompression;
+extern cvar_t	*mme_pngCompression;
+extern cvar_t	*mme_skykey;
+extern cvar_t	*mme_worldShader;
+extern cvar_t	*mme_pip;
+extern cvar_t	*mme_renderWidth;
+extern cvar_t	*mme_renderHeight;
+extern cvar_t	*mme_blurFrames;
+extern cvar_t	*mme_blurType;
+extern cvar_t	*mme_blurOverlap;
+extern cvar_t	*mme_blurGamma;
+extern cvar_t	*mme_dofFrames;
+extern cvar_t	*mme_cpuSSE2;
+extern cvar_t	*mme_workMegs;
+extern cvar_t	*mme_depthRange;
+extern cvar_t	*mme_depthFocus;
+extern cvar_t	*mme_saveOverwrite;
+extern cvar_t	*mme_saveStencil;
+extern cvar_t	*mme_saveShot;
+extern cvar_t	*mme_saveDepth;
+
+
 float R_NoiseGet4f( float x, float y, float z, float t );
 void  R_NoiseInit( void );
 
@@ -1271,6 +1306,7 @@ int R_CullPointAndRadius( vec3_t origin, float radius );
 int R_CullLocalPointAndRadius( vec3_t origin, float radius );
 
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *ori );
+void R_RotateForWorld ( const orientationr_t* input, orientationr_t* world );
 
 /*
 ** GL wrapper/helper functions
@@ -1760,6 +1796,13 @@ typedef struct {
 	int		numDrawSurfs;
 } drawSurfsCommand_t;
 
+typedef struct {
+	int		commandId;
+	char	name[MAX_OSPATH];
+	float	fps;
+	float	focus;
+} captureCommand_t;
+
 typedef enum {
 	RC_END_OF_LIST,
 	RC_SET_COLOR,
@@ -1768,7 +1811,9 @@ typedef enum {
 	RC_ROTATE_PIC2,
 	RC_DRAW_SURFS,
 	RC_DRAW_BUFFER,
-	RC_SWAP_BUFFERS
+	RC_SWAP_BUFFERS,
+	RC_CAPTURE,
+	RC_CAPTURE_STEREO,
 } renderCommand_t;
 
 
@@ -1821,7 +1866,8 @@ void RE_RotatePic2 ( float x, float y, float w, float h,
 					  float s1, float t1, float s2, float t2,float a, qhandle_t hShader );
 void RE_BeginFrame( stereoFrame_t stereoFrame );
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
-void SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer);
+//void SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer);
+void RE_SaveJPG(char * filename, int quality, int image_width, int image_height, byte *image_buffer, int padding);
 
 /*
 Ghoul2 Insert Start
@@ -1841,3 +1887,26 @@ Ghoul2 Insert End
 void RB_DrawSurfaceSprites( shaderStage_t *stage, shaderCommands_t *input);
 #endif
 #endif //TR_LOCAL_H
+
+
+//MME
+int SaveJPG( int quality, int image_width, int image_height, mmeShotType_t image_type, byte *image_buffer, byte *out_buffer, int out_size );
+int SaveTGA( int image_compressed, int image_width, int image_height, mmeShotType_t image_type, byte *image_buffer, byte *out_buffer, int out_size );
+int SavePNG( int compresslevel, int image_width, int image_height, mmeShotType_t image_type, byte *image_buffer, byte *out_buffer, int out_size );
+
+void R_MME_Init(void);
+void R_MME_InitStereo(void);
+void R_MME_Shutdown(void);
+void R_MME_ShutdownStereo(void);
+void R_MME_TakeShot( void );
+void R_MME_TakeShotStereo( void );
+const void *R_MME_CaptureShotCmd( const void *data );
+const void *R_MME_CaptureShotCmdStereo( const void *data );
+void R_MME_Capture( const char *shotName, float fps, float focus );
+void R_MME_CaptureStereo( const char *shotName, float fps, float focus );
+void R_MME_BlurInfo( int* total, int* index );
+void R_MME_JitterView( float *pixels, float* eyes );
+qboolean R_MME_JitterOrigin( float *x, float *y );
+
+int R_MME_MultiPassNext( );
+int R_MME_MultiPassNextStereo( );

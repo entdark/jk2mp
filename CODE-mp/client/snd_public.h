@@ -5,6 +5,7 @@ void S_Shutdown( void );
 
 // if origin is NULL, the sound will be dynamically sourced from the entity
 void S_MuteSound(int entityNum, int entchannel);
+void S_StopSound(int entityNum, int entchannel, sfxHandle_t sfxHandle );
 void S_StartSound( vec3_t origin, int entnum, int entchannel, sfxHandle_t sfx );
 void S_StartLocalSound( sfxHandle_t sfx, int channelNum );
 
@@ -21,9 +22,9 @@ void S_StopAllSounds( void );
 
 // all continuous looping sounds must be added before calling S_Update
 void S_ClearLoopingSounds( qboolean killall );
-void S_AddLoopingSound( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
+void S_AddLoopingSound( const void *parent, int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfxHandle, int volume );
 void S_AddRealLoopingSound( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
-void S_StopLoopingSound(int entityNum );
+void S_StopLoopingSound(const void *parent );
 
 // recompute the reletive volumes for all running sounds
 // reletive to the given entityNum / orientation
@@ -49,3 +50,12 @@ void S_ClearSoundBuffer( void );
 
 void SNDDMA_Activate( qboolean bAppActive );
 
+// MME
+void S_MMERecord( const char *baseName, float deltaTime );
+void S_MMEWavClose( void );
+void S_MMEUpdate( float scale );
+void S_MMEMusic( const char *musicName, float time, float length );
+
+void S_UpdatePitch(float pitch);
+
+extern qboolean doNotYell;

@@ -402,8 +402,77 @@ static void RB_Hyperspace( void ) {
 }
 
 
+static void SetFinalProjection( void ) {
+	float	xmin, xmax, ymin, ymax;
+	float	width, height, depth;
+	float	zNear, zFar;
+	float	dx, dy;
+	vec2_t	pixelJitter, eyeJitter;
+	
+	//
+	// set up projection matrix
+	//
+	zNear	= r_znear->value;
+	zFar	= backEnd.viewParms.zFar;
+
+	ymax = zNear * tan( backEnd.viewParms.fovY * M_PI / 360.0f );
+	ymin = -ymax;
+
+	xmax = zNear * tan( backEnd.viewParms.fovX * M_PI / 360.0f );
+	xmin = -xmax;
+
+	width = xmax - xmin;
+	height = ymax - ymin;
+	depth = zFar - zNear;
+
+	pixelJitter[0] = pixelJitter[1] = 0;
+	eyeJitter[0] = eyeJitter[1] = 0;
+	/* Jitter the view */
+	R_MME_JitterView( pixelJitter, eyeJitter );
+
+	dx = ( pixelJitter[0]*width ) / backEnd.viewParms.viewportWidth;
+	dy = ( pixelJitter[1]*height ) / backEnd.viewParms.viewportHeight;
+	dx += eyeJitter[0];
+	dy += eyeJitter[1];
+
+	xmin += dx; xmax += dx;
+	ymin += dy; ymax += dy;
+
+	qglMatrixMode(GL_PROJECTION);
+	qglPushMatrix();
+	qglLoadIdentity();
+	qglFrustum( xmin, xmax, ymin, ymax, zNear, zFar );
+	qglGetFloatv(GL_PROJECTION_MATRIX, backEnd.viewParms.projectionMatrix );
+	qglPopMatrix();
+
+#if 0
+	backEnd.viewParms.projectionMatrix[0] = 2 * zNear / width;
+	backEnd.viewParms.projectionMatrix[4] = 0;
+	backEnd.viewParms.projectionMatrix[8] = ( xmax + xmin ) / width;	// normally 0
+	backEnd.viewParms.projectionMatrix[12] = 0;
+
+	backEnd.viewParms.projectionMatrix[1] = 0;
+	backEnd.viewParms.projectionMatrix[5] = 2 * zNear / height;
+	backEnd.viewParms.projectionMatrix[9] = ( ymax + ymin ) / height;	// normally 0
+	backEnd.viewParms.projectionMatrix[13] = 0;
+
+	backEnd.viewParms.projectionMatrix[2] = 0;
+	backEnd.viewParms.projectionMatrix[6] = 0;
+	backEnd.viewParms.projectionMatrix[10] = -( zFar + zNear ) / depth;
+	backEnd.viewParms.projectionMatrix[14] = -2 * zFar * zNear / depth;
+
+	backEnd.viewParms.projectionMatrix[3] = 0;
+	backEnd.viewParms.projectionMatrix[7] = 0;
+	backEnd.viewParms.projectionMatrix[11] = -1;
+	backEnd.viewParms.projectionMatrix[15] = 0;
+#endif
+}
+
 void SetViewportAndScissor( void ) {
 	qglMatrixMode(GL_PROJECTION);
+	if (r_stereoSeparation->value == 0) {
+		SetFinalProjection();
+	}
 	qglLoadMatrixf( backEnd.viewParms.projectionMatrix );
 	qglMatrixMode(GL_MODELVIEW);
 
@@ -551,6 +620,9 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	depthRange = qfalse;
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
+	if (!(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
+		backEnd.sceneZfar = backEnd.viewParms.zFar;
+	}
 
 	for (i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++) {
 		if ( drawSurf->sort == oldSort ) {
@@ -1040,7 +1112,36 @@ const void	*RB_DrawSurfs( const void *data ) {
 
 	backEnd.refdef = cmd->refdef;
 	backEnd.viewParms = cmd->viewParms;
+	//Jitter the camera origin
+	if ( !backEnd.viewParms.isPortal
+		&& !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)
+		&& r_stereoSeparation->value == 0) {
+		int i;
+		float x, y;
+		if ( R_MME_JitterOrigin( &x, &y ) ) {
+			orientationr_t* or = &backEnd.viewParms.ori;
+			orientationr_t* world = &backEnd.viewParms.world;
 
+//			VectorScale( or->axis[0], 0.5, or->axis[0] );
+//			VectorScale( or->axis[1], 0.3, or->axis[1] );
+//			VectorScale( or->axis[2], 0.8, or->axis[2] );
+			VectorMA( or->origin, x, or->axis[1], or->origin );
+			VectorMA( or->origin, y, or->axis[2], or->origin );
+//			or->origin[2] += 4000;
+//			or->origin[2] += 0.1 * x;
+			R_RotateForWorld( or, world );
+			for ( i = 0; i < 16; i++ ) {
+				int r = (rand() & 0xffff ) - 0x4000;
+				//world->modelMatrix[i] *= (0.9 + r * 0.0001);
+				//or->modelMatrix[i] *= (0.9 + r * 0.0001);
+			}
+		} else { 	
+			for ( i = 0; i < 16; i++ ) {
+//				int r = (rand() & 0xffff ) - 0x4000;
+//				backEnd.viewParms.world.modelMatrix[i] *= (0.9 + r * 0.0001);
+			}
+		}
+	}
 	RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
 
 	return (const void *)(cmd + 1);
@@ -1162,6 +1263,12 @@ const void	*RB_SwapBuffers( const void *data ) {
 
 	cmd = (const swapBuffersCommand_t *)data;
 
+	if ( r_stereoSeparation->value == 0) {
+		if ( R_MME_MultiPassNext() ) {
+			return (const void *)-1;
+		}
+	}
+
 	// we measure overdraw by reading back the stencil buffer and
 	// counting up the number of increments that have happened
 	if ( r_measureOverdraw->integer ) {
@@ -1184,6 +1291,10 @@ const void	*RB_SwapBuffers( const void *data ) {
     if ( !glState.finishCalled ) {
         qglFinish();
 	}
+	/* Allow MME to take a screenshot */
+	if ( r_stereoSeparation->value == 0) {
+		R_MME_TakeShot( );
+	}
 
     GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
 
@@ -1191,6 +1302,12 @@ const void	*RB_SwapBuffers( const void *data ) {
 
 	backEnd.projection2D = qfalse;
 
+	return (const void *)(cmd + 1);
+}
+
+
+const void	*RB_IncDataCapture( const void *data ) {
+	const captureCommand_t *cmd = (const captureCommand_t *)data;
 	return (const void *)(cmd + 1);
 }
 
@@ -1202,17 +1319,19 @@ This function will be called syncronously if running without
 smp extensions, or asyncronously by another thread.
 ====================
 */
-void RB_ExecuteRenderCommands( const void *data ) {
+void RB_ExecuteRenderCommands( const void *oldData ) {
 	int		t1, t2;
+	const void* data;
 
 	t1 = ri.Milliseconds ();
 
-	if ( !r_smp->integer || data == backEndData[0]->commands.cmds ) {
+	if ( !r_smp->integer || oldData == backEndData[0]->commands.cmds ) {
 		backEnd.smpFrame = 0;
 	} else {
 		backEnd.smpFrame = 1;
 	}
-
+again:
+	data = oldData;
 	while ( 1 ) {
 		switch ( *(const int *)data ) {
 		case RC_SET_COLOR:
@@ -1235,8 +1354,16 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			break;
 		case RC_SWAP_BUFFERS:
 			data = RB_SwapBuffers( data );
+			if ( (int)data == -1)
+				goto again;
 			break;
-
+		case RC_CAPTURE:
+			if (r_stereoSeparation->value == 0) {
+				data = R_MME_CaptureShotCmd( data );
+			} else {
+				data = RB_IncDataCapture( data );
+			}
+			break;
 		case RC_END_OF_LIST:
 		default:
 			// stop rendering on this thread

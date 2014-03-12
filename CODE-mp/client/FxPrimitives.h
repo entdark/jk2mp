@@ -661,7 +661,7 @@ public:
 	vec2_t	mST[MAX_CPOLY_VERTS];
 
 	float	mRot[3][3];
-	int		mLastFrameTime;
+	float	mLastFrameTime;
 
 
 	CPoly();
@@ -683,3 +683,8 @@ public:
 
 
 #endif //FX_PRIMITIVES_H_INC
+
+#define FX_FORCE_PHYSICS_EXPENSIVE	0x01
+#define FX_FORCE_PHYSICS_GHOUL2		0x02
+#define FX_FORCE_PHYSICS_BBOX		0x04
+#define FX_FORCE_PHYSICS_APPLY		0x08

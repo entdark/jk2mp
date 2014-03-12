@@ -48,7 +48,9 @@ cvar_t	*r_displayRefresh;
 
 cvar_t	*r_detailTextures;
 
-cvar_t	*r_znear;
+cvar_t	*r_znear;				// near Z clip plane
+cvar_t	*r_zproj;				// z distance of projection plane
+cvar_t	*r_stereoSeparation;	// separation of cameras for stereo capture
 
 cvar_t	*r_smp;
 cvar_t	*r_showSmp;
@@ -424,13 +426,54 @@ void R_TakeScreenshot( int x, int y, int width, int height, char *fileName ) {
 	ri.Hunk_FreeTempMemory( buffer );
 }
 
+/*
+==================
+
+RB_ReadPixels
+
+Reads an image but takes care of alignment issues for reading RGB images.
+
+Reads a minimum offset for where the RGB data starts in the image from
+integer stored at pointer offset. When the function has returned the actual
+offset was written back to address offset. This address will always have an
+alignment of packAlign to ensure efficient copying.
+
+Stores the length of padding after a line of pixels to address padlen
+
+Return value must be freed with Hunk_FreeTempMemory()
+==================
+*/
+
+byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
+{
+	byte *buffer, *bufstart;
+	int padwidth, linelen;
+	GLint packAlign;
+
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+
+	linelen = width * 3;
+	padwidth = PAD(linelen, packAlign);
+
+	// Allocate a few more bytes so that we can choose an alignment we like
+	buffer = (byte *)Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
+
+	bufstart = (byte *)PADP((intptr_t) buffer + *offset, packAlign);
+	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
+
+	*offset = bufstart - buffer;
+	*padlen = padwidth - linelen;
+
+	return buffer;
+}
+
 /* 
 ================== 
 R_TakeScreenshot
 ================== 
 */  
 void R_TakeScreenshotJPEG( int x, int y, int width, int height, char *fileName ) {
-	byte		*buffer;
+/*	byte		*buffer;
 
 	buffer = (unsigned char *)ri.Hunk_AllocateTempMemory(glConfig.vidWidth*glConfig.vidHeight*4);
 
@@ -444,7 +487,20 @@ void R_TakeScreenshotJPEG( int x, int y, int width, int height, char *fileName )
 	ri.FS_WriteFile( fileName, buffer, 1 );		// create path
 	SaveJPG( fileName, 95, glConfig.vidWidth, glConfig.vidHeight, buffer);
 
-	ri.Hunk_FreeTempMemory( buffer );
+	ri.Hunk_FreeTempMemory( buffer );*/
+	byte *buffer;
+	size_t offset = 0, memcount;
+	int padlen;
+
+	buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	memcount = (width * 3 + padlen) * height;
+
+	// gamma correct
+	if(glConfig.deviceSupportsGamma)
+		R_GammaCorrect(buffer + offset, memcount);
+
+	RE_SaveJPG(fileName, mme_jpegQuality->integer, width, height, buffer + offset, padlen);
+	ri.Hunk_FreeTempMemory(buffer);
 }
 
 /* 
@@ -906,6 +962,8 @@ void R_Register( void )
 	r_flares = ri.Cvar_Get ("r_flares", "0", CVAR_ARCHIVE );
 	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
 	AssertCvarRange( r_znear, 0.001f, 200, qtrue );
+	r_zproj = ri.Cvar_Get( "r_zproj", "107", CVAR_ARCHIVE );
+	r_stereoSeparation = ri.Cvar_Get( "r_stereoSeparation", "0", CVAR_ARCHIVE );
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
@@ -1086,6 +1144,9 @@ void R_Init( void ) {
 #endif
 	R_Register();
 
+	R_MME_Init();
+	R_MME_InitStereo();
+
 	max_polys = r_maxpolys->integer;
 	if (max_polys < MAX_POLYS)
 		max_polys = MAX_POLYS;
@@ -1169,6 +1230,9 @@ void RE_Shutdown( qboolean destroyWindow ) {
 		}
 	}
 
+	R_MME_Shutdown();
+	R_MME_ShutdownStereo();
+
 	// shut down platform specific OpenGL stuff
 	if ( destroyWindow ) {
 		GLimp_Shutdown();
@@ -1228,6 +1292,11 @@ void RE_SetLightStyle(int style, int color)
 }
 
 #endif //!DEDICATED
+
+static void R_DemoRandomSeed(int time, float timeFraction) {
+	srand(time + timeFraction);
+}
+
 /*
 @@@@@@@@@@@@@@@@@@@@@
 GetRefAPI
@@ -1302,6 +1371,13 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 
 	re.GetBModelVerts = RE_GetBModelVerts;
 #endif //!DEDICATED
+
+	//mme
+	re.Capture = R_MME_Capture;
+	re.CaptureStereo = R_MME_CaptureStereo;
+	re.BlurInfo = R_MME_BlurInfo;
+	re.DemoRandomSeed = R_DemoRandomSeed;
+
 	return &re;
 }
 

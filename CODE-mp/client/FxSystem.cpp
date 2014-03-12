@@ -11,6 +11,8 @@
 cvar_t	fx_debug;
 cvar_t	fx_freeze;
 
+cvar_t	*fx_forcePhysics;
+
 #define DEFAULT_EXPLOSION_RADIUS	512
 
 // Stuff for the FxHelper
@@ -45,7 +47,7 @@ void SFxHelper::Print( const char *msg, ... )
 }
 
 //------------------------------------------------------
-void SFxHelper::AdjustTime_Pos( int time, vec3_t refdef_vieworg, vec3_t refdef_viewaxis[3] )
+void SFxHelper::AdjustTime_Pos( int time, float frametime, float timeFraction, vec3_t refdef_vieworg, vec3_t refdef_viewaxis[3] )
 {
 	if ( fx_freeze.integer )
 	{
@@ -59,7 +61,8 @@ void SFxHelper::AdjustTime_Pos( int time, vec3_t refdef_vieworg, vec3_t refdef_v
 		VectorCopy( refdef_viewaxis[2], refdef.viewaxis[2] );
 		mOldTime = mTime;
 		mTime = time;
-		mFrameTime = mTime - mOldTime;
+		mFrameTime = frametime;//mTime - mOldTime;
+		mTimeFraction = timeFraction;
 	}
 }
 
@@ -85,4 +88,8 @@ void SFxHelper::CameraShake( vec3_t origin, float intensity, int radius, int tim
 	realIntensity = intensity * intensityScale;
 
 //rjr	theClientCamera.Shake( realIntensity, time );
+}
+
+void SFxHelper::DemoRandomSeed( int time, float timeFraction ) {
+	srand(time + timeFraction);
 }

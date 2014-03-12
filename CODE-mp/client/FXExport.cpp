@@ -68,11 +68,15 @@ int FX_InitSystem( void )
 
 qboolean FX_FreeSystem( void )
 {
-	return (qboolean)FX_Free();
+	return (qboolean)FX_Free(true);
 }
 
-void FX_AdjustTime_Pos( int time, vec3_t refdef_vieworg, vec3_t refdef_viewaxis[3] )
+void FX_AdjustTime_Pos( int time, float frametime, float timeFraction, vec3_t refdef_vieworg, vec3_t refdef_viewaxis[3] )
 {
-	theFxHelper.AdjustTime_Pos( time, refdef_vieworg, refdef_viewaxis );
+	theFxHelper.AdjustTime_Pos( time, frametime, timeFraction, refdef_vieworg, refdef_viewaxis );
 }
 
+void FX_DemoRandomSeed( int time, float timeFraction )
+{
+	theFxHelper.DemoRandomSeed(time, timeFraction);
+}

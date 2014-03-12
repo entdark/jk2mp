@@ -357,6 +357,46 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	ori->viewOrigin[2] = DotProduct( delta, ori->axis[2] ) * axisLength;
 }
 
+
+void R_RotateForWorld ( const orientationr_t* input, orientationr_t* world ) 
+{
+	float	viewerMatrix[16];
+	const float	*origin = input->origin;
+
+	Com_Memset ( world, 0, sizeof(*world));
+	world->axis[0][0] = 1;
+	world->axis[1][1] = 1;
+	world->axis[2][2] = 1;
+
+	// transform by the camera placement
+	VectorCopy( origin, world->viewOrigin );
+
+	viewerMatrix[0] = input->axis[0][0];
+	viewerMatrix[4] = input->axis[0][1];
+	viewerMatrix[8] = input->axis[0][2];
+	viewerMatrix[12] = -origin[0] * viewerMatrix[0] + -origin[1] * viewerMatrix[4] + -origin[2] * viewerMatrix[8];
+
+	viewerMatrix[1] = input->axis[1][0];
+	viewerMatrix[5] = input->axis[1][1];
+	viewerMatrix[9] = input->axis[1][2];
+	viewerMatrix[13] = -origin[0] * viewerMatrix[1] + -origin[1] * viewerMatrix[5] + -origin[2] * viewerMatrix[9];
+
+	viewerMatrix[2] = input->axis[2][0];
+	viewerMatrix[6] = input->axis[2][1];
+	viewerMatrix[10] = input->axis[2][2];
+	viewerMatrix[14] = -origin[0] * viewerMatrix[2] + -origin[1] * viewerMatrix[6] + -origin[2] * viewerMatrix[10];
+
+	viewerMatrix[3] = 0;
+	viewerMatrix[7] = 0;
+	viewerMatrix[11] = 0;
+	viewerMatrix[15] = 1;
+
+	// convert from our coordinate system (looking down X)
+	// to OpenGL's coordinate system (looking down -Z)
+	myGlMultMatrix( viewerMatrix, s_flipMatrix, world->modelMatrix );
+
+}
+
 /*
 =================
 R_RotateForViewer
@@ -366,7 +406,7 @@ Sets up the modelview matrix for a given viewParm
 */
 void R_RotateForViewer (void) 
 {
-	float	viewerMatrix[16];
+/*	float	viewerMatrix[16];
 	vec3_t	origin;
 
 	Com_Memset (&tr.ori, 0, sizeof(tr.ori));
@@ -401,7 +441,8 @@ void R_RotateForViewer (void)
 	// convert from our coordinate system (looking down X)
 	// to OpenGL's coordinate system (looking down -Z)
 	myGlMultMatrix( viewerMatrix, s_flipMatrix, tr.ori.modelMatrix );
-
+*/
+	R_RotateForWorld( &tr.viewParms.ori, &tr.ori );
 	tr.viewParms.world = tr.ori;
 
 }
@@ -479,7 +520,7 @@ R_SetupProjection
 void R_SetupProjection( void ) {
 	float	xmin, xmax, ymin, ymax;
 	float	width, height, depth;
-	float	zNear, zFar;
+	float	zNear, zFar, zProj, stereoSep;
 
 	// dynamically compute far clip plane distance
 	SetFarClip();
@@ -488,7 +529,9 @@ void R_SetupProjection( void ) {
 	// set up projection matrix
 	//
 	zNear	= r_znear->value;
+	zProj	= r_zproj->value;
 	zFar	= tr.viewParms.zFar;
+	stereoSep = r_stereoSeparation->value;
 
 	ymax = zNear * tan( tr.refdef.fov_y * M_PI / 360.0f );
 	ymin = -ymax;
@@ -502,8 +545,8 @@ void R_SetupProjection( void ) {
 
 	tr.viewParms.projectionMatrix[0] = 2 * zNear / width;
 	tr.viewParms.projectionMatrix[4] = 0;
-	tr.viewParms.projectionMatrix[8] = ( xmax + xmin ) / width;	// normally 0
-	tr.viewParms.projectionMatrix[12] = 0;
+	tr.viewParms.projectionMatrix[8] = (xmax + xmin + 2 * stereoSep) / width;//( xmax + xmin ) / width;	// normally 0
+	tr.viewParms.projectionMatrix[12] = 2 * zProj * stereoSep / width;//0;
 
 	tr.viewParms.projectionMatrix[1] = 0;
 	tr.viewParms.projectionMatrix[5] = 2 * zNear / height;
@@ -532,6 +575,16 @@ void R_SetupFrustum (void) {
 	int		i;
 	float	xs, xc;
 	float	ang;
+	float	stereoSep;
+	vec3_t	ofsorigin;
+
+	stereoSep = r_stereoSeparation->value;
+
+	if(stereoSep == 0) {
+		VectorCopy(tr.viewParms.ori.origin, ofsorigin);
+	} else {
+		VectorMA(tr.viewParms.ori.origin, stereoSep*20, tr.viewParms.ori.axis[1], ofsorigin);
+	}
 
 	ang = tr.viewParms.fovX / 180 * M_PI * 0.5f;
 	xs = sin( ang );
@@ -555,7 +608,7 @@ void R_SetupFrustum (void) {
 
 	for (i=0 ; i<4 ; i++) {
 		tr.viewParms.frustum[i].type = PLANE_NON_AXIAL;
-		tr.viewParms.frustum[i].dist = DotProduct (tr.viewParms.ori.origin, tr.viewParms.frustum[i].normal);
+		tr.viewParms.frustum[i].dist = DotProduct (ofsorigin, tr.viewParms.frustum[i].normal);
 		SetPlaneSignbits( &tr.viewParms.frustum[i] );
 	}
 }

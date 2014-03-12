@@ -129,7 +129,7 @@ int forceModelModificationCount = -1;
 void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum );
 void CG_Shutdown( void );
 
-void CG_CalcEntityLerpPositions( centity_t *cent );
+//void CG_CalcEntityLerpPositions( centity_t *cent );
 void CG_ROFF_NotetrackCallback( centity_t *cent, const char *notetrack);
 
 static int	C_PointContents(void);
@@ -148,6 +148,8 @@ This is the only way control passes into the module.
 This must be the very first function compiled into the .q3vm file
 ================
 */
+extern void CG_DemosDrawActiveFrame( int serverTime, stereoFrame_t stereoView );
+extern qboolean CG_DemosConsoleCommand( void );
 int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11  ) {
 
 	switch ( command ) {
@@ -158,9 +160,16 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 		CG_Shutdown();
 		return 0;
 	case CG_CONSOLE_COMMAND:
-		return CG_ConsoleCommand();
+		if (cg.demoPlayback == 2)
+			return CG_DemosConsoleCommand();
+		else
+			return CG_ConsoleCommand();
 	case CG_DRAW_ACTIVE_FRAME:
-		CG_DrawActiveFrame( arg0, arg1, arg2 );
+		if (arg2 == 2) {
+			CG_DemosDrawActiveFrame( arg0, arg1 );
+		} else {
+			CG_DrawActiveFrame( arg0, arg1, arg2 );
+		}
 		return 0;
 	case CG_CROSSHAIR_PLAYER:
 		return CG_CrosshairPlayer();
@@ -170,8 +179,8 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 		CG_KeyEvent(arg0, arg1);
 		return 0;
 	case CG_MOUSE_EVENT:
-		cgDC.cursorx = cgs.cursorX;
-		cgDC.cursory = cgs.cursorY;
+//		cgDC.cursorx = cgs.cursorX;
+//		cgDC.cursory = cgs.cursorY;
 		CG_MouseEvent(arg0, arg1);
 		return 0;
 	case CG_EVENT_HANDLING:
@@ -248,6 +257,9 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 	}
 	return -1;
 }
+
+int fxT;
+qboolean doFX = qfalse;
 
 static int C_PointContents(void)
 {
@@ -501,6 +513,36 @@ vmCvar_t	cg_recordSPDemoName;
 
 vmCvar_t	ui_myteam;
 
+
+//mme
+vmCvar_t	mov_chatBeep;
+vmCvar_t	mov_fragsOnly;
+vmCvar_t	mov_captureCamera;
+vmCvar_t	mov_captureName;
+vmCvar_t	mov_captureFPS;
+
+vmCvar_t	mov_filterMask;
+vmCvar_t	mov_seekInterval;
+vmCvar_t	mov_musicFile;
+vmCvar_t	mov_musicStart;
+vmCvar_t	mov_chaseRange;
+
+vmCvar_t	mov_deltaYaw;
+vmCvar_t	mov_deltaPitch;
+vmCvar_t	mov_deltaRoll;
+
+vmCvar_t	mov_smoothQuat;
+vmCvar_t	mov_captureCvars;
+vmCvar_t	mov_ratioFix;
+vmCvar_t	mov_saberTeamColour;
+vmCvar_t	mov_wallhack;
+
+vmCvar_t	fx_Vibrate;
+vmCvar_t	fx_vfps;
+
+vmCvar_t	mme_demoFileName;
+
+
 typedef struct {
 	vmCvar_t	*vmCvar;
 	char		*cvarName;
@@ -530,7 +572,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE },
 	{ &cg_drawScores,		  "cg_drawScores", "1", CVAR_ARCHIVE },
 	{ &cg_dynamicCrosshair, "cg_dynamicCrosshair", "1", CVAR_ARCHIVE },
-	{ &cg_drawRewards, "cg_drawRewards", "1", CVAR_ARCHIVE },
+	{ &cg_drawRewards, "cg_drawRewards", "0", CVAR_ARCHIVE },
 	{ &cg_crosshairSize, "cg_crosshairSize", "24", CVAR_ARCHIVE },
 	{ &cg_crosshairHealth, "cg_crosshairHealth", "0", CVAR_ARCHIVE },
 	{ &cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE },
@@ -656,6 +698,27 @@ Ghoul2 Insert Start
 /*
 Ghoul2 Insert End
 */
+	{ &mme_demoFileName,	"mme_demoFileName",		"",			0		},
+	{ &mov_chatBeep,		"mov_chatBeep",			"1",		CVAR_ARCHIVE	},
+	{ &mov_fragsOnly,		"mov_fragOnly",			"0",		CVAR_ARCHIVE	},
+	{ &mov_filterMask,		"mov_filterMask",		"0",		CVAR_ARCHIVE	},
+	{ &mov_seekInterval,	"mov_seekInterval",		"4",		CVAR_ARCHIVE	},
+	{ &mov_deltaYaw,		"mov_deltaYaw",			"0",		CVAR_ARCHIVE	},
+	{ &mov_deltaPitch,		"mov_deltaPitch",		"0",		CVAR_ARCHIVE	},
+	{ &mov_deltaRoll,		"mov_deltaRoll",		"0",		CVAR_ARCHIVE	},
+	{ &mov_captureCamera,	"mov_captureCamera",	"0",		CVAR_ARCHIVE	},
+	{ &mov_captureName,		"mov_captureName",		"",			CVAR_TEMP		},
+	{ &mov_captureFPS,		"mov_captureFPS",		"25",		CVAR_ARCHIVE	},
+	{ &mov_musicFile,		"mov_musicFile",		"",			CVAR_TEMP		},
+	{ &mov_musicStart,		"mov_musicStart",		"0",		CVAR_TEMP		},
+	{ &mov_chaseRange,		"mov_chaseRange",		"20",		CVAR_ARCHIVE	},
+	{ &mov_smoothQuat,		"mov_smoothQuat",		"0",		CVAR_ARCHIVE	},
+	{ &mov_captureCvars,	"mov_captureCvars",		"",			CVAR_TEMP		},
+	{ &mov_ratioFix,		"mov_ratioFix",			"1",		CVAR_ARCHIVE	},
+	{ &mov_saberTeamColour,	"mov_saberTeamColour",	"1",		CVAR_ARCHIVE	},
+	{ &mov_wallhack,		"mov_wallhack",			"0",		CVAR_ARCHIVE	},
+	{ &fx_Vibrate,			"fx_Vibrate",			"1",		CVAR_ARCHIVE	},
+	{ &fx_vfps,				"fx_vfps",				"340",		CVAR_ARCHIVE	},
 };
 
 static int  cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
@@ -1036,7 +1099,7 @@ static void CG_RegisterSounds( void ) {
 	if ( cgs.gametype >= GT_TEAM || cg_buildScript.integer ) {
 
 #ifdef JK2AWARDS
-		cgs.media.captureAwardSound = trap_S_RegisterSound( "sound/teamplay/flagcapture_yourteam.wav" );
+		cgs.media.captureAwardSound = trap_S_RegisterSound( "sound/chars/protocol/misc/capture.wav" );
 #endif
 		cgs.media.redLeadsSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM046");
 		cgs.media.blueLeadsSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM045");
@@ -1085,11 +1148,15 @@ static void CG_RegisterSounds( void ) {
 
 	cgs.media.crackleSound = trap_S_RegisterSound( "sound/effects/energy_crackle.wav" );
 #ifdef JK2AWARDS
-	cgs.media.impressiveSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM025" );
-	cgs.media.excellentSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM053" );
-	cgs.media.deniedSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM017" );
-	cgs.media.humiliationSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM019" );
-	cgs.media.defendSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM024" );
+	cgs.media.firstImpressiveSound = trap_S_RegisterSound( "sound/chars/protocol/misc/first_impressive.wav" );
+	cgs.media.impressiveSound = trap_S_RegisterSound( "sound/chars/protocol/misc/impressive.wav" );
+	cgs.media.firstExcellentSound = trap_S_RegisterSound( "sound/chars/protocol/misc/first_excellent.wav" );
+	cgs.media.excellentSound = trap_S_RegisterSound( "sound/chars/protocol/misc/excellent.wav" );
+	cgs.media.firstHumiliationSound = trap_S_RegisterSound( "sound/chars/protocol/misc/first_gauntlet.wav" );
+	cgs.media.humiliationSound = trap_S_RegisterSound( "sound/chars/protocol/misc/humiliation.wav" );
+	cgs.media.deniedSound = trap_S_RegisterSound( "sound/chars/protocol/misc/denied.wav" );
+	cgs.media.defendSound = trap_S_RegisterSound( "sound/chars/protocol/misc/defense.wav" );
+	cgs.media.assistSound = trap_S_RegisterSound( "sound/chars/protocol/misc/assist.wav" );
 #endif
 
 	cgs.media.takenLeadSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM051");
@@ -1324,16 +1391,15 @@ static void CG_RegisterGraphics( void ) {
 	trap_FX_RegisterEffect("spark_explosion.efx");
 
 	trap_FX_RegisterEffect("effects/turret/muzzle_flash.efx");
-	trap_FX_RegisterEffect("saber/spark.efx");
-	trap_FX_RegisterEffect("mp/spawn.efx");
+	cgs.effects.mSparks = trap_FX_RegisterEffect("saber/spark.efx");
+	cgs.effects.mSpawn = trap_FX_RegisterEffect("mp/spawn.efx");
 	trap_FX_RegisterEffect("mp/jedispawn.efx");
-	trap_FX_RegisterEffect("mp/itemcone.efx");
+	cgs.effects.itemCone = trap_FX_RegisterEffect("mp/itemcone.efx");
 	trap_FX_RegisterEffect("blaster/deflect.efx");
 	trap_FX_RegisterEffect("saber/saber_block.efx");
-	trap_FX_RegisterEffect("saber/spark.efx");
 	trap_FX_RegisterEffect("saber/blood_sparks.efx");
 	trap_FX_RegisterEffect("blaster/smoke_bolton");
-	trap_FX_RegisterEffect("force/confusion.efx");
+	cgs.effects.mForceConfustion = trap_FX_RegisterEffect("force/confusion.efx");
 
 	trap_FX_RegisterEffect("effects/force/lightning.efx");
 
@@ -2138,7 +2204,7 @@ static qboolean CG_FeederSelection(float feederID, int index) {
 	return qtrue;
 }
 
-static float CG_Cvar_Get(const char *cvar) {
+float CG_Cvar_Get(const char *cvar) {
 	char buff[128];
 	memset(buff, 0, sizeof(buff));
 	trap_Cvar_VariableStringBuffer(cvar, buff, sizeof(buff));

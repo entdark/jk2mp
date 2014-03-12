@@ -219,15 +219,29 @@ void FX_DrawPortableShield(centity_t *cent)
 
 	trap_Cvar_VariableStringBuffer("cl_paused", buf, sizeof(buf));
 
-	if (atoi(buf))
-	{ //rww - fix to keep from rendering repeatedly while HUD menu is up
+	if (atoi(buf)) { //rww - fix to keep from rendering repeatedly while HUD menu is up
 		return;
 	}
 
-	if (cent->currentState.eFlags & EF_NODRAW)
-	{
+	if (cent->currentState.eFlags & EF_NODRAW) {
 		return;
 	}
+
+	if (fx_vfps.integer <= 0)
+			fx_vfps.integer = 1;
+	if (fxT > cg.time)
+		fxT = cg.time;
+	if (doFX || cg.time - fxT >= 1000 / fx_vfps.integer) {
+		doFX = qtrue;
+		fxT = cg.time;
+	} else {
+		doFX = qfalse;
+		return;
+	}
+	if (!(cg.frametime > 0
+		&& ((cg.frametime < 6 && fmod((float)cg.time, 6.0f) <= cg.frametime)
+		|| cg.frametime >= 6)))
+		return;
 
 	// decode the data stored in time2
 	xaxis = ((cent->currentState.time2 >> 24) & 1);
@@ -242,13 +256,10 @@ void FX_DrawPortableShield(centity_t *cent)
 	VectorCopy(cent->lerpOrigin, start);
 	VectorCopy(cent->lerpOrigin, end);
 
-	if (xaxis) // drawing along x-axis
-	{
+	if (xaxis) { // drawing along x-axis
 		start[0] -= negWidth;
 		end[0] += posWidth;
-	}
-	else
-	{
+	} else {
 		start[1] -= negWidth;
 		end[1] += posWidth;
 	}
@@ -260,27 +271,15 @@ void FX_DrawPortableShield(centity_t *cent)
 	end[2] += height/2;
 
 	if (team == TEAM_RED)
-	{
 		if (cent->currentState.trickedentindex)
-		{
 			shader = trap_R_RegisterShader( "gfx/misc/red_dmgshield" );
-		}
 		else
-		{
 			shader = trap_R_RegisterShader( "gfx/misc/red_portashield" );
-		}
-	}
 	else
-	{
 		if (cent->currentState.trickedentindex)
-		{
 			shader = trap_R_RegisterShader( "gfx/misc/blue_dmgshield" );
-		}
 		else
-		{
 			shader = trap_R_RegisterShader( "gfx/misc/blue_portashield" );
-		}
-	}
 
 	le = FX_AddOrientedLine(start, end, normal, 1.0f, height, 0.0f, 1.0f, 1.0f, 50.0, shader);
 }
@@ -1452,7 +1451,7 @@ Ghoul2 Insert Start
 
 		if (!doGrey)
 		{
-			trap_FX_PlayEffectID(trap_FX_RegisterEffect("mp/itemcone.efx"), ent.origin, uNorm);
+			trap_FX_PlayEffectID(cgs.effects.itemCone, ent.origin, uNorm);
 		}
 	}
 
@@ -2234,16 +2233,6 @@ void CG_AdjustPositionForMover( const vec3_t in, int moverNum, int fromTime, int
 }
 
 /*
-Ghoul2 Insert Start
-*/
-static void LerpBoneAngleOverrides( centity_t *cent)
-{
-	
-}
-/*
-Ghoul2 Insert End
-*/
-/*
 =============================
 CG_InterpolateEntityPosition
 =============================
@@ -2275,17 +2264,6 @@ static void CG_InterpolateEntityPosition( centity_t *cent ) {
 	cent->lerpAngles[0] = LerpAngle( current[0], next[0], f );
 	cent->lerpAngles[1] = LerpAngle( current[1], next[1], f );
 	cent->lerpAngles[2] = LerpAngle( current[2], next[2], f );
-/*
-Ghoul2 Insert Start
-*/
-		// now the nasty stuff - this will interpolate all ghoul2 models bone angle overrides per model attached to this cent
-//	if (cent->currentState.ghoul2.size())
-	{
-		LerpBoneAngleOverrides(cent);
-	}
-/*
-Ghoul2 Insert End
-*/
 }
 
 /*
@@ -2319,8 +2297,8 @@ void CG_CalcEntityLerpPositions( centity_t *cent ) {
 	}
 
 	// just use the current frame and evaluate as best we can
-	BG_EvaluateTrajectory( &cent->currentState.pos, cg.time, cent->lerpOrigin );
-	BG_EvaluateTrajectory( &cent->currentState.apos, cg.time, cent->lerpAngles );
+	demoNowTrajectory( &cent->currentState.pos, cent->lerpOrigin );
+	demoNowTrajectory( &cent->currentState.apos, cent->lerpAngles );
 
 	// adjust for riding a mover if it wasn't rolled into the predicted
 	// player state
@@ -2328,17 +2306,6 @@ void CG_CalcEntityLerpPositions( centity_t *cent ) {
 		CG_AdjustPositionForMover( cent->lerpOrigin, cent->currentState.groundEntityNum, 
 		cg.snap->serverTime, cg.time, cent->lerpOrigin );
 	}
-/*
-Ghoul2 Insert Start
-*/
-	// now the nasty stuff - this will interpolate all ghoul2 models bone angle overrides per model attached to this cent
-//	if (cent->currentState.ghoul2.size())
-	{
-		LerpBoneAngleOverrides(cent);
-	}
-/*
-Ghoul2 Insert End
-*/
 }
 
 /*
@@ -2453,6 +2420,35 @@ Ghoul2 Insert End
 	}
 }
 
+void CG_PreparePacketEntities( void ) {
+	// set cg.frameInterpolation
+	if ( cg.nextSnap ) {
+		int		delta;
+
+		delta = (cg.nextSnap->serverTime - cg.snap->serverTime);
+		if ( delta == 0 ) {
+			cg.frameInterpolation = 0;
+		} else {
+			cg.frameInterpolation = (float)( (cg.time  - cg.snap->serverTime) + cg.timeFraction ) / delta;
+		}
+	} else {
+		cg.frameInterpolation = 0;	// actually, it should never be used, because 
+									// no entities should be marked as interpolating
+	}
+
+	// the auto-rotating items will all have the same axis
+	cg.autoAngles[0] = 0;
+	cg.autoAngles[1] = (( cg.time & 2047 ) + cg.timeFraction) * 360 / 2048.0;
+	cg.autoAngles[2] = 0;
+
+	cg.autoAnglesFast[0] = 0;
+	cg.autoAnglesFast[1] = (( cg.time & 1023 ) + + cg.timeFraction) * 360 / 1024.0f;
+	cg.autoAnglesFast[2] = 0;
+
+	AnglesToAxis( cg.autoAngles, cg.autoAxis );
+	AnglesToAxis( cg.autoAnglesFast, cg.autoAxisFast );
+}
+
 void CG_ManualEntityRender(centity_t *cent)
 {
 	CG_AddCEntity(cent);
@@ -2467,45 +2463,6 @@ CG_AddPacketEntities
 void CG_AddPacketEntities( void ) {
 	int					num;
 	centity_t			*cent;
-	playerState_t		*ps;
-
-	// set cg.frameInterpolation
-	if ( cg.nextSnap ) {
-		int		delta;
-
-		delta = (cg.nextSnap->serverTime - cg.snap->serverTime);
-		if ( delta == 0 ) {
-			cg.frameInterpolation = 0;
-		} else {
-			cg.frameInterpolation = (float)( cg.time - cg.snap->serverTime ) / delta;
-		}
-	} else {
-		cg.frameInterpolation = 0;	// actually, it should never be used, because 
-									// no entities should be marked as interpolating
-	}
-
-	// the auto-rotating items will all have the same axis
-	cg.autoAngles[0] = 0;
-	cg.autoAngles[1] = ( cg.time & 2047 ) * 360 / 2048.0;
-	cg.autoAngles[2] = 0;
-
-	cg.autoAnglesFast[0] = 0;
-	cg.autoAnglesFast[1] = ( cg.time & 1023 ) * 360 / 1024.0f;
-	cg.autoAnglesFast[2] = 0;
-
-	AnglesToAxis( cg.autoAngles, cg.autoAxis );
-	AnglesToAxis( cg.autoAnglesFast, cg.autoAxisFast );
-
-	// generate and add the entity from the playerstate
-	ps = &cg.predictedPlayerState;
-
-	//rww - update the g2 pointer BEFORE the weapons, otherwise bad things could happen
-	//FIXME: These two pointers seem to differ sometimes, they shouldn't, should they?
-	//the one on predictedPlayerEntity also seems to often be invalid, so it can't be
-	//reliably checked and cleared.
-	cg.predictedPlayerEntity.ghoul2 = cg_entities[ cg.snap->ps.clientNum].ghoul2;
-	CG_CheckPlayerG2Weapons(ps, &cg.predictedPlayerEntity);
-	BG_PlayerStateToEntityState( ps, &cg.predictedPlayerEntity.currentState, qfalse );
 	
 	// add in the Ghoul2 stuff.
 	VectorCopy( cg_entities[ cg.snap->ps.clientNum].modelScale, cg.predictedPlayerEntity.modelScale);
@@ -2519,8 +2476,7 @@ void CG_AddPacketEntities( void ) {
 	// add each entity sent over by the server
 	for ( num = 0 ; num < cg.snap->numEntities ; num++ ) {
 		// Don't re-add ents that have been predicted.
-		if (cg.snap->entities[ num ].number != cg.snap->ps.clientNum)
-		{
+		if (cg.snap->entities[ num ].number != cg.snap->ps.clientNum) {
 			cent = &cg_entities[ cg.snap->entities[ num ].number ];
 			CG_AddCEntity( cent );
 		}

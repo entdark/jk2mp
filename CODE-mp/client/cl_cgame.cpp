@@ -41,6 +41,12 @@ extern qboolean loadCamera(const char *name);
 extern void startCamera(int time);
 extern qboolean getCameraInfo(int time, vec3_t *origin, vec3_t *angles);
 
+extern void demoGetSnapshotNumber( int *snapNumber, int *serverTime );
+extern qboolean demoGetSnapshot( int snapNumber, snapshot_t *snap );
+extern qboolean demoGetServerCommand( int cmdNumber );
+extern void demoRenderFrame( stereoFrame_t stereo );
+extern int demoSeek( int seekTime );
+
 void FX_FeedTrail(effectTrailArgStruct_t *a);
 
 /*
@@ -591,6 +597,9 @@ int CL_CgameSystemCalls( int *args ) {
 	case CG_S_STARTSOUND:
 		S_StartSound( (float *)VMA(1), args[2], args[3], args[4] );
 		return 0;
+	case CG_S_STOPSOUND:
+		S_StopSound(args[1], args[2], args[3] );
+		return 0;
 	case CG_S_STARTLOCALSOUND:
 		S_StartLocalSound( args[1], args[2] );
 		return 0;
@@ -598,13 +607,13 @@ int CL_CgameSystemCalls( int *args ) {
 		S_ClearLoopingSounds((qboolean)args[1]);
 		return 0;
 	case CG_S_ADDLOOPINGSOUND:
-		S_AddLoopingSound( args[1], (const float *)VMA(2), (const float *)VMA(3), args[4] );
+		S_AddLoopingSound( ((char *)cl.entityBaselines) + args[1], args[1], (const float *)VMA(2), (const float *)VMA(3), args[4], 127 );
 		return 0;
 	case CG_S_ADDREALLOOPINGSOUND:
-		S_AddRealLoopingSound( args[1], (const float *)VMA(2), (const float *)VMA(3), args[4] );
+		S_AddLoopingSound( ((char *)cl.entityBaselines) + args[1], args[1], (const float *)VMA(2), (const float *)VMA(3), args[4], 90 );
 		return 0;
 	case CG_S_STOPLOOPINGSOUND:
-		S_StopLoopingSound( args[1] );
+		S_StopLoopingSound( ((char *)cl.entityBaselines) + args[1] );
 		return 0;
 	case CG_S_UPDATEENTITYPOSITION:
 		S_UpdateEntityPosition( args[1], (const float *)VMA(2) );
@@ -692,12 +701,21 @@ int CL_CgameSystemCalls( int *args ) {
 		CL_GetGameState( (gameState_t *)VMA(1) );
 		return 0;
 	case CG_GETCURRENTSNAPSHOTNUMBER:
-		CL_GetCurrentSnapshotNumber( (int *)VMA(1), (int *)VMA(2) );
+		if (clc.newDemoPlayer) 
+			demoGetSnapshotNumber( (int *)VMA(1), (int *)VMA(2) );
+		else
+			CL_GetCurrentSnapshotNumber( (int *)VMA(1), (int *)VMA(2) );
 		return 0;
 	case CG_GETSNAPSHOT:
-		return CL_GetSnapshot( args[1], (snapshot_t *)VMA(2) );
+		if (clc.newDemoPlayer) 
+			return demoGetSnapshot( args[1], (snapshot_t *)VMA(2) );
+		else
+			return CL_GetSnapshot( args[1], (snapshot_t *)VMA(2) );
 	case CG_GETSERVERCOMMAND:
-		return CL_GetServerCommand( args[1] );
+		if (clc.newDemoPlayer)
+			return demoGetServerCommand( args[1] );
+		else
+			return CL_GetServerCommand( args[1] );
 	case CG_GETCURRENTCMDNUMBER:
 		return CL_GetCurrentCmdNumber();
 	case CG_GETUSERCMD:
@@ -878,7 +896,7 @@ int CL_CgameSystemCalls( int *args ) {
 		return FX_FreeSystem();
 
 	case CG_FX_ADJUST_TIME:
-		FX_AdjustTime_Pos(args[1],(float *)VMA(2),(vec3_t *)VMA(3));
+		FX_AdjustTime_Pos(args[1], VMF(2), VMF(3),(float *)VMA(4),(vec3_t *)VMA(5));
 		return 0;
 
 	case CG_FX_ADDPOLY:
@@ -1140,7 +1158,39 @@ Ghoul2 Insert End
 	case CG_SET_SHARED_BUFFER:
 		cl.mSharedMemory = ((char *)VMA(1));
 		return 0;
-
+	
+	case CG_MME_SEEKTIME:
+		return demoSeek( args[1] );
+	case CG_KEY_GETOVERSTRIKEMODE:
+		return Key_GetOverstrikeMode();
+	case CG_KEY_SETOVERSTRIKEMODE:
+		Key_SetOverstrikeMode( (qboolean)args[1] );
+		return 0;
+	case CG_MME_CAPTURE:
+		re.Capture( (char *)VMA(1), VMF(2), VMF(3) );
+		S_MMERecord( (char *)VMA(1), 1.0f / VMF(2) );
+		return 0;
+	case CG_MME_CAPTURE_STEREO:
+		re.CaptureStereo( (char *)VMA(1), VMF(2), VMF(3) );
+		return 0;
+	case CG_MME_BLURINFO:
+		re.BlurInfo( (int *)VMA(1), (int *)VMA(2) );
+		return 0;
+	case CG_MME_MUSIC:
+		S_MMEMusic( (const char *)VMA(1), VMF(2), VMF(3) );
+        return 0; 	
+	case CG_R_RANDOMSEED:
+		re.DemoRandomSeed( args[1], VMF(2) );
+        return 0; 
+	case CG_FX_RANDOMSEED:
+		FX_DemoRandomSeed( args[1], VMF(2) );
+        return 0;
+	case CG_FX_RESET:
+		FX_Free ( false );
+		return 0;
+	case CG_S_UPDATE_PITCH:
+		S_UpdatePitch(VMF(1));
+		return 0;
 	default:
 	        assert(0); // bk010102
 		Com_Error( ERR_DROP, "Bad cgame system trap: %i", args[0] );
@@ -1240,7 +1290,11 @@ CL_CGameRendering
 =====================
 */
 void CL_CGameRendering( stereoFrame_t stereo ) {
-	VM_Call( cgvm, CG_DRAW_ACTIVE_FRAME, cl.serverTime, stereo, clc.demoplaying );
+	if (clc.newDemoPlayer) {
+		demoRenderFrame( stereo );
+	} else {
+		VM_Call( cgvm, CG_DRAW_ACTIVE_FRAME, cl.serverTime, stereo, clc.demoplaying );
+	}
 	VM_Debug( 0 );
 }
 

@@ -14,6 +14,8 @@
 extern cvar_t	fx_debug;
 extern cvar_t	fx_freeze;
 
+extern cvar_t	*fx_forcePhysics;
+
 inline void Vector2Clear(vec2_t a)
 {
 	a[0] = 0.0f;
@@ -53,8 +55,9 @@ class SFxHelper
 public:
 	int			mTime;
 	int			mOldTime;
-	int			mFrameTime;
+	float		mFrameTime;
 	bool		mTimeFrozen;
+	float		mTimeFraction;
 	refdef_t	refdef;
 
 #ifdef _DEBUG
@@ -65,11 +68,12 @@ public:
 public:
 	SFxHelper(void);
 
-	inline	int	GetTime(void) { return mTime; }
-	inline	int	GetFrameTime(void) { return mFrameTime; }
+	inline	int GetTime(void) { return mTime; }
+	inline	float GetFrameTime(void) { return mFrameTime; }
 
 	void	ReInit(void);
-	void	AdjustTime_Pos( int time, vec3_t refdef_vieworg, vec3_t refdef_viewaxis[3] );
+	void	AdjustTime_Pos( int time, float frametime, float timeFraction, vec3_t refdef_vieworg, vec3_t refdef_viewaxis[3] );
+	void	DemoRandomSeed( int time, float timeFraction );
 
 	// These functions are wrapped and used by the fx system in case it makes things a bit more portable
 	void	Print( const char *msg, ... );

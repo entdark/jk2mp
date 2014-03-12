@@ -72,6 +72,9 @@
     <Filter Include="botlib\Source Files">
       <UniqueIdentifier>{e35eee66-ef85-4052-87d5-b8503cdb0af1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\libpng">
+      <UniqueIdentifier>{09dcce17-f28d-4268-861c-ee72d8eb939b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="client\0_SH_Leak.cpp">
@@ -422,9 +425,6 @@
     <ClCompile Include="jpeg-6\jutils.cpp">
       <Filter>Renderer\jpeg files\JPG Source</Filter>
     </ClCompile>
-    <ClCompile Include="png\png.cpp">
-      <Filter>Renderer\png</Filter>
-    </ClCompile>
     <ClCompile Include="server\sv_bot.cpp">
       <Filter>Server</Filter>
     </ClCompile>
@@ -665,6 +665,84 @@
     <ClCompile Include="botlib\l_struct.cpp">
       <Filter>botlib\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="client\cl_demos.cpp">
+      <Filter>Client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\cl_mme.cpp">
+      <Filter>Client</Filter>
+    </ClCompile>
+    <ClCompile Include="client\snd_demos.cpp">
+      <Filter>Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="client\snd_mme.cpp">
+      <Filter>Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="client\snd_effects.cpp">
+      <Filter>Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\tr_mme.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\tr_mme_sse2.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\tr_mme_stereo.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\tr_mme_avi.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\tr_mme_common.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\png.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngerror.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngget.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngmem.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngpread.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngread.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngrio.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngrtran.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngrutil.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngset.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngtrans.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngwio.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngwrite.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngwtran.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="libpng\pngwutil.c">
+      <Filter>Renderer\libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="png\rpng.cpp">
+      <Filter>Renderer\png</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="client\client.h">
@@ -864,9 +942,6 @@
     </ClInclude>
     <ClInclude Include="jpeg-6\jversion.h">
       <Filter>Renderer\jpeg files\JPG Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="png\png.h">
-      <Filter>Renderer\png</Filter>
     </ClInclude>
     <ClInclude Include="server\server.h">
       <Filter>Server</Filter>
@@ -1068,6 +1143,39 @@
     </ClInclude>
     <ClInclude Include="game\be_ai_weap.h">
       <Filter>botlib\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="client\cl_demos.h">
+      <Filter>Client</Filter>
+    </ClInclude>
+    <ClInclude Include="client\snd_mix.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\tr_mme.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="libpng\png.h">
+      <Filter>Renderer\libpng</Filter>
+    </ClInclude>
+    <ClInclude Include="libpng\pngconf.h">
+      <Filter>Renderer\libpng</Filter>
+    </ClInclude>
+    <ClInclude Include="libpng\pngdebug.h">
+      <Filter>Renderer\libpng</Filter>
+    </ClInclude>
+    <ClInclude Include="libpng\pnginfo.h">
+      <Filter>Renderer\libpng</Filter>
+    </ClInclude>
+    <ClInclude Include="libpng\pnglibconf.h">
+      <Filter>Renderer\libpng</Filter>
+    </ClInclude>
+    <ClInclude Include="libpng\pngpriv.h">
+      <Filter>Renderer\libpng</Filter>
+    </ClInclude>
+    <ClInclude Include="libpng\pngstruct.h">
+      <Filter>Renderer\libpng</Filter>
+    </ClInclude>
+    <ClInclude Include="png\rpng.h">
+      <Filter>Renderer\png</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

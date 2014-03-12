@@ -9,8 +9,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ui", "ui\ui.vcxproj", "{EA8
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game", "game\game.vcxproj", "{2D2E0D86-B056-478E-BEA5-C7A0D18DE570}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinDed", "WinDed.vcxproj", "{73FCBBE8-B1F7-4189-B63A-A8E4E898B95B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -33,10 +31,6 @@ Global
 		{2D2E0D86-B056-478E-BEA5-C7A0D18DE570}.Debug|Win32.Build.0 = Debug|Win32
 		{2D2E0D86-B056-478E-BEA5-C7A0D18DE570}.Release|Win32.ActiveCfg = Release|Win32
 		{2D2E0D86-B056-478E-BEA5-C7A0D18DE570}.Release|Win32.Build.0 = Release|Win32
-		{73FCBBE8-B1F7-4189-B63A-A8E4E898B95B}.Debug|Win32.ActiveCfg = Debug|Win32
-		{73FCBBE8-B1F7-4189-B63A-A8E4E898B95B}.Debug|Win32.Build.0 = Debug|Win32
-		{73FCBBE8-B1F7-4189-B63A-A8E4E898B95B}.Release|Win32.ActiveCfg = Release|Win32
-		{73FCBBE8-B1F7-4189-B63A-A8E4E898B95B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

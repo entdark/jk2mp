@@ -626,8 +626,21 @@ AngleNormalize360
 returns angle normalized to the range [0 <= angle < 360]
 =================
 */
+static float Value360 = 360.0f;
 float AngleNormalize360 ( float angle ) {
-	return (360.0 / 65536) * ((int)(angle * (65536 / 360.0)) & 65535);
+#if defined (_MSC_VER)
+    __asm	fld Value360
+    __asm	fld angle
+    __asm	fprem
+    __asm	fstp st(1)
+#elif defined (__linux__) && defined(__i386__)
+    float result;
+    __asm__ volatile ( "fprem" : "=t" (result) :  "0" (angle) , "u" (Value360)
+       );
+    return result;
+#else 
+    return (360.0/65536) * ((int)(angle*(65536/360.0)) & 65535);
+#endif
 }
 
 
@@ -639,11 +652,23 @@ returns angle normalized to the range [-180 < angle <= 180]
 =================
 */
 float AngleNormalize180 ( float angle ) {
+#if defined (_MSC_VER)
+	__asm	fld	Value360
+	__asm	fld angle
+	__asm	fprem1
+	__asm	fstp st(1)
+#elif defined (__linux__) && defined(__i386__)
+    float result;
+    __asm__ volatile ( "fprem1" : "=t" (result) :  "0" (angle) , "u" (Value360)
+       );
+    return result;
+#else 
 	angle = AngleNormalize360( angle );
 	if ( angle > 180.0 ) {
 		angle -= 360.0;
 	}
 	return angle;
+#endif
 }
 
 
@@ -658,6 +683,17 @@ float AngleDelta ( float angle1, float angle2 ) {
 	return AngleNormalize180( angle1 - angle2 );
 }
 
+void LerpAngles( const vec3_t from, const vec3_t to, vec3_t out, float lerp ) {
+	out[0] = LerpAngle( from[0], to[0], lerp );
+	out[1] = LerpAngle( from[1], to[1], lerp );
+	out[2] = LerpAngle( from[2], to[2], lerp );
+}
+
+void LerpOrigin( const vec3_t from, const vec3_t to, vec3_t out, float lerp ) {
+	vec3_t delta;
+	VectorSubtract( to, from, delta );
+	VectorMA( from, lerp, delta, out );
+}
 
 //============================================================
 

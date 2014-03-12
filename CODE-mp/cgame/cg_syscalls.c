@@ -159,12 +159,20 @@ void	trap_S_MuteSound( int entityNum, int entchannel ) {
 	syscall( CG_S_MUTESOUND, entityNum, entchannel );
 }
 
+void	trap_S_StopSound( int entityNum, int entchannel, sfxHandle_t sfx ) {
+	syscall( CG_S_STOPSOUND, entityNum, entchannel, sfx );
+}
+
 void	trap_S_StartSound( vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx ) {
 	syscall( CG_S_STARTSOUND, origin, entityNum, entchannel, sfx );
 }
 
 void	trap_S_StartLocalSound( sfxHandle_t sfx, int channelNum ) {
-	syscall( CG_S_STARTLOCALSOUND, sfx, channelNum );
+	//announcer is always hearable, rite?
+	if ( channelNum == CHAN_ANNOUNCER )
+		syscall( CG_S_STARTSOUND, 0, ENTITYNUM_NONE, CHAN_ANNOUNCER, sfx );
+	else
+		syscall( CG_S_STARTLOCALSOUND, sfx, channelNum );
 }
 
 void	trap_S_ClearLoopingSounds( qboolean killall ) {
@@ -427,6 +435,14 @@ int trap_Key_GetKey( const char *binding ) {
 	return syscall( CG_KEY_GETKEY, binding );
 }
 
+qboolean trap_Key_GetOverstrikeMode( void ) {
+	return syscall( CG_KEY_GETOVERSTRIKEMODE );
+}
+
+void trap_Key_SetOverstrikeMode( qboolean state ) {
+	syscall( CG_KEY_SETOVERSTRIKEMODE, state );
+}
+
 int trap_PC_AddGlobalDefine( char *define ) {
 	return syscall( CG_PC_ADD_GLOBAL_DEFINE, define );
 }
@@ -534,12 +550,70 @@ void trap_FX_PlaySimpleEffectID( int id, vec3_t org )
 
 void trap_FX_PlayEffectID( int id, vec3_t org, vec3_t fwd )
 {
+	if (id == cgs.effects.rocketShotEffect				||
+		id == cgs.effects.repeaterAltProjectileEffect	||
+		id == cgs.effects.flechetteAltShotEffect 		||
+		id == cgs.effects.tripmineLaserFX 				||
+		id == cgs.effects.itemCone						||
+		id == cgs.effects.mSpawn						||
+		id == cgs.effects.mSparks						||
+		id == cgs.effects.bryarPowerupShotEffect		||
+		id == cgs.effects.bryarShotEffect				||
+		id == cgs.effects.turretShotEffect				||
+		id == cgs.effects.blasterShotEffect				||
+		id == cgs.effects.bowcasterShotEffect			||
+		id == cgs.effects.repeaterProjectileEffect		||
+		id == cgs.effects.repeaterAltProjectileEffect	||
+		id == cgs.effects.demp2ProjectileEffect			||
+		id == cgs.effects.flechetteShotEffect) {
+			if (fx_vfps.integer <= 0)
+				fx_vfps.integer = 1;
+			if (fxT > cg.time)
+				fxT = cg.time;
+			if (doFX || cg.time - fxT >= (1000.0f / (float)fx_vfps.integer)) {
+				doFX = qtrue;
+				fxT = cg.time;
+			} else {
+				doFX = qfalse;
+				return;
+			}
+	}
+
+	if (id == cgs.effects.itemCone && !(cg.frametime > 0
+		&& ((cg.frametime < 17 && fmod((float)cg.time, 17.0f) <= cg.frametime)
+		|| cg.frametime >= 17)))
+		return;
+
 	syscall( CG_FX_PLAY_EFFECT_ID, id, org, fwd);
 }
 
 void trap_FX_PlayEntityEffectID( int id, vec3_t org, 
 						vec3_t axis[3], const int boltInfo, const int entNum )
 {
+	if (id == cgs.effects.forceLightning			||
+		id == cgs.effects.forceLightningWide		||
+		id == cgs.effects.forceDrainWide			||
+		id == cgs.effects.forceDrain				||
+		id == cgs.effects.mForceConfustion) {
+
+		if (fx_vfps.integer <= 0)
+			fx_vfps.integer = 1;
+		if (fxT > cg.time)
+			fxT = cg.time;
+		if (doFX || cg.time - fxT >= 1000 / fx_vfps.integer) {
+			doFX = qtrue;
+			fxT = cg.time;
+		} else {
+			doFX = qfalse;
+			return;
+		}
+
+		if (!(cg.frametime > 0
+			&& ((cg.frametime < 17 && fmod((float)cg.time, 17.0f) <= cg.frametime)
+			|| cg.frametime >= 17)))
+			return;
+	}
+	
 	syscall( CG_FX_PLAY_ENTITY_EFFECT_ID, id, org, axis, boltInfo, entNum);
 }
 
@@ -563,9 +637,9 @@ qboolean trap_FX_FreeSystem( void )
 	return syscall( CG_FX_FREE_SYSTEM );
 }
 
-void trap_FX_AdjustTime( int time, vec3_t vieworg, vec3_t viewaxis[3] )
+void trap_FX_AdjustTime( int time, float frametime, float timeFraction, vec3_t vieworg, vec3_t viewaxis[3] )
 {
-	syscall( CG_FX_ADJUST_TIME, time, vieworg, viewaxis );
+	syscall( CG_FX_ADJUST_TIME, time, PASSFLOAT(frametime), PASSFLOAT(timeFraction), vieworg, viewaxis );
 }
 
 void trap_FX_AddPoly( addpolyArgStruct_t *p )
@@ -585,6 +659,25 @@ void trap_FX_AddPrimitive( effectTrailArgStruct_t *p )
 
 void trap_FX_AddSprite( addspriteArgStruct_t *p )
 {
+	if( p->shader == cgs.media.bryarFrontFlash			||
+		p->shader == cgs.media.greenFrontFlash			||
+		p->shader == cgs.media.lightningFlash			||
+		p->shader == cgs.media.yellowDroppedSaberShader ) {
+			if (fx_vfps.integer <= 0)
+				fx_vfps.integer = 1;
+			if (fxT > cg.time)
+				fxT = cg.time;
+			if( doFX || cg.time - fxT >= 1000 / fx_vfps.integer )
+			{
+				doFX = qtrue;
+				fxT = cg.time;
+			}
+			else 
+			{
+				doFX = qfalse;
+				return;
+			}
+	}
 	syscall( CG_FX_ADDSPRITE, p );
 }
 
@@ -780,3 +873,32 @@ void trap_CG_RegisterSharedMemory(char *memory)
 /*
 Ghoul2 Insert End
 */
+
+// new MME syscalls
+void trap_FX_Reset ( void ) {
+	syscall ( CG_FX_RESET );
+}
+void trap_MME_Capture( const char *baseName, float fps, float focus ) {
+	syscall( CG_MME_CAPTURE, baseName, PASSFLOAT(fps), PASSFLOAT( focus ) );
+}
+void trap_MME_CaptureStereo( const char *baseName, float fps, float focus ) {
+	syscall( CG_MME_CAPTURE_STEREO, baseName, PASSFLOAT(fps), PASSFLOAT(focus) );
+}
+void trap_MME_BlurInfo( int* total, int* index ) {
+	syscall( CG_MME_BLURINFO, total, index );
+}
+int trap_MME_SeekTime( int seekTime ) {
+	return syscall( CG_MME_SEEKTIME, seekTime );
+}
+void trap_MME_Music( const char *musicName, float time, float length ) {
+	syscall( CG_MME_MUSIC, musicName, PASSFLOAT(time), PASSFLOAT(length) );
+}
+void trap_R_RandomSeed( int time, float timeFraction ) {
+	syscall( CG_R_RANDOMSEED, time, PASSFLOAT(timeFraction) );
+}
+void trap_FX_RandomSeed( int time, float timeFraction ) {
+	syscall( CG_FX_RANDOMSEED, time, PASSFLOAT(timeFraction) );
+}
+void trap_S_UpdatePitch( float pitch ) {
+	syscall( CG_S_UPDATE_PITCH, PASSFLOAT(pitch) );
+}

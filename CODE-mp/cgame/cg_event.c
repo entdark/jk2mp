@@ -974,6 +974,7 @@ also called by CG_CheckPlayerstateEvents
 ==============
 */
 #define	DEBUGNAME(x) if(cg_debugEvents.integer){CG_Printf(x"\n");}
+extern void CG_DemoEntityEvent( const centity_t *cent );
 void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	entityState_t	*es;
 	int				event;
@@ -996,6 +997,8 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		DEBUGNAME("ZEROEVENT");
 		return;
 	}
+
+	CG_DemoEntityEvent( cent );
 
 	clientNum = es->clientNum;
 	if ( clientNum < 0 || clientNum >= MAX_CLIENTS ) {
@@ -1340,6 +1343,10 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_CHANGE_WEAPON:
 		DEBUGNAME("EV_CHANGE_WEAPON");
+		if (cg_weapons[es->weapon].chargeSound)
+			trap_S_StopSound(es->number, CHAN_WEAPON, cg_weapons[es->weapon].chargeSound);
+		if (cg_weapons[es->weapon].altChargeSound)
+			trap_S_StopSound(es->number, CHAN_WEAPON, cg_weapons[es->weapon].altChargeSound);
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.selectSound );
 		break;
 	case EV_FIRE_WEAPON:
@@ -1604,14 +1611,22 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	case EV_DISRUPTOR_ZOOMSOUND:
 		DEBUGNAME("EV_DISRUPTOR_ZOOMSOUND");
-		if (es->number == cg.snap->ps.clientNum)
+		if (!cg.playerCent) // local sounds don't sound in freecam
+			return;
+
+		if ((cg.playerPredicted && es->number == cg.snap->ps.clientNum)
+			|| (!cg.playerPredicted
+			&& es->number == cg.playerCent->currentState.number))
 		{
-			if (cg.snap->ps.zoomMode)
+			if ((cg.playerPredicted && cg.snap->ps.zoomMode)
+				|| (!cg.playerPredicted && (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+				|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4)))
 			{
 				trap_S_StartLocalSound(trap_S_RegisterSound("sound/weapons/disruptor/zoomstart.wav"), CHAN_AUTO);
 			}
 			else
 			{
+				trap_S_StopSound(cg.playerCent->currentState.number, CHAN_WEAPON, cg_weapons[WP_DISRUPTOR].altChargeSound);
 				trap_S_StartLocalSound(trap_S_RegisterSound("sound/weapons/disruptor/zoomend.wav"), CHAN_AUTO);
 			}
 		}
@@ -1809,13 +1824,15 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			CG_Trace(&tr, position, playerMins, playerMaxs, dpos, es->number, MASK_SOLID);
 			VectorCopy(tr.endpos, pos);
 			
+			trap_S_StopSound(es->clientNum, CHAN_VOICE, CG_CustomSound(es->clientNum, "*falling1.wav"));
+
 			trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleInSound );
 
 			if (tr.fraction == 1)
 			{
 				break;
 			}
-			trap_FX_PlayEffectID(trap_FX_RegisterEffect("mp/spawn.efx"), pos, ang);
+			trap_FX_PlayEffectID(cgs.effects.mSpawn, pos, ang);
 		}
 		break;
 
@@ -1842,7 +1859,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			{
 				break;
 			}
-			trap_FX_PlayEffectID(trap_FX_RegisterEffect("mp/spawn.efx"), pos, ang);
+			trap_FX_PlayEffectID(cgs.effects.mSpawn, pos, ang);
 		}
 		break;
 
@@ -2066,6 +2083,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		{
 			cg_entities[es->trickedentindex2].currentState.eFlags -= EF_SOUNDTRACKER;
 		}
+		trap_S_StopSound(es->trickedentindex2, es->trickedentindex, -1);
 		trap_S_MuteSound(es->trickedentindex2, es->trickedentindex);
 		trap_S_StopLoopingSound(es->trickedentindex2);
 		break;
@@ -2259,6 +2277,12 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	case EV_OBITUARY:
 		DEBUGNAME("EV_OBITUARY");
+
+		if (cg_weapons[es->weapon].chargeSound)
+			trap_S_StopSound(es->number, CHAN_WEAPON, cg_weapons[es->weapon].chargeSound);
+		if (cg_weapons[es->weapon].altChargeSound)
+			trap_S_StopSound(es->number, CHAN_WEAPON, cg_weapons[es->weapon].altChargeSound);
+
 		CG_Obituary( es );
 		break;
 

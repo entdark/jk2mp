@@ -51,7 +51,7 @@ sfxHandle_t	CG_CustomSound( int clientNum, const char *soundName ) {
 		}
 	}
 
-	CG_Error( "Unknown custom sound: %s", soundName );
+//	CG_Error( "Unknown custom sound: %s", soundName );
 	return 0;
 }
 
@@ -968,6 +968,16 @@ static void CG_SetDeferredClientInfo( clientInfo_t *ci ) {
 	CG_LoadClientInfo( ci );
 }
 
+char *ConfigValue( const char *configs[4], const char *value ) {
+	int i;
+	for ( i = 0; i <6;i++ ) {
+		char *v = Info_ValueForKey( configs[i], value );
+		if ( v[0] )
+			return v;
+	}
+	return "";
+}
+
 /*
 ======================
 CG_NewClientInfo
@@ -983,18 +993,29 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 	int i = 0;
 	qboolean wasATST = qfalse;
 
+	const char	*strings[6];
+	qboolean	friendly, skipColor, skipColor2;
+	int			psTeam;
+
 	ci = &cgs.clientinfo[clientNum];
 
-	oldGhoul2 = ci->ghoul2Model;
-
-	configstring = CG_ConfigString( clientNum + CS_PLAYERS );
-	if ( !configstring[0] ) {
+	strings[5] = CG_ConfigString( clientNum + CS_PLAYERS );
+	if ( !strings[5][0] ) {
 		memset( ci, 0, sizeof( *ci ) );
 		return;		// player just left
 	}
+	strings[0] = cgs.clientOverride[clientNum];
+	if ( cg.snap && clientNum == cg.snap->ps.clientNum ) 
+		strings[1] = cgs.playerOverride;
+	else
+		strings[1] = "";
+	strings[2] = "";
+	strings[3] = "";
+	strings[4] = cgs.allOverride;
 
-	if (ci)
-	{
+	oldGhoul2 = ci->ghoul2Model;
+
+	if (ci) {
 		wasATST = ci->ATST;
 	}
 
@@ -1003,54 +1024,98 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 	memset( &newInfo, 0, sizeof( newInfo ) );
 
 	// isolate the player's name
-	v = Info_ValueForKey(configstring, "n");
+	v = ConfigValue( strings, "n");
 	Q_strncpyz( newInfo.name, v, sizeof( newInfo.name ) );
 
 	// colors
-	v = Info_ValueForKey( configstring, "c1" );
+	v = ConfigValue( strings, "c1" );
 	CG_ColorFromString( v, newInfo.color1 );
 
 	newInfo.icolor1 = atoi(v);
 
-	v = Info_ValueForKey( configstring, "c2" );
+	v = ConfigValue( strings, "c2" );
 	CG_ColorFromString( v, newInfo.color2 );
 
+	v = ConfigValue( strings, "shader");
+	if ( v[0] )
+		newInfo.shaderOverride = trap_R_RegisterShader( v );
+
+	v = ConfigValue( strings, "effect");
+	if ( v[0] )
+		newInfo.effectOverride = trap_FX_RegisterEffect( v );
+
 	// bot skill
-	v = Info_ValueForKey( configstring, "skill" );
+	v = ConfigValue( strings, "skill" );
 	newInfo.botSkill = atoi( v );
 
 	// handicap
-	v = Info_ValueForKey( configstring, "hc" );
+	v = ConfigValue( strings, "hc" );
 	newInfo.handicap = atoi( v );
 
 	// wins
-	v = Info_ValueForKey( configstring, "w" );
+	v = ConfigValue( strings, "w" );
 	newInfo.wins = atoi( v );
 
 	// losses
-	v = Info_ValueForKey( configstring, "l" );
+	v = ConfigValue( strings, "l" );
 	newInfo.losses = atoi( v );
 
 	// team
-	v = Info_ValueForKey( configstring, "t" );
+	v = ConfigValue( strings, "t" );
 	newInfo.team = atoi( v );
 
+	switch ( newInfo.team ) {
+	case TEAM_RED:
+		strings[2] = cgs.redOverride;
+		break;
+	case TEAM_BLUE:
+		strings[2] = cgs.blueOverride;
+		break;
+	}
+
+	friendly = qfalse;
+	if ( cg.snap ) {
+		psTeam = cg.snap->ps.persistant[PERS_TEAM];
+	} else {
+		psTeam = TEAM_FREE;
+	}
+
+	if ( newInfo.team > TEAM_FREE ) {
+		if ( psTeam == TEAM_RED ) {
+			if ( psTeam == newInfo.team ) 
+				friendly = qtrue;
+		} else if ( psTeam == TEAM_BLUE ) {
+			if ( psTeam == newInfo.team ) 
+				friendly = qtrue;
+		} else {
+			friendly = newInfo.team == psTeam;
+		}
+	} else {
+		friendly = cg.snap && (clientNum == cg.snap->ps.clientNum);
+	}
+
+	if ( friendly ) {
+		strings[3] = cgs.friendlyOverride;
+	} else {
+		strings[3] = cgs.enemyOverride;
+	}
+
 	// team task
-	v = Info_ValueForKey( configstring, "tt" );
+	v = ConfigValue( strings, "tt" );
 	newInfo.teamTask = atoi(v);
 
 	// team leader
-	v = Info_ValueForKey( configstring, "tl" );
+	v = ConfigValue( strings, "tl" );
 	newInfo.teamLeader = atoi(v);
 
-	v = Info_ValueForKey( configstring, "g_redteam" );
+	v = ConfigValue( strings, "g_redteam" );
 	Q_strncpyz(newInfo.redTeam, v, MAX_TEAMNAME);
 
-	v = Info_ValueForKey( configstring, "g_blueteam" );
+	v = ConfigValue( strings, "g_blueteam" );
 	Q_strncpyz(newInfo.blueTeam, v, MAX_TEAMNAME);
 
 	// model
-	v = Info_ValueForKey( configstring, "model" );
+	v = ConfigValue( strings, "model" );
 	if ( cg_forceModel.integer ) {
 		// forcemodel makes everyone use a single model
 		// to prevent load hitches
@@ -1093,53 +1158,8 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 		}
 	}
 
-	// head model
-/*
-	v = Info_ValueForKey( configstring, "hmodel" );
-	if ( cg_forceModel.integer ) {
-		// forcemodel makes everyone use a single model
-		// to prevent load hitches
-		char modelStr[MAX_QPATH];
-		char *skin;
-
-		if( cgs.gametype >= GT_TEAM ) {
-			Q_strncpyz( newInfo.headModelName, DEFAULT_TEAM_MODEL, sizeof( newInfo.headModelName ) );
-			Q_strncpyz( newInfo.headSkinName, "default", sizeof( newInfo.headSkinName ) );
-		} else {
-			trap_Cvar_VariableStringBuffer( "headmodel", modelStr, sizeof( modelStr ) );
-			if ( ( skin = strchr( modelStr, '/' ) ) == NULL) {
-				skin = "default";
-			} else {
-				*skin++ = 0;
-			}
-
-			Q_strncpyz( newInfo.headSkinName, skin, sizeof( newInfo.headSkinName ) );
-			Q_strncpyz( newInfo.headModelName, modelStr, sizeof( newInfo.headModelName ) );
-		}
-
-		if ( cgs.gametype >= GT_TEAM ) {
-			// keep skin name
-			slash = strchr( v, '/' );
-			if ( slash ) {
-				Q_strncpyz( newInfo.headSkinName, slash + 1, sizeof( newInfo.headSkinName ) );
-			}
-		}
-	} else {
-		Q_strncpyz( newInfo.headModelName, v, sizeof( newInfo.headModelName ) );
-
-		slash = strchr( newInfo.headModelName, '/' );
-		if ( !slash ) {
-			// modelName didn not include a skin name
-			Q_strncpyz( newInfo.headSkinName, "default", sizeof( newInfo.headSkinName ) );
-		} else {
-			Q_strncpyz( newInfo.headSkinName, slash + 1, sizeof( newInfo.headSkinName ) );
-			// truncate modelName
-			*slash = 0;
-		}
-	}
-*/
 	// force powers
-	v = Info_ValueForKey( configstring, "forcepowers" );
+	v = ConfigValue( strings, "forcepowers" );
 	Q_strncpyz( newInfo.forcePowers, v, sizeof( newInfo.forcePowers ) );
 
 	newInfo.ATST = wasATST;
@@ -1262,6 +1282,152 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 			trap_G2API_CleanGhoul2Models(&cg_entities[clientNum].ghoul2);
 		}
 		trap_G2API_DuplicateGhoul2Instance(ci->ghoul2Model, &cg_entities[clientNum].ghoul2);
+	}
+}
+
+static void CG_ShowOverride( const char *configString, const char *overrideString ) {
+	static char * entryList[] = {
+		"n", "t", "model", "c1", "c2", "st", "st2", "shader", "effect", 0
+	};
+	int n;
+
+	for ( n = 0;entryList[n];n++) {
+		const char *v, *entry;
+		
+		entry = entryList[n];
+		v = Info_ValueForKey( configString, entryList[n] );
+		if ( v[0] ) {
+			Com_Printf(S_COLOR_WHITE " %s ", entryList[n] );
+			Com_Printf( v );
+			continue;
+		}
+	}
+	if ( overrideString[0] ) 
+		Com_Printf( "\nOverride: %s", overrideString );
+}
+
+static void CG_ParseOverride( char *overrideString ) {
+	int index = 2;
+	int argc = trap_Argc();
+	char cmdType[64];
+
+	if (!Q_stricmp( CG_Argv( index ), "reset" )) {
+		overrideString[0] = 0;
+	} else while ( index < argc ) {
+		const char *line = CG_Argv( index );
+		if (index & 1) {
+			Info_SetValueForKey( overrideString, cmdType, line );
+		} else {
+			Q_strncpyz( cmdType, line, sizeof( cmdType ));
+		}
+		index++;
+	}
+}
+
+
+void CG_ClientOverride_f(void) {
+	int argc = trap_Argc();
+	int clientStart, clientEnd;
+	int i;
+	char buf[64];
+	char *line;
+
+	if (argc < 2) {
+		CG_Printf("Clientoverride usage:\n");
+		CG_Printf("list, view current settings, red tag means an override\n" );
+		CG_Printf("or\n" );
+		CG_Printf("startNumber[-endNumber] select client or range of client\n" );
+		CG_Printf("Followed by a list of 2 parameter combinations\n" );
+		CG_Printf("model \"modelname/skin\", Change model\n" );
+		CG_Printf("n \"name\", Change name\n" );
+		CG_Printf("t \"0-3\", Change team number\n" );
+		CG_Printf("c1 \"0-9,w-zhexcode\", Change saber color1\n" );
+		CG_Printf("c2 \"0-9,w-zhexcode\", Change saber color2\n" );
+		CG_Printf("st \"hiltname\", Change saber hilt\n" );
+		CG_Printf("st2 \"hiltname\", Change saber hilt2\n" );
+		CG_Printf("shader \"shadername\", Shader override to be use on the whole player\n" );
+		CG_Printf("effect \"effectname\", Effect .efx to run from the player's position\n" );
+		return;
+	}
+	if (!Q_stricmp( CG_Argv(1), "list")) {
+		for (i = 0;i<MAX_CLIENTS;i++) {
+			const char *configString, *overrideString;
+
+			overrideString = cgs.clientOverride[i];
+			configString = CG_ConfigString( i + CS_PLAYERS );
+			if ( !configString[0] ) 
+				continue;
+
+			Com_Printf("client %-2d", i);
+			CG_ShowOverride( configString, overrideString );
+			Com_Printf("\n");
+		}
+		Com_Printf("\nplayer" );
+		CG_ShowOverride( "", cgs.playerOverride );
+		Com_Printf("\nred" );
+		CG_ShowOverride( "", cgs.redOverride );
+		Com_Printf("\nblue" );
+		CG_ShowOverride( "", cgs.blueOverride );
+		Com_Printf("\nfriendly" );
+		CG_ShowOverride( "", cgs.friendlyOverride );
+		Com_Printf("\nenemy" );
+		CG_ShowOverride( "", cgs.enemyOverride );
+		Com_Printf("\nall\n" );
+		CG_ShowOverride( "", cgs.allOverride );
+		return;
+	}
+	trap_Argv( 1, buf, sizeof( buf ));
+	if  (!Q_stricmp( buf, "all" )) {
+		clientStart = 0;
+		clientEnd = MAX_CLIENTS - 1;
+		CG_ParseOverride( cgs.allOverride );
+	} else if  (!Q_stricmp( buf, "red" )) {
+		clientStart = 0;
+		clientEnd = MAX_CLIENTS - 1;
+		CG_ParseOverride( cgs.redOverride );
+	} else if  (!Q_stricmp( buf, "blue" )) {
+		clientStart = 0;
+		clientEnd = MAX_CLIENTS - 1;
+		CG_ParseOverride( cgs.blueOverride );
+	} else if  (!Q_stricmp( buf, "friendly" )) {
+		clientStart = 0;
+		clientEnd = MAX_CLIENTS - 1;
+		CG_ParseOverride( cgs.friendlyOverride );
+	} else if  (!Q_stricmp( buf, "enemy" )) {
+		clientStart = 0;
+		clientEnd = MAX_CLIENTS - 1;
+		CG_ParseOverride( cgs.enemyOverride );
+	} else if  (!Q_stricmp( buf, "player" )) {
+		clientStart = 0;
+		clientEnd = MAX_CLIENTS - 1;
+		CG_ParseOverride( cgs.playerOverride );
+	} else {
+		line = strstr( buf, "-" );
+		if ( line ) {
+			*line++ = 0;
+			clientStart = atoi ( buf );
+			clientEnd = atoi( line );
+		} else {
+			clientStart = clientEnd = atoi ( buf );
+		}
+		if (clientStart < 0 || clientStart >= MAX_CLIENTS ) {
+			CG_Printf("Illegal clientnum %d", clientStart);
+			return;
+		}
+		if (clientEnd < 0 || clientEnd >= MAX_CLIENTS ) {
+			CG_Printf("Illegal clientnum %d", clientEnd);
+			return;
+		}
+		if ( clientStart > clientEnd ) {
+			CG_Printf("Illegal clientrange %d-%d for clientoverride", clientStart, clientEnd );
+			return;
+		}
+		for (i = clientStart;i<=clientEnd;i++) {
+			CG_ParseOverride( cgs.clientOverride[i] );		
+		}
+	}
+	for (i = clientStart;i<=clientEnd;i++) {
+		CG_NewClientInfo( i, qtrue );
 	}
 }
 
@@ -3208,7 +3374,8 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		CG_PlayerFloatSprite( cent, cgs.media.balloonShader );
 		return;
 	}
-/*
+
+#ifdef JK2AWARDS
 	if ( cent->currentState.eFlags & EF_AWARD_IMPRESSIVE ) {
 		CG_PlayerFloatSprite( cent, cgs.media.medalImpressive );
 		return;
@@ -3238,7 +3405,8 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		CG_PlayerFloatSprite( cent, cgs.media.medalCapture );
 		return;
 	}
-
+#endif
+/*
 	team = cgs.clientinfo[ cent->currentState.clientNum ].team;
 	if ( !(cent->currentState.eFlags & EF_DEAD) && 
 		cg.snap->ps.persistant[PERS_TEAM] == team &&
@@ -3405,9 +3573,24 @@ static void CG_PlayerSplash( centity_t *cent ) {
 	trap_R_AddPolyToScene( cgs.media.wakeMarkShader, 4, verts );
 }
 
-void CG_ForcePushBlur( vec3_t org )
-{
+void CG_ForcePushBlur( vec3_t org ) {
 	localEntity_t	*ex;
+
+	if (fx_vfps.integer <= 0)
+			fx_vfps.integer = 1;
+		if (fxT > cg.time)
+			fxT = cg.time;
+		if (doFX || cg.time - fxT >= 1000 / fx_vfps.integer) {
+			doFX = qtrue;
+			fxT = cg.time;
+		} else {
+			doFX = qfalse;
+			return;
+		}
+		if (!(cg.frametime > 0
+			&& ((cg.frametime < 8 && fmod((float)cg.time, 8.0f) <= cg.frametime)
+			|| cg.frametime >= 8)))
+			return;
 
 	ex = CG_AllocLocalEntity();
 	ex->leType = LE_PUFF;
@@ -3447,6 +3630,22 @@ void CG_ForceGripEffect( vec3_t org )
 {
 	localEntity_t	*ex;
 	float wv = sin( cg.time * 0.004f ) * 0.08f + 0.1f;
+
+	if (fx_vfps.integer <= 0)
+			fx_vfps.integer = 1;
+	if (fxT > cg.time)
+		fxT = cg.time;
+	if (doFX || cg.time - fxT >= 1000 / fx_vfps.integer) {
+		doFX = qtrue;
+		fxT = cg.time;
+	} else {
+		doFX = qfalse;
+		return;
+	}
+	if (!(cg.frametime > 0
+		&& ((cg.frametime < 8 && fmod((float)cg.time, 8.0f) <= cg.frametime)
+		|| cg.frametime >= 8)))
+		return;
 
 	ex = CG_AllocLocalEntity();
 	ex->leType = LE_PUFF;
@@ -4229,7 +4428,7 @@ Ghoul2 Insert Start
 			{
 				trDir[1] = 1;
 			}
-			trap_FX_PlayEffectID( trap_FX_RegisterEffect("saber/spark.efx"), trace.endpos, trDir );
+			trap_FX_PlayEffectID( cgs.effects.mSparks, trace.endpos, trDir );
 
 			//Stop saber? (it wouldn't look right if it was stuck through a thin wall and unable to hurt players on the other side)
 			VectorSubtract(org_, trace.endpos, v);
@@ -5939,6 +6138,11 @@ void CG_Player( centity_t *cent ) {
 				return;
 			}
 		}
+	} else if ( mov_filterMask.integer & movMaskPlayers) {
+		return;
+	}
+	if (mov_wallhack.integer && cg.demoPlayback) {
+		renderfx |= RF_NODEPTH;
 	}
 
 	// Update the player's client entity information regarding weapons.
@@ -5953,6 +6157,27 @@ void CG_Player( centity_t *cent ) {
 		cent->ghoul2weapon = g2WeaponInstances[WP_SABER];
 	}
 
+	if (ci->effectOverride) {
+		vec3_t forward;
+		
+		if (fx_vfps.integer <= 0)
+			fx_vfps.integer = 1;
+		if (fxT > cg.time)
+			fxT = cg.time;
+		if(doFX || cg.time - fxT >= 1000 / fx_vfps.integer) {
+			doFX = qtrue;
+			fxT = cg.time;
+		} else {
+			doFX = qfalse;
+			goto skipEffectOverride;
+		}
+
+		if (VectorNormalize2(cent->currentState.pos.trDelta, forward) == 0.0f)
+			forward[2] = 1.0f;
+		trap_FX_PlayEffectID(ci->effectOverride, cent->lerpOrigin, forward, -1, -1);
+	}
+
+skipEffectOverride:
 	if (cent->ghoul2 && 
 		cent->ghoul2weapon != g2WeaponInstances[cent->currentState.weapon] &&
 		!(cent->currentState.eFlags & EF_DEAD) && !cent->torsoBolt && !cent->isATST)
@@ -6212,6 +6437,11 @@ doEssentialOne:
 		goto doEssentialTwo;
 	}
 
+	if (ci->shaderOverride) {
+		legs.customShader = ci->shaderOverride;
+		trap_R_AddRefEntityToScene( &legs );
+	}
+
 	//rww - force speed "trail" effect
 	if (!(cent->currentState.powerups & (1 << PW_SPEED)) || doAlpha || !cg_speedTrail.integer)
 	{
@@ -6241,7 +6471,12 @@ doEssentialOne:
 		//once per frame anyway, so we might end up with speed trails very spread out.
 		//in order to avoid that, we'll get the direction of the last trail from the player
 		//and place the trail refent a set distance from the player location this frame
-		VectorSubtract(cent->frame_minus1.origin, legs.origin, tDir);
+		if (!cg.demoPlayback)
+			VectorSubtract(cent->frame_minus1.origin, legs.origin, tDir);
+		else {
+			VectorCopy(cent->currentState.pos.trDelta, tDir);
+			VectorInverse(tDir);
+		}
 		VectorNormalize(tDir);
 
 		cent->frame_minus1.origin[0] = legs.origin[0]+tDir[0]*distVelBase;
@@ -6257,7 +6492,12 @@ doEssentialOne:
 		cent->frame_minus2.shaderRGBA[3] = 50;
 
 		//Same as above but do it between trail points instead of the player and first trail entry
-		VectorSubtract(cent->frame_minus2.origin, cent->frame_minus1.origin, tDir);
+		if (!cg.demoPlayback)
+			VectorSubtract(cent->frame_minus2.origin, cent->frame_minus1.origin, tDir);
+		else {
+			VectorCopy(cent->currentState.pos.trDelta, tDir);
+			VectorInverse(tDir);
+		}
 		VectorNormalize(tDir);
 
 		cent->frame_minus2.origin[0] = cent->frame_minus1.origin[0]+tDir[0]*distVelBase;
@@ -6641,7 +6881,7 @@ doEssentialTwo:
 	
 			while (effectTimeLayerC > 0)
 			{
-				trap_FX_PlayEntityEffectID(trap_FX_RegisterEffect("force/confusion.efx"), efOrg, axis, cent->boltInfo, cent->currentState.number);
+				trap_FX_PlayEntityEffectID(cgs.effects.mForceConfustion, efOrg, axis, cent->boltInfo, cent->currentState.number);
 
 				//FIXME: Due to the horrible inefficiency involved in the current effect bolt process an effect with as many particles as this won't
 				//work too happily. It also doesn't look a lot better due to the lag between origin updates with the effect bolt. If those issues
@@ -7269,7 +7509,7 @@ doEssentialThree:
 	//
 	if (cent->currentState.weapon != WP_EMPLACED_GUN)
 	{
-		CG_AddPlayerWeapon( &legs, NULL, cent, ci->team, rootAngles, qtrue );
+		CG_AddPlayerWeapon( &legs, qfalse, cent, ci->team, rootAngles, qtrue );
 	}
 	// add powerups floating behind the player
 	CG_PlayerPowerups( cent, &legs );
@@ -7497,8 +7737,8 @@ void CG_ResetPlayerEntity( centity_t *cent )
 	CG_ClearLerpFrame( cent, &cgs.clientinfo[ cent->currentState.clientNum ], &cent->pe.legs, cent->currentState.legsAnim, qfalse);
 	CG_ClearLerpFrame( cent, &cgs.clientinfo[ cent->currentState.clientNum ], &cent->pe.torso, cent->currentState.torsoAnim, qtrue);
 
-	BG_EvaluateTrajectory( &cent->currentState.pos, cg.time, cent->lerpOrigin );
-	BG_EvaluateTrajectory( &cent->currentState.apos, cg.time, cent->lerpAngles );
+	demoNowTrajectory( &cent->currentState.pos, cent->lerpOrigin );
+	demoNowTrajectory( &cent->currentState.apos, cent->lerpAngles );
 
 	VectorCopy( cent->lerpOrigin, cent->rawOrigin );
 	VectorCopy( cent->lerpAngles, cent->rawAngles );

@@ -885,14 +885,18 @@ void Console_Key (int key) {
 		return;
 	}
 
-	// console scrolling
-	if ( key == A_PAGE_UP ) {
-		Con_PageUp();
+	// console scrolling (ctrl to scroll fast)
+	if ( key == A_PAGE_UP || key == A_MWHEELUP ) {
+		int count = kg.keys[A_CTRL].down ? 5 : 1;
+		for ( int i=0; i<count; i++ )
+			Con_PageUp();
 		return;
 	}
 
-	if ( key == A_PAGE_DOWN ) {
-		Con_PageDown();
+	if ( key == A_PAGE_DOWN || key == A_MWHEELDOWN ) {
+		int count = kg.keys[A_CTRL].down ? 5 : 1;
+		for ( int i=0; i<count; i++ )
+			Con_PageDown();
 		return;
 	}
 
@@ -1460,10 +1464,9 @@ void CL_KeyEvent (int key, qboolean down, unsigned time) {
 	}
 
 	// console key is hardcoded, so the user can never unbind it
-	if (key == A_CONSOLE) {
+	if (key == A_CONSOLE || (kg.keys[A_SHIFT].down && key == A_ESCAPE)) {
 		if (!down) {
 			return;
-
 		}
 	    Con_ToggleConsole_f ();
 		return;
@@ -1471,7 +1474,7 @@ void CL_KeyEvent (int key, qboolean down, unsigned time) {
 
 
 	// kg.keys can still be used for bound actions
-	if ( down && /*( key < 128 || key == A_MOUSE1 ) && */ ( clc.demoplaying || cls.state == CA_CINEMATIC ) && !cls.keyCatchers) {
+	if ( down && /*( key < 128 || key == A_MOUSE1 ) && */ ( cls.state == CA_CINEMATIC ) && !cls.keyCatchers) {
 
 		if (Cvar_VariableValue ("com_cameraMode") == 0) {
 			Cvar_Set ("nextdemo","");
@@ -1490,7 +1493,7 @@ void CL_KeyEvent (int key, qboolean down, unsigned time) {
 
 		// escape always gets out of CGAME stuff
 		if (cls.keyCatchers & KEYCATCH_CGAME) {
-			cls.keyCatchers &= ~KEYCATCH_CGAME;
+			cls.keyCatchers &= ~KEYCATCH_CGAME|KEYCATCH_CGAMEEXEC;
 			VM_Call (cgvm, CG_EVENT_HANDLING, CGAME_EVENT_NONE);
 			return;
 		}
@@ -1535,18 +1538,27 @@ void CL_KeyEvent (int key, qboolean down, unsigned time) {
 	// distribute the key down event to the apropriate handler
 	if ( cls.keyCatchers & KEYCATCH_CONSOLE ) {
 		Console_Key( key );
-	} else if ( cls.keyCatchers & KEYCATCH_UI ) {
-		if ( uivm ) {
+		return;
+	}
+	if ( uivm && (cls.keyCatchers & KEYCATCH_UI) ) {
 			VM_Call( uivm, UI_KEY_EVENT, key, down );
-		} 
-	} else if ( cls.keyCatchers & KEYCATCH_CGAME ) {
-		if ( cgvm ) {
-			VM_Call( cgvm, CG_KEY_EVENT, key, down );
-		} 
-	} else if ( cls.keyCatchers & KEYCATCH_MESSAGE ) {
+	}
+	if ( cls.keyCatchers & KEYCATCH_CGAME ) {
+		qboolean ret = (qboolean)VM_Call( cgvm, CG_KEY_EVENT, key, down );
+		if ( Key_GetCatcher( ) & KEYCATCH_CGAMEEXEC )  {
+			if ( ret )
+				return;
+		} else {
+			return;
+		}
+	}
+	if ( cls.keyCatchers & KEYCATCH_MESSAGE ) {
 		Message_Key( key );
-	} else if ( cls.state == CA_DISCONNECTED ) {
+		return;
+	}
+	if ( cls.state == CA_DISCONNECTED ) {
 		Console_Key( key );
+		return;
 	} else {
 		// send the bound action
 		kb = kg.keys[ keynames[key].upper ].binding;

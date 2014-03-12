@@ -41,6 +41,11 @@ cvar_t	*cl_timedemo;
 cvar_t	*cl_avidemo;
 cvar_t	*cl_forceavidemo;
 
+cvar_t	*cl_mme_capture;
+cvar_t	*cl_mme_fps;
+cvar_t	*cl_mme_name;
+cvar_t	*cl_mme_focus;
+
 cvar_t	*cl_freelook;
 cvar_t	*cl_sensitivity;
 
@@ -489,6 +494,27 @@ void CL_ReadDemoMessage( void ) {
 
 /*
 ====================
+CL_WalkDemoExt
+====================
+*/
+static void CL_WalkDemoExt(const char *arg, char *name, int *demofile) {
+	int i = 0;
+	*demofile = 0;
+	while(demo_protocols[i]) {
+		Com_sprintf (name, MAX_OSPATH, "demos/%s.dm_%d", arg, demo_protocols[i]);
+		FS_FOpenFileRead( name, demofile, qtrue );
+		if (*demofile) {
+			Com_Printf("Demo file: %s\n", name);
+			break;
+		}
+		else
+			Com_Printf("Not found: %s\n", name);
+		i++;
+	}
+}
+
+/*
+====================
 CL_PlayDemo_f
 
 demo <demoname>
@@ -496,25 +522,27 @@ demo <demoname>
 ====================
 */
 void CL_PlayDemo_f( void ) {
-	char		name[MAX_OSPATH], extension[32];
-	char		*arg;
+	char		name[MAX_OSPATH], testName[MAX_OSPATH];//name[MAX_OSPATH], extension[32];
+	char		*ext;
+//	char		*arg;
+	qboolean	haveConvert;
+	cvar_t		*fs_game;
 
 	if (Cmd_Argc() != 2) {
 		Com_Printf ("playdemo <demoname>\n");
 		return;
 	}
 
+	fs_game = Cvar_FindVar ("fs_game" );
+	if (!fs_game)
+		return;
+	haveConvert = (qboolean)(mme_demoConvert->integer && !Q_stricmp( fs_game->string, "mme" ));
 	// make sure a local server is killed
 	Cvar_Set( "sv_killserver", "1" );
-
 	CL_Disconnect( qtrue );
 
-	/* MrE: 2000-09-13: now called in CL_DownloadsComplete
-	CL_FlushMemory( );
-	*/
-
 	// open the demo file
-	arg = Cmd_Argv(1);
+/*	arg = Cmd_Argv(1);
 	Com_sprintf(extension, sizeof(extension), ".dm_%d", PROTOCOL_VERSION);
 	if ( !Q_stricmp( arg + strlen(arg) - strlen(extension), extension ) ) {
 		Com_sprintf (name, sizeof(name), "demos/%s", arg);
@@ -533,6 +561,42 @@ void CL_PlayDemo_f( void ) {
 			Com_Error( ERR_DROP, "couldn't open %s", name);
 		}
 		return;
+	}*/
+	Q_strncpyz( testName, Cmd_Argv(1), sizeof( testName ) );
+	// check for an extension .dm_?? (?? is protocol)
+	ext = testName + strlen(testName) - 6;
+	if ((strlen(name) > 6) && (ext[0] == '.') && ((ext[1] == 'd') || (ext[1] == 'D')) && ((ext[2] == 'm') || (ext[2] == 'M')) && (ext[3] == '_'))
+	{
+		ext[0] = 0;	
+	}
+
+	Cvar_Set( "mme_demoFileName", testName );
+
+	if ( haveConvert ) {
+		Com_sprintf (name, MAX_OSPATH, "mmedemos/%s.mme", testName );
+		if (FS_FileExists( name )) {
+			if (demoPlay( name ))
+				return;
+		}
+	}
+
+	CL_WalkDemoExt( testName, name, &clc.demofile );
+	if (!clc.demofile) {
+		Com_Error( ERR_DROP, "couldn't open %s", name);
+		return;
+	} else if ( haveConvert ) {
+		char mmeName[MAX_OSPATH];
+
+		FS_FCloseFile( clc.demofile );
+		clc.demofile = 0;
+
+		Com_sprintf( mmeName, sizeof( mmeName ), "mmedemos/%s", testName );
+		demoConvert( name, mmeName, (qboolean)mme_demoSmoothen->integer );
+		Q_strcat( mmeName , sizeof( mmeName ), ".mme" );
+		if (demoPlay( mmeName ))
+			return;
+		Com_Printf("Can't seem to play demo %s\n", testName );
+
 	}
 	Q_strncpyz( clc.demoName, Cmd_Argv(1), sizeof( clc.demoName ) );
 
@@ -739,6 +803,10 @@ void CL_Disconnect( qboolean showMainMenu ) {
 	if ( clc.demofile ) {
 		FS_FCloseFile( clc.demofile );
 		clc.demofile = 0;
+	}
+
+	if (clc.newDemoPlayer) {
+		demoStop( );
 	}
 
 	if ( uivm && showMainMenu ) {
@@ -2117,16 +2185,96 @@ void CL_Frame ( int msec ) {
 		// save the current screen
 		if ( cls.state == CA_ACTIVE || cl_forceavidemo->integer) {
 			if (cl_avidemo->integer > 0) {
-				Cbuf_ExecuteText( EXEC_NOW, "screenshot silent\n" );
+				float stereoSep;
+				stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
+				if (stereoSep != 0) {
+					float camOffset;
+
+					// we need camOffset to change focus if we have problems with r_zproj
+					camOffset = Cvar_VariableValue( "cg_stereoSeparation");
+
+					// camOffset has to be positive and stereoSep has to be negative
+					if (camOffset < 0)
+						camOffset = -camOffset;
+					if (stereoSep > 0)
+						stereoSep = -stereoSep;
+
+					Cvar_SetValue("r_stereoSeparation", stereoSep);
+					Cvar_SetValue("cg_stereoSeparation", camOffset);
+					SCR_UpdateScreen();
+					Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme left\n" );
+
+					stereoSep = -stereoSep;
+					camOffset = -camOffset;
+
+					Cvar_SetValue("r_stereoSeparation", stereoSep);
+					Cvar_SetValue("cg_stereoSeparation", camOffset);
+					SCR_UpdateScreen();
+					Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme right\n" );
+				} else {
+					Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme\n" );
+				}
 			} else {
 				Cbuf_ExecuteText( EXEC_NOW, "screenshot_tga silent\n" );
 			}
+			float frameTime, fps;
+			char shotName[MAX_OSPATH];
+			Com_sprintf( shotName, sizeof( shotName ), "screenshots/%s", mme_demoFileName->string );
+
+			// fixed time for next frame'
+			fps = cl_avidemo->integer * com_timescale->value;
+			if ( fps > 1000.0f)
+				fps = 1000.0f;
+			frameTime = (1000.0f / fps);
+			if (frameTime < 1) {
+				frameTime = 1;
+			}
+			frameTime += clc.aviDemoRemain;
+			msec = (int)frameTime;
+			clc.aviDemoRemain = frameTime - msec;
+
+			S_MMERecord( shotName, 1.0f / (cl_avidemo->value * com_timescale->value ));
 		}
+	}
+
+	if (cl_mme_capture->integer) {
+//		CL_CaptureStereo(cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value);
+		float stereoSep;
+		float frameTime, fps;
+		
+		stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
+		if (stereoSep != 0) {
+			if (stereoSep > 0)
+				stereoSep = -stereoSep; // we start always with negative for correct sync
+
+			Cvar_SetValue("r_stereoSeparation", stereoSep);
+			SCR_UpdateScreen();
+			re.Capture( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value );
+//			Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme left\n" );
+
+			stereoSep = -stereoSep;
+
+			Cvar_SetValue("r_stereoSeparation", stereoSep);
+			SCR_UpdateScreen();
+			re.CaptureStereo( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value  );
+//			Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme right\n" );
+		} else {
+//			re.Capture( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value  );
+		}
+
 		// fixed time for next frame'
-		msec = (1000 / abs(cl_avidemo->integer)) * com_timescale->value;
-		if (msec == 0) {
-			msec = 1;
+		fps = cl_mme_fps->value * com_timescale->value;
+		if ( fps > 1000.0f)
+			fps = 1000.0f;
+		frameTime = (1000.0f / fps);
+		if (frameTime < 1) {
+			frameTime = 1;
 		}
+		frameTime += clc.aviDemoRemain;
+		msec = (int)frameTime;
+		clc.aviDemoRemain = frameTime - msec;
+
+		S_MMERecord( cl_mme_name->string, 1.0f / (cl_mme_fps->value * com_timescale->value ));
 	}
 
 	CL_MakeMonkeyDoLaundry();
@@ -2170,6 +2318,9 @@ void CL_Frame ( int msec ) {
 	// drop the connection
 	CL_CheckTimeout();
 
+	// MME:
+	CL_MME_CheckCvarChanges();
+
 	// send intentions now
 	CL_SendCmd();
 
@@ -2177,7 +2328,11 @@ void CL_Frame ( int msec ) {
 	CL_CheckForResend();
 
 	// decide on the serverTime to render
-	CL_SetCGameTime();
+	if (!clc.newDemoPlayer) {
+		CL_SetCGameTime();
+	} else {
+		CL_DemoSetCGameTime();
+	}
 
 	// update the screen
 	SCR_UpdateScreen();
@@ -2352,6 +2507,13 @@ void CL_InitRef( void ) {
 	ri.FS_ListFiles = FS_ListFiles;
 	ri.FS_FileIsInPAK = FS_FileIsInPAK;
 	ri.FS_FileExists = FS_FileExists;
+
+	ri.FS_FCloseFile = FS_FCloseFile;
+	ri.FS_FileErase = FS_FileErase;
+	ri.FS_Seek = FS_Seek;
+	ri.FS_Write = FS_Write;
+	ri.FS_FDirectOpenFileWrite = FS_FDirectOpenFileWrite;
+
 	ri.Cvar_Get = Cvar_Get;
 	ri.Cvar_Set = Cvar_Set;
 
@@ -2444,6 +2606,11 @@ void CL_Init( void ) {
 	cl_avidemo = Cvar_Get ("cl_avidemo", "0", 0);
 	cl_forceavidemo = Cvar_Get ("cl_forceavidemo", "0", 0);
 
+	cl_mme_capture = Cvar_Get ("cl_mme_capture", "0", CVAR_INTERNAL);
+	cl_mme_fps = Cvar_Get ("cl_mme_fps", "0", CVAR_INTERNAL);
+	cl_mme_name = Cvar_Get ("cl_mme_name", "", CVAR_INTERNAL);
+	cl_mme_focus = Cvar_Get("cl_mme_focus", "0", CVAR_INTERNAL);
+
 	rconAddress = Cvar_Get ("rconAddress", "", 0);
 
 	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_ARCHIVE);
@@ -2522,6 +2689,16 @@ void CL_Init( void ) {
 	// cgame might not be initialized before menu is used
 	Cvar_Get ("cg_viewsize", "100", CVAR_ARCHIVE );
 
+
+	// MME cvars
+	mme_saveWav = Cvar_Get ("mme_saveWav", "1", CVAR_ARCHIVE );
+	mme_demoConvert = Cvar_Get ("mme_demoConvert", "1", CVAR_ARCHIVE );
+	mme_demoListQuit = Cvar_Get ("mme_demoListQuit", "", CVAR_ARCHIVE );
+	mme_demoSmoothen = Cvar_Get ("mme_demoSmoothen", "1", CVAR_ARCHIVE );
+	mme_demoFileName = Cvar_Get ("mme_demoFileName", "", CVAR_TEMP | CVAR_NORESTART );
+	mme_demoStartProject = Cvar_Get ("mme_demoStartProject", "", CVAR_TEMP );
+	mme_demoAutoQuit = Cvar_Get ("mme_demoAutoQuit", "0", CVAR_ARCHIVE );
+
 	//
 	// register our commands
 	//
@@ -2535,7 +2712,7 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("demo", CL_PlayDemo_f);
 	Cmd_AddCommand ("cinematic", CL_PlayCinematic_f);
 	Cmd_AddCommand ("stoprecord", CL_StopRecord_f);
-	Cmd_AddCommand ("connect", CL_Connect_f);
+//	Cmd_AddCommand ("connect", CL_Connect_f);
 	Cmd_AddCommand ("reconnect", CL_Reconnect_f);
 	Cmd_AddCommand ("localservers", CL_LocalServers_f);
 	Cmd_AddCommand ("globalservers", CL_GlobalServers_f);

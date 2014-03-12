@@ -457,6 +457,7 @@ bool CParticle::UpdateOrigin()
 	vec3_t	new_origin;
 	float	ftime, time2;
 	int		i;
+	int		FP = fx_forcePhysics->integer;
 
 	UpdateVelocity();
 
@@ -471,11 +472,11 @@ bool CParticle::UpdateOrigin()
 	}
 
 	// Only perform physics if this object is tagged to do so
-	if ( mFlags & FX_APPLY_PHYSICS )
+	if ( mFlags & FX_APPLY_PHYSICS || FP & FX_FORCE_PHYSICS_APPLY )
 	{
 		bool solid;
 
-		if ( mFlags & FX_EXPENSIVE_PHYSICS )
+		if ( mFlags & FX_EXPENSIVE_PHYSICS || FP & FX_FORCE_PHYSICS_EXPENSIVE )
 		{
 			solid = true; // by setting this to true, we force a real trace to happen
 		}
@@ -496,7 +497,7 @@ bool CParticle::UpdateOrigin()
 			trace_t	trace;
 			float	dot;
 
-			if ( mFlags & FX_USE_BBOX )
+			if ( mFlags & FX_USE_BBOX || FP & FX_FORCE_PHYSICS_BBOX )
 			{
 				theFxHelper.Trace( trace, mOrigin1, mMin, mMax, new_origin, -1, CONTENTS_SOLID );
 			}
@@ -529,7 +530,7 @@ bool CParticle::UpdateOrigin()
 
 				// If the velocity is too low, make it stop moving, rotating, and turn off physics to avoid
 				//	doing expensive operations when they aren't needed
-				if ( trace.plane.normal[2] > 0 && mVel[2] < 4 )
+				if ( VectorLengthSquared(mVel) < 1.0f )
 				{
 					VectorClear( mVel );
 					VectorClear( mAccel );
@@ -569,18 +570,18 @@ void CParticle::UpdateSize()
 	if ( (mFlags & FX_SIZE_LINEAR) )
 	{ 
 		// calculate element biasing
-		perc1 = 1.0f - (float)(theFxHelper.mTime - mTimeStart) 
-						/ (float)(mTimeEnd - mTimeStart);
+		perc1 = 1.0f - ((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mTimeStart);
+		Com_Clamp(0.0f, 1.0f, perc1);
 	}
 
 	// We can combine FX_LINEAR with _either_ FX_NONLINEAR, FX_WAVE, or FX_CLAMP
 	if (( mFlags & FX_SIZE_PARM_MASK ) == FX_SIZE_NONLINEAR )
 	{
-		if ( theFxHelper.mTime > mSizeParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) > (double)mSizeParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = 1.0f - (float)(theFxHelper.mTime - mSizeParm) 
-							/ (float)(mTimeEnd - mSizeParm);
+			perc2 = 1.0f - ((float)((float)theFxHelper.mTime - mSizeParm) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mSizeParm);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 
 		if ( mFlags & FX_SIZE_LINEAR )
@@ -597,15 +598,15 @@ void CParticle::UpdateSize()
 	else if (( mFlags & FX_SIZE_PARM_MASK ) == FX_SIZE_WAVE )
 	{ 
 		// wave gen, with parm being the frequency multiplier
-		perc1 = perc1 * (float)cos( (theFxHelper.mTime - mTimeStart) * mSizeParm );
+		perc1 = perc1 * cos(((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) * mSizeParm );
 	}
 	else if (( mFlags & FX_SIZE_PARM_MASK ) == FX_SIZE_CLAMP )
 	{
-		if ( theFxHelper.mTime < mSizeParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) < (double)mSizeParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = (float)(mSizeParm - theFxHelper.mTime) 
-							/ (float)(mSizeParm - mTimeStart);
+			perc2 = ((float)(mSizeParm - (float)theFxHelper.mTime) - theFxHelper.mTimeFraction) / (float)(mSizeParm - mTimeStart);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 		else
 		{
@@ -631,7 +632,7 @@ void CParticle::UpdateSize()
 		perc1 = random() * perc1;
 	}
 
-	mRefEnt.radius = (mSizeStart * perc1) + (mSizeEnd * (1.0f - perc1));
+	mRefEnt.radius = (double)(((double)mSizeStart * (double)perc1) + ((double)mSizeEnd * (double)(1.0f - perc1)));
 }
 
 //----------------------------
@@ -646,18 +647,18 @@ void CParticle::UpdateRGB()
 	if ( (mFlags & FX_RGB_LINEAR) )
 	{ 
 		// calculate element biasing
-		perc1 = 1.0f - (float)( theFxHelper.mTime - mTimeStart ) 
-						/ (float)( mTimeEnd - mTimeStart );
+		perc1 = 1.0f - ((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mTimeStart);
+		Com_Clamp(0.0f, 1.0f, perc1);
 	}
 
 	// We can combine FX_LINEAR with _either_ FX_NONLINEAR, FX_WAVE, or FX_CLAMP
 	if (( mFlags & FX_RGB_PARM_MASK ) == FX_RGB_NONLINEAR )
 	{
-		if ( theFxHelper.mTime > mRGBParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) > (double)mRGBParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = 1.0f - (float)( theFxHelper.mTime - mRGBParm ) 
-							/ (float)( mTimeEnd - mRGBParm );
+			perc2 = 1.0f - ((float)((float)theFxHelper.mTime - mRGBParm) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mRGBParm);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 
 		if ( (mFlags & FX_RGB_LINEAR) )
@@ -674,15 +675,15 @@ void CParticle::UpdateRGB()
 	else if (( mFlags & FX_RGB_PARM_MASK ) == FX_RGB_WAVE )
 	{ 
 		// wave gen, with parm being the frequency multiplier
-		perc1 = perc1 * (float)cos(( theFxHelper.mTime - mTimeStart ) * mRGBParm );
+		perc1 = perc1 * cos(((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) * mRGBParm );
 	}
 	else if (( mFlags & FX_RGB_PARM_MASK ) == FX_RGB_CLAMP )
 	{
-		if ( theFxHelper.mTime < mRGBParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) < (double)mRGBParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = (float)(mRGBParm - theFxHelper.mTime) 
-							/ (float)(mRGBParm - mTimeStart);
+			perc2 = ((float)(mRGBParm - (float)theFxHelper.mTime) - theFxHelper.mTimeFraction) / (float)(mRGBParm - mTimeStart);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 		else
 		{
@@ -724,18 +725,18 @@ void CParticle::UpdateAlpha()
 	if ( mFlags & FX_ALPHA_LINEAR )
 	{ 
 		// calculate element biasing
-		perc1 = 1.0f - (float)(theFxHelper.mTime - mTimeStart) 
-						/ (float)(mTimeEnd - mTimeStart);
+		perc1 = 1.0f - ((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mTimeStart);
+		Com_Clamp(0.0f, 1.0f, perc1);
 	}
 
 	// We can combine FX_LINEAR with _either_ FX_NONLINEAR, FX_WAVE, or FX_CLAMP
 	if (( mFlags & FX_ALPHA_PARM_MASK ) == FX_ALPHA_NONLINEAR )
 	{
-		if ( theFxHelper.mTime > mAlphaParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) > (double)mAlphaParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = 1.0f - (float)(theFxHelper.mTime - mAlphaParm) 
-							/ (float)(mTimeEnd - mAlphaParm);
+			perc2 = 1.0f - ((float)((float)theFxHelper.mTime - mAlphaParm) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mAlphaParm);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 
 		if ( mFlags & FX_ALPHA_LINEAR )
@@ -752,15 +753,15 @@ void CParticle::UpdateAlpha()
 	else if (( mFlags & FX_ALPHA_PARM_MASK ) == FX_ALPHA_WAVE )
 	{ 
 		// wave gen, with parm being the frequency multiplier
-		perc1 = perc1 * (float)cos( (theFxHelper.mTime - mTimeStart) * mAlphaParm );
+		perc1 = perc1 * cos(((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) * mAlphaParm );
 	}
 	else if (( mFlags & FX_ALPHA_PARM_MASK ) == FX_ALPHA_CLAMP )
 	{
-		if ( theFxHelper.mTime < mAlphaParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) < (double)mAlphaParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = (float)(mAlphaParm - theFxHelper.mTime) 
-							/ (float)(mAlphaParm - mTimeStart);
+			perc2 = ((float)(mAlphaParm - (float)theFxHelper.mTime) - theFxHelper.mTimeFraction) / (float)(mAlphaParm - mTimeStart);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 		else
 		{
@@ -779,17 +780,10 @@ void CParticle::UpdateAlpha()
 		}
 	}
 
-	perc1 = (mAlphaStart * perc1) + (mAlphaEnd * (1.0f - perc1));
+	perc1 = (double)((double)((double)mAlphaStart * (double)perc1) + (double)((double)mAlphaEnd * (double)(1.0f - perc1)));
 
 	// We should be in the right range, but clamp to ensure
-	if ( perc1 < 0.0f )
-	{
-		perc1 = 0.0f;
-	}
-	else if ( perc1 > 1.0f )
-	{
-		perc1 = 1.0f;
-	}
+	perc1 = Com_Clamp(0.0f, 1.0f, perc1);
 
 	// If needed, RAND can coexist with linear and either non-linear or wave.
 	if ( (mFlags & FX_ALPHA_RAND) )
@@ -1019,6 +1013,7 @@ void CElectricity::Draw()
 	VectorCopy( mOrigin2, mRefEnt.oldorigin );
 	mRefEnt.axis[0][0] = mChaos;
 	mRefEnt.axis[0][1] = mTimeEnd - mTimeStart;
+	mRefEnt.axis[1][0] = theFxHelper.mTimeFraction;
 
 	theFxHelper.AddFxToScene( &mRefEnt );
 }
@@ -1110,18 +1105,18 @@ void CTail::UpdateLength()
 	if ( mFlags & FX_LENGTH_LINEAR )
 	{ 
 		// calculate element biasing
-		perc1 = 1.0f - (float)(theFxHelper.mTime - mTimeStart) 
-						/ (float)(mTimeEnd - mTimeStart);
+		perc1 = 1.0f - ((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mTimeStart);
+		Com_Clamp(0.0f, 1.0f, perc1);
 	}
 
 	// We can combine FX_LINEAR with _either_ FX_NONLINEAR or FX_WAVE
 	if (( mFlags & FX_LENGTH_PARM_MASK ) == FX_LENGTH_NONLINEAR )
 	{
-		if ( theFxHelper.mTime > mLengthParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) > (double)mLengthParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = 1.0f - (float)(theFxHelper.mTime - mLengthParm) 
-							/ (float)(mTimeEnd - mLengthParm);
+			perc2 = 1.0f - ((float)((float)theFxHelper.mTime - mLengthParm) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mLengthParm);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 
 		if ( mFlags & FX_LENGTH_LINEAR )
@@ -1138,15 +1133,15 @@ void CTail::UpdateLength()
 	else if (( mFlags & FX_LENGTH_PARM_MASK ) == FX_LENGTH_WAVE )
 	{ 
 		// wave gen, with parm being the frequency multiplier
-		perc1 = perc1 * (float)cos( (theFxHelper.mTime - mTimeStart) * mLengthParm );
+		perc1 = perc1 * cos(((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) * mLengthParm);
 	}
 	else if (( mFlags & FX_LENGTH_PARM_MASK ) == FX_LENGTH_CLAMP )
 	{
-		if ( theFxHelper.mTime < mLengthParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) < (double)mLengthParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = (float)(mLengthParm - theFxHelper.mTime) 
-							/ (float)(mLengthParm - mTimeStart);
+			perc2 = ((float)(mLengthParm - (float)theFxHelper.mTime) - theFxHelper.mTimeFraction) / (float)(mLengthParm - mTimeStart);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 		else
 		{
@@ -1172,7 +1167,7 @@ void CTail::UpdateLength()
 		perc1 = random() * perc1;
 	}
 
-	mLength = (mLengthStart * perc1) + (mLengthEnd * (1.0f - perc1));
+	mLength = (double)(((double)mLengthStart * (double)perc1) + ((double)mLengthEnd * (double)(1.0f - perc1)));
 }
 
 
@@ -1182,7 +1177,10 @@ void CTail::CalcNewEndpoint()
 	vec3_t temp;
 
 	// FIXME:  Hmmm, this looks dumb when physics are on and a bounce happens
-	VectorSubtract( mOldOrigin, mOrigin1, temp );
+//	VectorSubtract( mOldOrigin, mOrigin1, temp );
+	//if old and new origins are too close to each other then direction is counted wrong...
+	//let's be based on velocity
+	VectorCopy( mVel, temp );
 
 	// I wish we didn't have to do a VectorNormalize every frame.....
 	VectorNormalize( temp );
@@ -1238,18 +1236,18 @@ void CCylinder::UpdateSize2()
 	if ( mFlags & FX_SIZE2_LINEAR )
 	{ 
 		// calculate element biasing
-		perc1 = 1.0f - (float)(theFxHelper.mTime - mTimeStart) 
-						/ (float)(mTimeEnd - mTimeStart);
+		perc1 = 1.0f - ((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mTimeStart);
+		Com_Clamp(0.0f, 1.0f, perc1);
 	}
 
 	// We can combine FX_LINEAR with _either_ FX_NONLINEAR or FX_WAVE
 	if (( mFlags & FX_SIZE2_PARM_MASK ) == FX_SIZE2_NONLINEAR )
 	{
-		if ( theFxHelper.mTime > mSize2Parm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) > (double)mSize2Parm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = 1.0f - (float)(theFxHelper.mTime - mSize2Parm) 
-							/ (float)(mTimeEnd - mSize2Parm);
+			perc2 = 1.0f - ((float)((float)theFxHelper.mTime - mSize2Parm) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mSize2Parm);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 
 		if ( (mFlags & FX_SIZE2_LINEAR) )
@@ -1266,15 +1264,15 @@ void CCylinder::UpdateSize2()
 	else if (( mFlags & FX_SIZE2_PARM_MASK ) == FX_SIZE2_WAVE )
 	{ 
 		// wave gen, with parm being the frequency multiplier
-		perc1 = perc1 * (float)cos( (theFxHelper.mTime - mTimeStart) * mSize2Parm );
+		perc1 = perc1 * cos(((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) * mSize2Parm);
 	}
 	else if (( mFlags & FX_SIZE2_PARM_MASK ) == FX_SIZE2_CLAMP )
 	{
-		if ( theFxHelper.mTime < mSize2Parm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) < (double)mSize2Parm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = (float)(mSize2Parm - theFxHelper.mTime) 
-							/ (float)(mSize2Parm - mTimeStart);
+			perc2 = ((float)(mSize2Parm - (float)theFxHelper.mTime) - theFxHelper.mTimeFraction) / (float)(mSize2Parm - mTimeStart);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 		else
 		{
@@ -1300,7 +1298,7 @@ void CCylinder::UpdateSize2()
 		perc1 = random() * perc1;
 	}
 
-	mRefEnt.rotation = (mSize2Start * perc1) + (mSize2End * (1.0f - perc1));
+	mRefEnt.rotation = (double)(((double)mSize2Start * (double)perc1) + ((double)mSize2End * (double)(1.0f - perc1)));
 }
 
 //----------------------------
@@ -1516,18 +1514,18 @@ void CLight::UpdateSize()
 	if ( mFlags & FX_SIZE_LINEAR )
 	{ 
 		// calculate element biasing
-		perc1 = 1.0f - (float)(theFxHelper.mTime - mTimeStart) 
-						/ (float)(mTimeEnd - mTimeStart);
+		perc1 = 1.0f - ((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mTimeStart);
+		Com_Clamp(0.0f, 1.0f, perc1);
 	}
 
 	// We can combine FX_LINEAR with _either_ FX_NONLINEAR or FX_WAVE
 	if (( mFlags & FX_SIZE_PARM_MASK ) == FX_SIZE_NONLINEAR )
 	{
-		if ( theFxHelper.mTime > mSizeParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) > (double)mSizeParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = 1.0f - (float)(theFxHelper.mTime - mSizeParm) 
-							/ (float)(mTimeEnd - mSizeParm);
+			perc2 = 1.0f - ((float)((float)theFxHelper.mTime - mSizeParm) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mSizeParm);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 
 		if ( (mFlags & FX_SIZE_LINEAR) )
@@ -1544,15 +1542,15 @@ void CLight::UpdateSize()
 	else if (( mFlags & FX_SIZE_PARM_MASK ) == FX_SIZE_WAVE )
 	{ 
 		// wave gen, with parm being the frequency multiplier
-		perc1 = perc1 * (float)cos( (theFxHelper.mTime - mTimeStart) * mSizeParm );
+		perc1 = perc1 * cos(((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) * mSizeParm);
 	}
 	else if (( mFlags & FX_SIZE_PARM_MASK ) == FX_SIZE_CLAMP )
 	{
-		if ( theFxHelper.mTime < mSizeParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) < (double)mSizeParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = (float)(mSizeParm - theFxHelper.mTime) 
-							/ (float)(mSizeParm - mTimeStart);
+			perc2 = ((float)(mSizeParm - (float)theFxHelper.mTime) - theFxHelper.mTimeFraction) / (float)(mSizeParm - mTimeStart);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 		else
 		{
@@ -1578,7 +1576,7 @@ void CLight::UpdateSize()
 		perc1 = random() * perc1;
 	}
 
-	mRefEnt.radius = (mSizeStart * perc1) + (mSizeEnd * (1.0f - perc1));
+	mRefEnt.radius = (double)(((double)mSizeStart * (double)perc1) + ((double)mSizeEnd * (double)(1.0f - perc1)));
 }
 
 //----------------------------
@@ -1593,18 +1591,18 @@ void CLight::UpdateRGB()
 	if ( mFlags & FX_RGB_LINEAR )
 	{ 
 		// calculate element biasing
-		perc1 = 1.0f - (float)( theFxHelper.mTime - mTimeStart ) 
-						/ (float)( mTimeEnd - mTimeStart );
+		perc1 = 1.0f - ((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mTimeStart);
+		Com_Clamp(0.0f, 1.0f, perc1);
 	}
 
 	// We can combine FX_LINEAR with _either_ FX_NONLINEAR or FX_WAVE
 	if (( mFlags & FX_RGB_PARM_MASK ) == FX_RGB_NONLINEAR )
 	{
-		if ( theFxHelper.mTime > mRGBParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) > (double)mRGBParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = 1.0f - (float)( theFxHelper.mTime - mRGBParm ) 
-							/ (float)( mTimeEnd - mRGBParm );
+			perc2 = 1.0f - ((float)((float)theFxHelper.mTime - mRGBParm) + theFxHelper.mTimeFraction) / (float)(mTimeEnd - mRGBParm);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 
 		if ( mFlags & FX_RGB_LINEAR )
@@ -1621,15 +1619,15 @@ void CLight::UpdateRGB()
 	else if (( mFlags & FX_RGB_PARM_MASK ) == FX_RGB_WAVE )
 	{ 
 		// wave gen, with parm being the frequency multiplier
-		perc1 = perc1 * (float)cos(( theFxHelper.mTime - mTimeStart ) * mRGBParm );
+		perc1 = perc1 * cos(((float)(theFxHelper.mTime - mTimeStart) + theFxHelper.mTimeFraction) * mRGBParm);
 	}
 	else if (( mFlags & FX_RGB_PARM_MASK ) == FX_RGB_CLAMP )
 	{
-		if ( theFxHelper.mTime < mRGBParm )
+		if ((double)((double)theFxHelper.mTime + (double)theFxHelper.mTimeFraction) < (double)mRGBParm)
 		{ 
 			// get percent done, using parm as the start of the non-linear fade
-			perc2 = (float)(mRGBParm - theFxHelper.mTime) 
-							/ (float)(mRGBParm - mTimeStart);
+			perc2 = ((float)(mRGBParm - (float)theFxHelper.mTime) - theFxHelper.mTimeFraction) / (float)(mRGBParm - mTimeStart);
+			Com_Clamp(0.0f, 1.0f, perc2);
 		}
 		else
 		{
@@ -1763,7 +1761,7 @@ bool CTrail::Update()
 		return false;
 	}
 		
-	float perc = (float)(mTimeEnd - theFxHelper.mTime) / (float)(mTimeEnd - mTimeStart);
+	float perc = ((float)(mTimeEnd - theFxHelper.mTime) - theFxHelper.mTimeFraction) / (float)(mTimeEnd - mTimeStart);
 
 	for ( int t = 0; t < 4; t++ )
 	{
@@ -1898,7 +1896,7 @@ Roll
 void CPoly::Rotate()
 {
 	vec3_t	temp[MAX_CPOLY_VERTS];
-	float	dif = fabs((float)mLastFrameTime - theFxHelper.mFrameTime);
+	float	dif = fabs(mLastFrameTime - theFxHelper.mFrameTime);
 	
 	if ( dif > 0.1f * mLastFrameTime )
 	{
@@ -2221,6 +2219,10 @@ void CFlash::Init( void )
 //----------------------------
 void CFlash::Draw( void )	
 {
+	// Interestingly, if znear is set > than this, then the flash
+    // doesn't appear at all.
+    const float FLASH_DISTANCE_FROM_VIEWER = 8.0f;
+	float stereoSep, stereoCoeff = 1.0f;
 	mRefEnt.reType = RT_SPRITE;
 
 	for ( int i = 0; i < 3; i++ )
@@ -2240,8 +2242,13 @@ void CFlash::Draw( void )
 	mRefEnt.shaderRGBA[3] = 255;
 
 	VectorCopy( theFxHelper.refdef.vieworg, mRefEnt.origin );
-	VectorMA( mRefEnt.origin, 8, theFxHelper.refdef.viewaxis[0], mRefEnt.origin );
-	mRefEnt.radius = 7.0f;
+	VectorMA( mRefEnt.origin, FLASH_DISTANCE_FROM_VIEWER, theFxHelper.refdef.viewaxis[0], mRefEnt.origin );
+	
+	// This is assuming that the screen is wider than it is tall.
+	stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
+	if (stereoSep != 0)
+		stereoCoeff = stereoSep / 0.017f; //not accurate but works
+    mRefEnt.radius = FLASH_DISTANCE_FROM_VIEWER * tan (DEG2RAD (theFxHelper.refdef.fov_x * 0.5f)) * stereoCoeff;
 
 	theFxHelper.AddFxToScene( &mRefEnt );
 }

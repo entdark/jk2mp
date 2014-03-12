@@ -1,3 +1,5 @@
+#pragma once
+
 // Copyright (C) 1999-2000 Id Software, Inc.
 //
 #ifndef __TR_TYPES_H
@@ -239,6 +241,7 @@ typedef struct {
 
 	// time in milliseconds for shader effects and other time dependent rendering issues
 	int			time;
+	float		timeFraction;
 
 	int			rdflags;			// RDF_NOWORLDMODEL, etc
 
@@ -320,3 +323,28 @@ typedef struct {
 
 
 #endif	// __TR_TYPES_H
+
+
+//MME
+typedef struct {
+	int			maxAnisotropy;
+	int			multiSamples;
+	int			glWidth;
+	int			glHeight;
+	qboolean	framebufferObject;
+	qboolean	framebufferMultiSample;
+	qboolean	shaderSupport;
+} glMMEConfig_t;
+
+typedef enum {
+	mmeShotFormatTGA,
+	mmeShotFormatJPG,
+	mmeShotFormatPNG,
+	mmeShotFormatAVI,
+} mmeShotFormat_t;
+
+typedef enum {
+	mmeShotTypeRGB,
+	mmeShotTypeRGBA,
+	mmeShotTypeGray,
+} mmeShotType_t;

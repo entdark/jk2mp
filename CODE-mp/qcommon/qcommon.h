@@ -199,6 +199,10 @@ PROTOCOL
 //v1.03 #define	PROTOCOL_VERSION	15
 #define	PROTOCOL_VERSION	16	//v1.04
 
+// maintain a list of compatible protocols for demo playing
+// NOTE: that stuff only works with two digits protocols
+extern int demo_protocols[];
+
 #define	UPDATE_SERVER_NAME		"updatejk2.ravensoft.com"
 #define MASTER_SERVER_NAME		"masterjk2.ravensoft.com"
 
@@ -456,6 +460,9 @@ void	Cvar_InfoStringBuffer( int bit, char *buff, int buffsize );
 
 void	Cvar_Restart_f( void );
 
+// MME: make Cvar_FindCvar public
+cvar_t *Cvar_FindVar( const char *var_name );
+
 extern	int			cvar_modifiedFlags;
 // whenever a cvar is modifed, its flags will be OR'd into this, so
 // a single check can determine if any CVAR_USERINFO, CVAR_SERVERINFO,
@@ -499,15 +506,17 @@ char	**FS_ListFiles( const char *directory, const char *extension, int *numfiles
 // the returned files will not include any directories or /
 
 void	FS_FreeFileList( char **list );
-
 qboolean FS_FileExists( const char *file );
-
 int		FS_LoadStack();
+
+qboolean FS_FileErase( const char *file );
 
 int		FS_GetFileList(  const char *path, const char *extension, char *listbuf, int bufsize );
 int		FS_GetModList(  char *listbuf, int bufsize );
 
 fileHandle_t	FS_FOpenFileWrite( const char *qpath );
+fileHandle_t	FS_FOpenFileReadWrite( const char *filename );
+fileHandle_t	FS_FDirectOpenFileWrite( const char *filename, const char *mode );
 // will properly create any needed paths and deal with seperater character issues
 
 int		FS_filelength( fileHandle_t f );

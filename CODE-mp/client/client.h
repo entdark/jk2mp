@@ -194,6 +194,7 @@ typedef struct {
 	qboolean	demowaiting;	// don't record until a non-delta message is received
 	qboolean	firstDemoFrameSkipped;
 	fileHandle_t	demofile;
+	qboolean	newDemoPlayer;
 
 	int			timeDemoFrames;		// counter of rendered frames
 	int			timeDemoStart;		// cls.realtime before first frame
@@ -201,6 +202,8 @@ typedef struct {
 
 	// big stuff at end of structure so most offsets are 15 bits or less
 	netchan_t	netchan;
+
+	float		aviDemoRemain;		// Used for accurate fps recording
 } clientConnection_t;
 
 extern	clientConnection_t clc;
@@ -368,6 +371,12 @@ extern	cvar_t	*m_side;
 extern	cvar_t	*m_filter;
 
 extern	cvar_t	*cl_timedemo;
+extern	cvar_t	*cl_avidemo;
+
+extern	cvar_t	*cl_mme_capture;
+extern	cvar_t	*cl_mme_fps;
+extern	cvar_t	*cl_mme_name;
+extern	cvar_t	*cl_mme_focus;
 
 extern	cvar_t	*cl_activeAction;
 
@@ -377,7 +386,28 @@ extern	cvar_t	*cl_inGameVideo;
 
 extern	cvar_t	*cl_consoleKeys;	
 
+
+// MME cvars
+//extern	cvar_t	*mme_anykeystopsdemo;
+extern	cvar_t	*mme_saveWav;
+//extern	cvar_t	*mme_gameOverride;
+extern	cvar_t	*mme_demoConvert;
+extern	cvar_t	*mme_demoSmoothen;
+extern	cvar_t	*mme_demoFileName;
+extern  cvar_t	*mme_demoListQuit;
+extern	cvar_t	*mme_demoStartProject;
+extern	cvar_t	*mme_demoAutoQuit;
+
 //=================================================
+// cl_demos
+void CL_MMEDemo_f( void );
+void CL_DemoList_f( void );
+void CL_DemoListNext_f( void );
+//void CL_DemoShutDown( void );
+void CL_DemoSetCGameTime( void );
+void demoConvert( const char *oldName, const char *newName, qboolean smoothen );
+qboolean demoPlay( const char *fileName );
+void demoStop( void );
 
 //
 // cl_main
@@ -552,3 +582,9 @@ void LAN_SaveServersToCache();
 void CL_Netchan_Transmit( netchan_t *chan, msg_t* msg);	//int length, const byte *data );
 void CL_Netchan_TransmitNextFragment( netchan_t *chan );
 qboolean CL_Netchan_Process( netchan_t *chan, msg_t *msg );
+
+
+//
+// cl_mme.c
+//
+void CL_MME_CheckCvarChanges(void);

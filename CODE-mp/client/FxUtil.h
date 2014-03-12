@@ -7,7 +7,7 @@
 #define FX_UTIL_H_INC
 
 
-bool	FX_Free( void );	// ditches all active effects;
+bool	FX_Free( bool templates );	// ditches all active effects;
 int		FX_Init( void );	// called in CG_Init to purge the fx system.
 void	FX_Add( void );		// called every cgame frame to add all fx into the scene.
 void	FX_Stop( void );	// ditches all active effects without touching the templates.

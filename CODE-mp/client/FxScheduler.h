@@ -85,7 +85,7 @@ public:
 
 	void	AddHandle( int item )	{ mMediaList.push_back( item );	}
 	int		GetHandle()				{ if (mMediaList.size()==0) {return 0;}
-										else {return mMediaList[irand(0,mMediaList.size()-1)];} }
+										else {return mMediaList[(int)(random() * (mMediaList.size()-1))];} }
 
 	void operator=(const CMediaHandles &that );
 
@@ -132,9 +132,9 @@ public:
 
 	inline float	GetVal(float percent) const		{return (mMin + (mMax - mMin) * percent);}
 	inline float	GetVal() const					{if(mMin == mMax){return mMin;}
-														return flrand(mMin, mMax);}
+														return random() * (mMax - mMin) + mMin;}
 	inline int		GetRoundedVal() const			{if(mMin == mMax){return mMin;}
-														return (int)(flrand(mMin, mMax) + 0.5f);}
+														return (int)(random() * (mMax - mMin) + mMin + 0.5f);}
 
 	inline void		ForceRange(float min,float max)	{if(mMin < min){mMin=min;} if(mMin > max){mMin=max;}
 														if(mMax < min){mMax=min;} if(mMax > max){mMax=max;}}

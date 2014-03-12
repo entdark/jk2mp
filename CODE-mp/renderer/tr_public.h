@@ -95,6 +95,13 @@ typedef struct {
 	void (*SetLightStyle)(int style, int color);
 
 	void	(*GetBModelVerts)( int bmodelIndex, vec3_t *vec, vec3_t normal );
+
+	//mme
+	void	(*Capture)( const char *baseName, float fps, float focus );
+	void	(*CaptureStereo)( const char *baseName, float fps, float focus );
+	void	(*BlurInfo)( int* total, int* index );
+	void	(*DemoRandomSeed)( int time, float timeFraction );
+	void	(*ClearDecals)( void );
 } refexport_t;
 
 //
@@ -149,6 +156,12 @@ typedef struct {
 	void	(*FS_FreeFileList)( char **filelist );
 	void	(*FS_WriteFile)( const char *qpath, const void *buffer, int size );
 	qboolean (*FS_FileExists)( const char *file );
+
+	void	(*FS_FCloseFile)( fileHandle_t f );
+	qboolean (*FS_FileErase)( const char *file );
+	int		(*FS_Seek)( fileHandle_t f, long offset, int origin );
+	int		(*FS_Write)( const void *buffer, int len, fileHandle_t f );
+	fileHandle_t (*FS_FDirectOpenFileWrite)( const char *filename, const char *mode );
 
 	// cinematic stuff
 	void	(*CIN_UploadCinematic)(int handle);

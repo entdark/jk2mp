@@ -42,12 +42,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>$(ProjectName)$(PlatformShortName)</TargetName>
-    <OutDir>..\..\build\base\</OutDir>
+    <OutDir>..\..\build\mme\</OutDir>
     <IntDir>..\.build\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\build\base\</OutDir>
+    <OutDir>..\..\build\mme\</OutDir>
     <IntDir>..\.build\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)$(PlatformShortName)</TargetName>
   </PropertyGroup>
@@ -64,6 +64,7 @@
       <CompileAs>CompileAsC</CompileAs>
       <AdditionalIncludeDirectories>.;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName).pch</PrecompiledHeaderOutputFile>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -132,6 +133,9 @@
     <ClInclude Include="..\ui\keycodes.h" />
     <ClInclude Include="..\ui\ui_shared.h" />
     <ClInclude Include="animtable.h" />
+    <ClInclude Include="bg_demos.h" />
+    <ClInclude Include="cg_demos.h" />
+    <ClInclude Include="cg_demos_math.h" />
     <ClInclude Include="cg_lights.h" />
     <ClInclude Include="cg_local.h" />
     <ClInclude Include="cg_public.h" />
@@ -148,7 +152,15 @@
     <ClCompile Include="..\game\q_math.c" />
     <ClCompile Include="..\game\q_shared.c" />
     <ClCompile Include="..\ui\ui_shared.c" />
+    <ClCompile Include="bg_demos.c" />
     <ClCompile Include="cg_consolecmds.c" />
+    <ClCompile Include="cg_demos.c" />
+    <ClCompile Include="cg_demos_camera.c" />
+    <ClCompile Include="cg_demos_capture.c" />
+    <ClCompile Include="cg_demos_hud.c" />
+    <ClCompile Include="cg_demos_line.c" />
+    <ClCompile Include="cg_demos_math.c" />
+    <ClCompile Include="cg_demos_move.c" />
     <ClCompile Include="cg_draw.c" />
     <ClCompile Include="cg_drawtools.c" />
     <ClCompile Include="cg_effects.c" />
@@ -185,6 +197,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="JK2_cgame.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

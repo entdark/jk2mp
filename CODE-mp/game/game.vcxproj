@@ -42,12 +42,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>jk2mp$(ProjectName)$(PlatformShortName)</TargetName>
-    <OutDir>..\..\build\base\</OutDir>
+    <OutDir>..\..\build\mme\</OutDir>
     <IntDir>..\.build\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\build\base\</OutDir>
+    <OutDir>..\..\build\mme\</OutDir>
     <IntDir>..\.build\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <TargetName>jk2mp$(ProjectName)$(PlatformShortName)</TargetName>
   </PropertyGroup>

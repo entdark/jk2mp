@@ -1,19 +1,35 @@
-JK2MP
+joMME
 =====
 
-# Introduction #
-This is the source code of Star Wars Jedi Knight 2: Jedi Outcast Multiplayer v1.04. The goal of this source is to be compilable in Microsoft Visual Studio 2010 (and therefore later versions). The code is cleaned a bit and has some minor fixes.
-
-# Building #
-By default it builds 2 applications (.exe): jk2mp and jk2Ded; and 3 dinamic libraries (.dll): cgamex86, uix86 and jk2mpgamex86. It doesn't build QVMs but the code of them is left so it is possible to build them as well.
-To build open a solution file (.sln) in CODE-mp folder and then press F7 (Build). It can build both Debug and Release versions without errors.
+joMME is an engine modification of Jedi Knight 2: Jedi Outcast for moviemaking. It's a port of q3mme with most of its features and some new ones. Original source code belongs to Raven Software.
 
 # Features #
-* removed cd check
-* the developer console can now be open with ` (holding SHIFT is not necessary anymore)
-* the game doesn't crash anymore on creating local server with custom resolution
-* increased fov limit to 180 degrees
+* demo playback control (pause, rewind)
+* free camera mode
+* chase camera mode
+* time speed animation
+* capturing motion blur
+* capturing output in stereo 3D
+* different output types: jpg, tga, png, avi
+* playing music on background to synchronize it with editing
+* saving depth of field mask
+* overriding players information: name, saber colours, hilts, team, model
+* realistic first person view with visible body (trueview)
+* recording audio to wav
+* replacing world textures with your own
+* replacing skybox with one solid colour (chroma key)
+* capturing in any resolution
+* off-screen capturing
+* capturing a list of demos
+* supporting versions: 1.02 (TODO), 1.04
 
-# Issues #
-For some reason game crashes either in Sys_Init or in QuickMemTest. I commented QuickMemTest and timeBeginPeriod(1) in Sys_Init to avoid crashes. I am not sure if those are important.
-Also I could not link openal32.dll to jk2mp.exe therefore openal is not supported (s_UseOpenAL = false).
+# Installation #
+Either extract the archive to "GameData" folder or extract anywhere, then create folder "base" next to folder "mme", put in there ("base") assets0.pk3, assets1.pk3, assets2.pk3, assets3.pk3 from "base" from your original game path. Then run start_joMME.cmd file and enjoy the mod.
+
+# Credits #
+* q3mme crew and their q3mme mod
+* Raz0r and his features from JA++ mod, also he helped a lot
+* teh and his pugmod that was a good starting point, also some joMME features are taken from pugmod
+* Sil and his features from SMod
+* CaNaBiS and his help in explaining of how q3mme works
+* Razorace and his trueview feature (taken from JA++)

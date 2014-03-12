@@ -242,9 +242,6 @@ cg.refdefViewAngles
 
 ===============
 */
-  
-extern qboolean gCGHasFallVector;
-extern vec3_t gCGFallVector;
 
 /*
 ===============
@@ -910,8 +907,6 @@ CG_CalcFov
 Fixed fov at intermissions, otherwise account for fov variable and zooms.
 ====================
 */
-#define	WAVE_AMPLITUDE	1
-#define	WAVE_FREQUENCY	0.4
 float zoomFov; //this has to be global client-side
 
 static int CG_CalcFov( void ) {
@@ -1058,7 +1053,7 @@ CG_DamageBlendBlob
 
 ===============
 */
-static void CG_DamageBlendBlob( void ) 
+void CG_DamageBlendBlob( void ) 
 {
 	int			t;
 	int			maxTime;
@@ -1164,6 +1159,79 @@ qboolean CheckOutOfConstrict(float curAng)
 	return qfalse;
 }
 
+int CG_DemosCalcViewValues( void ) {
+	entityState_t *es = &cg.playerCent->currentState;
+	memset( &cg.refdef, 0, sizeof( cg.refdef ) );
+
+	// calculate size of 3D view
+	CG_CalcVrect();
+
+	// intermission view
+	if ( cg.predictedPlayerState.pm_type == PM_INTERMISSION ) {
+		playerState_t *ps = &cg.predictedPlayerState;
+		VectorCopy( ps->origin, cg.refdef.vieworg );
+		VectorCopy( ps->viewangles, cg.refdefViewAngles );
+		AnglesToAxis( cg.refdefViewAngles, cg.refdef.viewaxis );
+		return CG_CalcFov();
+	}
+
+	if ( cg.playerPredicted ) {
+		cg.bobcycle = ( cg.predictedPlayerState.bobCycle & 128 ) >> 7;
+		cg.bobfracsin = fabs( sin( ( cg.predictedPlayerState.bobCycle & 127 ) / 127.0 * M_PI ) );
+	} else {
+		cg.bobcycle = 0;
+		cg.bobfracsin = 0;
+	}
+	cg.xyspeed = sqrt( es->pos.trDelta[0] * es->pos.trDelta[0] +
+		es->pos.trDelta[1] * es->pos.trDelta[1] );
+
+	if (cg.xyspeed > 270)
+	{
+		cg.xyspeed = 270;
+	}
+
+	VectorCopy( cg.playerCent->lerpOrigin, cg.refdef.vieworg );
+	VectorCopy( cg.playerCent->lerpAngles, cg.refdefViewAngles );
+
+	if (cg_cameraOrbit.integer) {
+		if (cg.time > cg.nextOrbitTime) {
+			cg.nextOrbitTime = cg.time + cg_cameraOrbitDelay.integer;
+			cg_thirdPersonAngle.value += cg_cameraOrbit.value;
+		}
+	}
+	// add error decay
+	if ( cg_errorDecay.value > 0 ) {
+		int		t;
+		float	f;
+
+		t = cg.time - cg.predictedErrorTime;
+		f = ( cg_errorDecay.value - t ) / cg_errorDecay.value;
+		if ( f > 0 && f < 1 ) {
+			VectorMA( cg.refdef.vieworg, f, cg.predictedError, cg.refdef.vieworg );
+		} else {
+			cg.predictedErrorTime = 0;
+		}
+	}
+
+	if ( cg.renderingThirdPerson && !cg.snap->ps.zoomMode) {
+		// back away from character
+		CG_OffsetThirdPersonView();
+	} else {
+		// offset for local bobbing and kicks
+		CG_OffsetFirstPersonView();
+	}
+
+	// position eye reletive to origin
+	AnglesToAxis( cg.refdefViewAngles, cg.refdef.viewaxis );
+
+	if ( cg.hyperspace ) {
+		cg.refdef.rdflags |= RDF_NOWORLDMODEL | RDF_HYPERSPACE;
+	}
+
+	// field of view
+	return CG_CalcFov();
+}
+
 /*
 ===============
 CG_CalcViewValues
@@ -1264,7 +1332,7 @@ static int CG_CalcViewValues( void ) {
 CG_PowerupTimerSounds
 =====================
 */
-static void CG_PowerupTimerSounds( void ) {
+void CG_PowerupTimerSounds( void ) {
 	int		i;
 	int		t;
 
@@ -1303,7 +1371,7 @@ void CG_AddBufferedSound( sfxHandle_t sfx ) {
 CG_PlayBufferedSounds
 =====================
 */
-static void CG_PlayBufferedSounds( void ) {
+void CG_PlayBufferedSounds( void ) {
 	if ( cg.soundTime < cg.time ) {
 		if (cg.soundBufferOut != cg.soundBufferIn && cg.soundBuffer[cg.soundBufferOut]) {
 			trap_S_StartLocalSound(cg.soundBuffer[cg.soundBufferOut], CHAN_ANNOUNCER);
@@ -1489,6 +1557,7 @@ CG_DrawActiveFrame
 Generates and draws a game scene and status information at the given time.
 =================
 */
+extern void CG_UpdateFallVector (void);
 void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback ) {
 	int		inwater;
 
@@ -1510,7 +1579,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		return;
 	}
 
-	trap_FX_AdjustTime( cg.time, cg.refdef.vieworg, cg.refdef.viewaxis );
+	trap_FX_AdjustTime( cg.time, cg.frametime, 0, cg.refdef.vieworg, cg.refdef.viewaxis );
 
 	CG_RunLightStyles();
 
@@ -1658,6 +1727,8 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	// actually issue the rendering calls
 	CG_DrawActive( stereoView );
+
+	CG_UpdateFallVector();
 
 	if ( cg_stats.integer ) {
 		CG_Printf( "cg.clientFrame:%i\n", cg.clientFrame );

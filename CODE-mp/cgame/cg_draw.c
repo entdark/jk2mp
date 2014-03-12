@@ -1850,7 +1850,7 @@ CG_DrawFPS
 ==================
 */
 #define	FPS_FRAMES	4
-static float CG_DrawFPS( float y ) {
+float CG_DrawFPS( float y ) {
 	char		*s;
 	int			w;
 	static int	previousTimes[FPS_FRAMES];
@@ -2230,8 +2230,8 @@ static void CG_DrawReward( void ) {
 
 	if ( cg.rewardCount[0] >= 10 ) {
 		y = 56;
-		x = 320 - ICON_SIZE/2;
-		CG_DrawPic( x, y, ICON_SIZE-4, ICON_SIZE-4, cg.rewardShader[0] );
+		x = 320 - (ICON_SIZE-4)*cgs.widthRatioCoef/2;
+		CG_DrawPic( x, y, (ICON_SIZE-4)*cgs.widthRatioCoef, ICON_SIZE-4, cg.rewardShader[0] );
 		Com_sprintf(buf, sizeof(buf), "%d", cg.rewardCount[0]);
 		x = ( SCREEN_WIDTH - SMALLCHAR_WIDTH * CG_DrawStrlen( buf ) ) / 2;
 		CG_DrawStringExt( x, y+ICON_SIZE, buf, color, qfalse, qtrue,
@@ -2242,10 +2242,10 @@ static void CG_DrawReward( void ) {
 		count = cg.rewardCount[0];
 
 		y = 56;
-		x = 320 - count * ICON_SIZE/2;
+		x = 320 - count * (ICON_SIZE/2)*cgs.widthRatioCoef;
 		for ( i = 0 ; i < count ; i++ ) {
-			CG_DrawPic( x, y, ICON_SIZE-4, ICON_SIZE-4, cg.rewardShader[0] );
-			x += ICON_SIZE;
+			CG_DrawPic( x, y, (ICON_SIZE-4)*cgs.widthRatioCoef, ICON_SIZE-4, cg.rewardShader[0] );
+			x += ICON_SIZE*cgs.widthRatioCoef;
 		}
 	}
 	trap_R_SetColor( NULL );
@@ -3836,7 +3836,7 @@ vec3_t gCGFallVector;
 CG_Draw2D
 =================
 */
-static void CG_Draw2D( void ) {
+void CG_Draw2D( void ) {
 	float			inTime = cg.invenSelectTime+WEAPON_SELECT_TIME;
 	float			wpTime = cg.weaponSelectTime+WEAPON_SELECT_TIME;
 	float			bestTime;
@@ -4360,46 +4360,9 @@ static void CG_Draw2D( void ) {
 			}
 
 			//Do we want to use this system again at some point?
-			//CG_DrawReward();
+			CG_DrawReward();
 		}
     
-	}
-
-	if (cg.snap->ps.fallingToDeath)
-	{
-		fallTime = (float)(cg.time - cg.snap->ps.fallingToDeath);
-
-		fallTime /= (FALL_FADE_TIME/2);
-
-		if (fallTime < 0)
-		{
-			fallTime = 0;
-		}
-		if (fallTime > 1)
-		{
-			fallTime = 1;
-		}
-
-		hcolor[3] = fallTime;
-		hcolor[0] = 0;
-		hcolor[1] = 0;
-		hcolor[2] = 0;
-
-		CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
-
-		if (!gCGHasFallVector)
-		{
-			VectorCopy(cg.snap->ps.origin, gCGFallVector);
-			gCGHasFallVector = qtrue;
-		}
-	}
-	else
-	{
-		if (gCGHasFallVector)
-		{
-			gCGHasFallVector = qfalse;
-			VectorClear(gCGFallVector);
-		}
 	}
 
 	CG_DrawVote();
@@ -4422,10 +4385,6 @@ static void CG_Draw2D( void ) {
 	}
 }
 
-
-static void CG_DrawTourneyScoreboard() {
-}
-
 /*
 =====================
 CG_DrawActive
@@ -4446,7 +4405,6 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 	// optionally draw the tournement scoreboard instead
 	if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR &&
 		( cg.snap->ps.pm_flags & PMF_SCOREBOARD ) ) {
-		CG_DrawTourneyScoreboard();
 		return;
 	}
 

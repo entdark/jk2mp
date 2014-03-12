@@ -10,6 +10,9 @@
 
 #define	MAXPRINTMSG	4096
 
+int demo_protocols[] =
+{ 15, 16 };
+
 #define MAX_NUM_ARGVS	50
 
 #define MIN_DEDICATED_COMHUNKMEGS 4//1 //We need more than 1 for VMs when we are also using temporary hunk memory for bot nav functions

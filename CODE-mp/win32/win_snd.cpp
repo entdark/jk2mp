@@ -262,6 +262,7 @@ how many sample are required to fill it up.
 ===============
 */
 int SNDDMA_GetDMAPos( void ) {
+#ifndef SND_MME
 	MMTIME	mmtime;
 	int		s;
 	DWORD	dwWrite;
@@ -280,6 +281,22 @@ int SNDDMA_GetDMAPos( void ) {
 	s &= (dma.samples-1);
 
 	return s;
+#else
+	DWORD	dwRead, dwWrite;
+
+	if ( !dsound_init ) {
+		return 0;
+	}
+
+	pDSBuf->GetCurrentPosition(&dwRead, &dwWrite);
+
+
+	dwRead >>= sample16;
+
+	dwRead &= (dma.samples-1);
+
+	return dwRead;
+#endif
 }
 
 /*

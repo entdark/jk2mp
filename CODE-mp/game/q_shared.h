@@ -1,3 +1,5 @@
+#pragma once
+
 // Copyright (C) 1999-2000 Id Software, Inc.
 //
 #ifndef __Q_SHARED_H
@@ -340,6 +342,47 @@ typedef int		fxHandle_t;
 typedef int		sfxHandle_t;
 typedef int		fileHandle_t;
 typedef int		clipHandle_t;
+
+
+//ent: Raz: can't think of a better place to put this atm,
+//		should probably be in the platform specific definitions
+#if defined (_MSC_VER) && (_MSC_VER >= 1600)
+
+	#include <stdint.h>
+
+	// vsnprintf is ISO/IEC 9899:1999
+	// abstracting this to make it portable
+	int Q_vsnprintf( char *str, size_t size, const char *format, va_list args );
+
+#elif defined (_MSC_VER)
+
+	#include <io.h>
+
+	typedef signed __int64 int64_t;
+	typedef signed __int32 int32_t;
+	typedef signed __int16 int16_t;
+	typedef signed __int8  int8_t;
+	typedef unsigned __int64 uint64_t;
+	typedef unsigned __int32 uint32_t;
+	typedef unsigned __int16 uint16_t;
+	typedef unsigned __int8  uint8_t;
+
+	// vsnprintf is ISO/IEC 9899:1999
+	// abstracting this to make it portable
+	int Q_vsnprintf( char *str, size_t size, const char *format, va_list args );
+#else // not using MSVC
+
+	#include <stdint.h>
+
+	#define Q_vsnprintf vsnprintf
+
+#endif
+
+#define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
+#define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
+
+#define PADP(base, alignment)	((void *) PAD((intptr_t) (base), (alignment)))
+
 
 #define G2_COLLISION_ENABLED
 
@@ -964,6 +1007,9 @@ float AngleNormalize360 ( float angle );
 float AngleNormalize180 ( float angle );
 float AngleDelta ( float angle1, float angle2 );
 
+void LerpOrigin( const vec3_t from, const vec3_t to, vec3_t out, float lerp );
+void LerpAngles( const vec3_t from, const vec3_t to, vec3_t out, float lerp );
+
 qboolean PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c );
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal );
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
@@ -1300,6 +1346,7 @@ typedef struct {
 #define	KEYCATCH_UI					0x0002
 #define	KEYCATCH_MESSAGE		0x0004
 #define	KEYCATCH_CGAME			0x0008
+#define	KEYCATCH_CGAMEEXEC		0x2000
 
 
 // sound channels
@@ -2126,3 +2173,16 @@ enum {
 
 
 #endif	// __Q_SHARED_H
+
+typedef struct {
+	fileHandle_t fileHandle;
+	int line;
+	int fileSize, filePos;
+	int depth;
+} BG_XMLParse_t;
+
+typedef struct BG_XMLParseBlock_s {
+	char *tagName;
+	qboolean (*openHandler)(BG_XMLParse_t *,const struct BG_XMLParseBlock_s *, void *);
+	qboolean (*textHandler)(BG_XMLParse_t *,const char *, void *);
+} BG_XMLParseBlock_t;

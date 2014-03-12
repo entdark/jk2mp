@@ -395,7 +395,7 @@ The main player will have this called for BOTH cases, so effects like light and
 sound should only be done on the world model case.
 =============
 */
-void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent, int team, vec3_t newAngles, qboolean thirdPerson ) {
+void CG_AddPlayerWeapon( refEntity_t *parent, qboolean firstPerson, centity_t *cent, int team, vec3_t newAngles, qboolean thirdPerson ) {
 	refEntity_t	gun;
 	refEntity_t	barrel;
 	vec3_t		angles;
@@ -428,7 +428,7 @@ Ghoul2 Insert Start
 		gun.shadowPlane = parent->shadowPlane;
 		gun.renderfx = parent->renderfx;
 
-		if (ps)
+		if (firstPerson)
 		{	// this player, in first person view
 			gun.hModel = weapon->viewModel;
 		}
@@ -440,7 +440,7 @@ Ghoul2 Insert Start
 			return;
 		}
 
-		if ( !ps ) {
+		if ( !firstPerson ) {
 			// add weapon ready sound
 			cent->pe.lightningFiring = qfalse;
 			if ( ( cent->currentState.eFlags & EF_FIRING ) && weapon->firingSound ) {
@@ -552,7 +552,7 @@ Ghoul2 Insert End
 
 	// Do special charge bits
 	//-----------------------
-	if ( (ps || cg.renderingThirdPerson || cg.predictedPlayerState.clientNum != cent->currentState.number) &&
+	if ( (firstPerson || cg.renderingThirdPerson || cg.predictedPlayerState.clientNum != cent->currentState.number) &&
 		( ( cent->currentState.modelindex2 == WEAPON_CHARGING_ALT && cent->currentState.weapon == WP_BRYAR_PISTOL ) ||
 		  ( cent->currentState.weapon == WP_BOWCASTER && cent->currentState.modelindex2 == WEAPON_CHARGING ) ||
 		  ( cent->currentState.weapon == WP_DEMP2 && cent->currentState.modelindex2 == WEAPON_CHARGING_ALT) ) )
@@ -613,14 +613,14 @@ Ghoul2 Insert End
 		else if ( val > 1.0f )
 		{
 			val = 1.0f;
-			if (ps && cent->currentState.number == ps->clientNum)
+			if (firstPerson && cg.playerCent && cent == cg.playerCent)
 			{
 				CGCam_Shake( /*0.1f*/0.2f, 100 );
 			}
 		}
 		else
 		{
-			if (ps && cent->currentState.number == ps->clientNum)
+			if (firstPerson && cg.playerCent && cent == cg.playerCent)
 			{
 				CGCam_Shake( val * val * /*0.3f*/0.6f, 100 );
 			}
@@ -667,7 +667,7 @@ Ghoul2 Insert End
 		}
 	}
 
-	if ( ps || cg.renderingThirdPerson ||
+	if ( firstPerson || cg.renderingThirdPerson ||
 			cent->currentState.number != cg.predictedPlayerState.clientNum ) 
 	{	// Make sure we don't do the thirdperson model effects for the local player if we're in first person
 		vec3_t flashorigin, flashdir;
@@ -700,19 +700,15 @@ Ghoul2 Insert End
 			trap_G2API_GiveMeVectorFromMatrix(&boltMatrix, POSITIVE_X, flashdir);
 		}
 
-		if ( cg.time - cent->muzzleFlashTime <= MUZZLE_FLASH_TIME + 10 )
-		{	// Handle muzzle flashes
-			if ( cent->currentState.eFlags & EF_ALT_FIRING )
-			{	// Check the alt firing first.
-				if (weapon->altMuzzleEffect)
-				{
+//		if ( cg.time - cent->muzzleFlashTime <= MUZZLE_FLASH_TIME + 10 )
+		if (cent->muzzleFlash) { // we play it once, so we don't need time
+			// Handle muzzle flashes
+			if ( cent->currentState.eFlags & EF_ALT_FIRING ){ // Check the alt firing first.
+				if (weapon->altMuzzleEffect) {
 					trap_FX_PlayEffectID(weapon->altMuzzleEffect, flashorigin, flashdir);
 				}
-			}
-			else
-			{	// Regular firing
-				if (weapon->muzzleEffect)
-				{
+			} else { // Regular firing
+				if (weapon->muzzleEffect) {
 					trap_FX_PlayEffectID(weapon->muzzleEffect, flashorigin, flashdir);
 				}
 			}
@@ -725,44 +721,26 @@ Ghoul2 Insert End
 			trap_R_AddLightToScene( flashorigin, 300 + (rand()&31), weapon->flashDlightColor[0],
 				weapon->flashDlightColor[1], weapon->flashDlightColor[2] );
 		}
+		cent->muzzleFlash = qfalse;
 	}
 }
 
-/*
-==============
-CG_AddViewWeapon
 
-Add the weapon, and flash for the player's view
-==============
-*/
-void CG_AddViewWeapon( playerState_t *ps ) {
+void CG_AddViewWeaponDirect( centity_t *cent ) {
 	refEntity_t	hand;
-	centity_t	*cent;
 	clientInfo_t	*ci;
 	float		fovOffset;
 	vec3_t		angles;
 	weaponInfo_t	*weapon;
 	float	cgFov = cg_fov.value;
 
-	if (cgFov < 1)
-	{
+	if (cgFov < 1) {
 		cgFov = 1;
-	}
-	if (cgFov > 97)
-	{
-		cgFov = 97;
-	}
-
-	if ( ps->persistant[PERS_TEAM] == TEAM_SPECTATOR ) {
-		return;
-	}
-
-	if ( ps->pm_type == PM_INTERMISSION ) {
-		return;
+	} else if (cgFov > 97) {
+		cgFov = 180;
 	}
 
 	// no gun if in third person view or a camera is active
-	//if ( cg.renderingThirdPerson || cg.cameraMode) {
 	if ( cg.renderingThirdPerson ) {
 		return;
 	}
@@ -775,7 +753,7 @@ void CG_AddViewWeapon( playerState_t *ps ) {
 			// special hack for lightning gun...
 			VectorCopy( cg.refdef.vieworg, origin );
 			VectorMA( origin, -8, cg.refdef.viewaxis[2], origin );
-			CG_LightningBolt( &cg_entities[ps->clientNum], origin );
+			CG_LightningBolt( cent, origin );
 		}
 		return;
 	}
@@ -792,9 +770,8 @@ void CG_AddViewWeapon( playerState_t *ps ) {
 		fovOffset = 0;
 	}
 
-	cent = &cg.predictedPlayerEntity;	// &cg_entities[cg.snap->ps.clientNum];
-	CG_RegisterWeapon( ps->weapon );
-	weapon = &cg_weapons[ ps->weapon ];
+	CG_RegisterWeapon( cent->currentState.weapon );
+	weapon = &cg_weapons[ cent->currentState.weapon ];
 
 	memset (&hand, 0, sizeof(hand));
 
@@ -807,6 +784,7 @@ void CG_AddViewWeapon( playerState_t *ps ) {
 
 	AnglesToAxis( angles, hand.axis );
 
+	ci = &cgs.clientinfo[ cent->currentState.clientNum ];
 	// map torso animations to weapon animations
 	if ( cg_gun_frame.integer ) {
 		// development tool
@@ -814,7 +792,6 @@ void CG_AddViewWeapon( playerState_t *ps ) {
 		hand.backlerp = 0;
 	} else {
 		// get clientinfo for animation map
-		ci = &cgs.clientinfo[ cent->currentState.clientNum ];
 		hand.frame = CG_MapTorsoToWeaponFrame( ci, cent->pe.torso.frame, cent->currentState.torsoAnim & ~ANIM_TOGGLEBIT );
 		hand.oldframe = CG_MapTorsoToWeaponFrame( ci, cent->pe.torso.oldFrame, cent->currentState.torsoAnim & ~ANIM_TOGGLEBIT );
 		hand.backlerp = cent->pe.torso.backlerp;
@@ -837,7 +814,22 @@ void CG_AddViewWeapon( playerState_t *ps ) {
 	hand.renderfx = RF_DEPTHHACK | RF_FIRST_PERSON;// | RF_MINLIGHT;
 
 	// add everything onto the hand
-	CG_AddPlayerWeapon( &hand, ps, &cg.predictedPlayerEntity, ps->persistant[PERS_TEAM], angles, qfalse );
+	CG_AddPlayerWeapon( &hand, qtrue, &cg.predictedPlayerEntity, ci->team, angles, qfalse );
+}
+/*
+==============
+CG_AddViewWeapon
+
+Add the weapon, and flash for the player's view
+==============
+*/
+void CG_AddViewWeapon( playerState_t *ps ) {
+	if ( ps->pm_type == PM_INTERMISSION ) {
+		return;
+	}
+
+	CG_AddViewWeaponDirect( &cg.predictedPlayerEntity );
+
 }
 
 /*
@@ -1308,6 +1300,7 @@ void CG_NextWeapon_f( void ) {
 	}
 	else
 	{
+		trap_S_StopSound(cg.snap->ps.clientNum, CHAN_WEAPON, -1);
 		trap_S_MuteSound(cg.snap->ps.clientNum, CHAN_WEAPON);
 	}
 }
@@ -1353,6 +1346,7 @@ void CG_PrevWeapon_f( void ) {
 	}
 	else
 	{
+		trap_S_StopSound(cg.snap->ps.clientNum, CHAN_WEAPON, -1);
 		trap_S_MuteSound(cg.snap->ps.clientNum, CHAN_WEAPON);
 	}
 }
@@ -1476,6 +1470,7 @@ void CG_Weapon_f( void ) {
 
 	if (cg.weaponSelect != num)
 	{
+		trap_S_StopSound(cg.snap->ps.clientNum, CHAN_WEAPON, -1);
 		trap_S_MuteSound(cg.snap->ps.clientNum, CHAN_WEAPON);
 	}
 
@@ -1515,6 +1510,7 @@ void CG_OutOfAmmoChange( int oldWeapon )
 		}
 	}
 
+	trap_S_StopSound(cg.snap->ps.clientNum, CHAN_WEAPON, -1);
 	trap_S_MuteSound(cg.snap->ps.clientNum, CHAN_WEAPON);
 }
 
@@ -1595,7 +1591,7 @@ Caused by an EV_FIRE_WEAPON event
 */
 void CG_FireWeapon( centity_t *cent, qboolean altFire ) {
 	entityState_t *ent;
-	int				c;
+	int				c, i;
 	weaponInfo_t	*weap;
 
 	if (cent->isATST)
@@ -1617,6 +1613,7 @@ void CG_FireWeapon( centity_t *cent, qboolean altFire ) {
 	// mark the entity as muzzle flashing, so when it is added it will
 	// append the flash to the weapon model
 	cent->muzzleFlashTime = cg.time;
+	cent->muzzleFlash = qtrue;
 
 	if (cg.predictedPlayerState.clientNum == cent->currentState.number)
 	{
@@ -1676,10 +1673,15 @@ void CG_FireWeapon( centity_t *cent, qboolean altFire ) {
 		//trap_S_StartSound (NULL, cent->currentState.number, CHAN_ITEM, cgs.media.quadSound );
 	}
 
+	for (i = 0; i < WP_NUM_WEAPONS; i++ ) {
+		if (cg_weapons[i].chargeSound)
+			trap_S_StopSound(ent->number, CHAN_WEAPON, cg_weapons[i].chargeSound);
+		if (cg_weapons[i].altChargeSound)
+			trap_S_StopSound(ent->number, CHAN_WEAPON, cg_weapons[i].altChargeSound);
+	}
 
 	// play a sound
-	if (altFire)
-	{
+	if (altFire) {
 		// play a sound
 		for ( c = 0 ; c < 4 ; c++ ) {
 			if ( !weap->altFlashSound[c] ) {
@@ -1688,18 +1690,11 @@ void CG_FireWeapon( centity_t *cent, qboolean altFire ) {
 		}
 		if ( c > 0 ) {
 			c = rand() % c;
-			if ( weap->altFlashSound[c] )
-			{
+			if ( weap->altFlashSound[c] ) {
 				trap_S_StartSound( NULL, ent->number, CHAN_WEAPON, weap->altFlashSound[c] );
 			}
 		}
-//		if ( weap->altFlashSnd )
-//		{
-//			trap_S_StartSound( NULL, ent->number, CHAN_WEAPON, weap->altFlashSnd );
-//		}
-	}
-	else
-	{
+	} else {
 		// play a sound
 		for ( c = 0 ; c < 4 ; c++ ) {
 			if ( !weap->flashSound[c] ) {
@@ -1708,8 +1703,7 @@ void CG_FireWeapon( centity_t *cent, qboolean altFire ) {
 		}
 		if ( c > 0 ) {
 			c = rand() % c;
-			if ( weap->flashSound[c] )
-			{
+			if ( weap->flashSound[c] ) {
 				trap_S_StartSound( NULL, ent->number, CHAN_WEAPON, weap->flashSound[c] );
 			}
 		}
