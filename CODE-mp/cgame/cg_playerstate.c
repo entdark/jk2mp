@@ -565,10 +565,12 @@ void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops ) {
 	// run events
 	CG_CheckPlayerstateEvents( ps, ops );
 
+	//mme
+	cg.predictedPlayerEntity.pe.viewHeight = ps->viewheight;
 	// smooth the ducking viewheight change
 	if ( ps->viewheight != ops->viewheight ) {
-		cg.duckChange = ps->viewheight - ops->viewheight;
-		cg.duckTime = cg.time;
+		cg.predictedPlayerEntity.pe.duckChange = ps->viewheight - ops->viewheight;
+		cg.predictedPlayerEntity.pe.duckTime = cg.time;
 	}
 }
 

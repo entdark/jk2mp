@@ -278,7 +278,7 @@ void CG_DrawBigString( int x, int y, const char *s, float alpha ) {
 
 	color[0] = color[1] = color[2] = 1.0;
 	color[3] = alpha;
-	CG_DrawStringExt( x, y, s, color, qfalse, qtrue, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 0 );
+	CG_DrawStringExt( x, y, s, color, qfalse, qtrue, BIGCHAR_WIDTH*cgs.widthRatioCoef, BIGCHAR_HEIGHT, 0 );
 }
 
 void CG_DrawBigStringColor( int x, int y, const char *s, vec4_t color ) {
@@ -392,7 +392,7 @@ float *CG_FadeColor( int startMsec, int totalMsec ) {
 		return NULL;
 	}
 
-	t = cg.time - startMsec;
+	t = (cg.time - startMsec) + cg.timeFraction;
 
 	if ( t >= totalMsec ) {
 		return NULL;
@@ -580,19 +580,19 @@ void CG_DrawNumField (int x, int y, int width, int value,int charWidth,int charH
 		switch(style)
 		{
 		case NUM_FONT_SMALL:
-			CG_DrawPic( x,y, charWidth, charHeight, cgs.media.smallnumberShaders[frame] );
+			CG_DrawPic( x,y, charWidth*cgs.widthRatioCoef, charHeight, cgs.media.smallnumberShaders[frame] );
 			x++;	// For a one line gap
 			break;
 		case NUM_FONT_CHUNKY:
-			CG_DrawPic( x,y, charWidth, charHeight, cgs.media.chunkyNumberShaders[frame] );
+			CG_DrawPic( x,y, charWidth*cgs.widthRatioCoef, charHeight, cgs.media.chunkyNumberShaders[frame] );
 			break;
 		default:
 		case NUM_FONT_BIG:
-			CG_DrawPic( x,y, charWidth, charHeight, cgs.media.numberShaders[frame] );
+			CG_DrawPic( x,y, charWidth*cgs.widthRatioCoef, charHeight, cgs.media.numberShaders[frame] );
 			break;
 		}
 
-		x += (xWidth);
+		x += (xWidth)*cgs.widthRatioCoef;
 		ptr++;
 		l--;
 	}

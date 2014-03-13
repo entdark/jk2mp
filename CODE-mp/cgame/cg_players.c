@@ -2170,7 +2170,7 @@ static void CG_RunLerpFrame( centity_t *cent, clientInfo_t *ci, lerpFrame_t *lf,
 	if ( lf->frameTime == lf->oldFrameTime ) {
 		lf->backlerp = 0;
 	} else {
-		lf->backlerp = 1.0 - (float)( cg.time - lf->oldFrameTime ) / ( lf->frameTime - lf->oldFrameTime );
+		lf->backlerp = 1.0 - (cg.timeFraction + ( cg.time - lf->oldFrameTime )) / ( lf->frameTime - lf->oldFrameTime );
 	}
 }
 
@@ -2401,15 +2401,15 @@ CG_AddPainTwitch
 =================
 */
 static void CG_AddPainTwitch( centity_t *cent, vec3_t torsoAngles ) {
-	int		t;
+	float	t;
 	float	f;
 
-	t = cg.time - cent->pe.painTime;
+	t = (cg.time - cent->pe.painTime) + cg.timeFraction;
 	if ( t >= PAIN_TWITCH_TIME ) {
 		return;
 	}
 
-	f = 1.0 - (float)t / PAIN_TWITCH_TIME;
+	f = 1.0 - t / PAIN_TWITCH_TIME;
 
 	if ( cent->pe.painDirection ) {
 		torsoAngles[ROLL] += 20 * f;
@@ -3175,14 +3175,11 @@ static void CG_PlayerFlag( centity_t *cent, qhandle_t hModel ) {
 	vec3_t			boltOrg, tAng, getAng, right;
 	mdxaBone_t		boltMatrix;
 
-	if (cent->currentState.number == cg.snap->ps.clientNum &&
-		!cg.renderingThirdPerson)
-	{
+	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number && !cg.renderingThirdPerson) {
 		return;
 	}
 
-	if (!cent->ghoul2)
-	{
+	if (!cent->ghoul2) {
 		return;
 	}
 
@@ -3289,7 +3286,8 @@ static void CG_PlayerFloatSprite( centity_t *cent, qhandle_t shader ) {
 	int				rf;
 	refEntity_t		ent;
 
-	if ( cent->currentState.number == cg.snap->ps.clientNum && !cg.renderingThirdPerson ) {
+	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number
+		&& !cg.renderingThirdPerson ) {
 		rf = RF_THIRD_PERSON;		// only show in mirrors
 	} else {
 		rf = 0;
@@ -3355,12 +3353,17 @@ Float sprites over the player's head
 static void CG_PlayerSprites( centity_t *cent ) {
 //	int		team;
 
-	if (cg.snap &&
+	//mme
+	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number
+		&& !cg.renderingThirdPerson) 
+		return;
+
+	if (cg.playerCent &&
 		CG_IsMindTricked(cent->currentState.trickedentindex,
 		cent->currentState.trickedentindex2,
 		cent->currentState.trickedentindex3,
 		cent->currentState.trickedentindex4,
-		cg.snap->ps.clientNum))
+		cg.playerCent->currentState.number))
 	{
 		return; //this entity is mind-tricking the current client, so don't render it
 	}
@@ -3445,11 +3448,11 @@ static qboolean CG_PlayerShadow( centity_t *cent, float *shadowPlane ) {
 		return qfalse;
 	}
 
-	if (CG_IsMindTricked(cent->currentState.trickedentindex,
+	if (cg.playerCent && CG_IsMindTricked(cent->currentState.trickedentindex,
 		cent->currentState.trickedentindex2,
 		cent->currentState.trickedentindex3,
 		cent->currentState.trickedentindex4,
-		cg.snap->ps.clientNum))
+		cg.playerCent->currentState.number))
 	{
 		return qfalse; //this entity is mind-tricking the current client, so don't render it
 	}
@@ -3629,7 +3632,7 @@ void CG_ForcePushBlur( vec3_t org ) {
 void CG_ForceGripEffect( vec3_t org )
 {
 	localEntity_t	*ex;
-	float wv = sin( cg.time * 0.004f ) * 0.08f + 0.1f;
+	float wv = sin(cg.time * 0.004 + cg.timeFraction * 0.004) * 0.08f + 0.1f;
 
 	if (fx_vfps.integer <= 0)
 			fx_vfps.integer = 1;
@@ -3703,12 +3706,11 @@ Also called by CG_Missile for quad rockets, but nobody can tell...
 */
 void CG_AddRefEntityWithPowerups( refEntity_t *ent, entityState_t *state, int team ) {
 
-	if (CG_IsMindTricked(state->trickedentindex,
+	if (cg.playerCent && CG_IsMindTricked(state->trickedentindex,
 		state->trickedentindex2,
 		state->trickedentindex3,
 		state->trickedentindex4,
-		cg.snap->ps.clientNum))
-	{
+		cg.playerCent->currentState.number)) {
 		return; //this entity is mind-tricking the current client, so don't render it
 	}
 
@@ -3732,40 +3734,39 @@ void CG_AddRefEntityWithPowerups( refEntity_t *ent, entityState_t *state, int te
 #define MIN_SHIELD_TIME	2000.0
 
 
-void CG_PlayerShieldHit(int entitynum, vec3_t dir, int amount)
-{
+void CG_PlayerShieldHit(int entitynum, vec3_t dir, int amount) {
 	centity_t *cent;
 	int	time;
 
-	if (entitynum<0 || entitynum >= MAX_CLIENTS)
-	{
+	if (entitynum<0 || entitynum >= MAX_CLIENTS) {
 		return;
 	}
 
 	cent = &cg_entities[entitynum];
 
-	if (amount > 100)
-	{
+	if (amount > 100) {
 		time = cg.time + MAX_SHIELD_TIME;		// 2 sec.
-	}
-	else
-	{
+	} else {
 		time = cg.time + 500 + amount*15;
 	}
 
-	if (time > cent->damageTime)
-	{
+	if (cent->damageTime > time)
 		cent->damageTime = time;
-		VectorScale(dir, -1, dir);
-		vectoangles(dir, cent->damageAngles);
-	}
+
+	VectorScale(dir, -1, dir);
+	vectoangles(dir, cent->damageAngles);
+
+	if (time > cent->damageTime)
+		cent->damageTime = time;
+
+	cent->damageStartTime = cg.time;
 }
 
 
 void CG_DrawPlayerShield(centity_t *cent, vec3_t origin)
 {
 	refEntity_t ent;
-	int			alpha;
+	float		alpha;
 	float		scale;
 	
 	// Don't draw the shield when the player is dead.
@@ -3780,12 +3781,12 @@ void CG_DrawPlayerShield(centity_t *cent, vec3_t origin)
 	ent.origin[2] += 10.0;
 	AnglesToAxis( cent->damageAngles, ent.axis );
 
-	alpha = 255.0 * ((cent->damageTime - cg.time) / MIN_SHIELD_TIME) + random()*16;
+	alpha = 255.0 * (((cent->damageTime - cg.time) - cg.timeFraction) / MIN_SHIELD_TIME) + random()*16;
 	if (alpha>255)
 		alpha=255;
 
 	// Make it bigger, but tighter if more solid
-	scale = 1.4 - ((float)alpha*(0.4/255.0));		// Range from 1.0 to 1.4
+	scale = 1.4 - (alpha*(0.4/255.0));		// Range from 1.0 to 1.4
 	VectorScale( ent.axis[0], scale, ent.axis[0] );
 	VectorScale( ent.axis[1], scale, ent.axis[1] );
 	VectorScale( ent.axis[2], scale, ent.axis[2] );
@@ -3800,22 +3801,12 @@ void CG_DrawPlayerShield(centity_t *cent, vec3_t origin)
 }
 
 
-void CG_PlayerHitFX(centity_t *cent)
-{
-	centity_t *curent;
-
+void CG_PlayerHitFX(centity_t *cent) {
 	// only do the below fx if the cent in question is...uh...me, and it's first person.
-	if (cent->currentState.clientNum != cg.predictedPlayerState.clientNum || cg.renderingThirdPerson)
-	{
-		// Get the NON-PREDICTED player entity, because the predicted one doesn't have the damage info on it.
-		curent = &cg_entities[cent->currentState.number];
-
-		if (curent->damageTime > cg.time)
-		{
-			CG_DrawPlayerShield(curent, cent->lerpOrigin);
+	if ((cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number) || cg.renderingThirdPerson) {
+		if (cent->damageTime > cg.time && cent->damageStartTime <= cg.time) {
+			CG_DrawPlayerShield(cent, cent->lerpOrigin);
 		}
-
-		return;
 	}
 }
 
@@ -4290,30 +4281,37 @@ void CG_AddSaberBlade( centity_t *cent, centity_t *scent, refEntity_t *saber, in
 
 	if (/*cg.snap->ps.clientNum == cent->currentState.number && */
 		cgs.clientinfo[ cent->currentState.clientNum ].team != TEAM_SPECTATOR &&
-		!(cg.snap->ps.pm_flags & PMF_FOLLOW))
-	{
-		if (cent->saberLength < 1)
-		{
+		!(cg.snap->ps.pm_flags & PMF_FOLLOW)) {
+		if (cent->saberLength < 1) {
 			cent->saberLength = 1;
 			cent->saberExtendTime = cg.time;
 		}
 
-		if (cent->saberLength < SABER_LENGTH_MAX)
-		{
-			cent->saberLength += (cg.time - cent->saberExtendTime)*0.05;
+		if (cent->saberLength < SABER_LENGTH_MAX) {
+			cent->saberLength += ((cg.time - cent->saberExtendTime) + cg.timeFraction)*0.05;
 		}
 
-		if (cent->saberLength > SABER_LENGTH_MAX)
-		{
+		if (cent->saberLength > SABER_LENGTH_MAX) {
 			cent->saberLength = SABER_LENGTH_MAX;
 		}
 
 		cent->saberExtendTime = cg.time;
 		saberLen = cent->saberLength;
-	}
-	else
-	{
+	} else {
 		saberLen = SABER_LENGTH_MAX;
+	}
+
+	if ((cg.time - cg.oldTime) == 0) {
+		if (cent->saberLengthOld != cent->saberLength) {
+			float lenDif = cent->saberLength - cent->saberLengthOld;
+			saberLen = cent->saberLengthOld + lenDif * cg.timeFraction;
+			cent->saberLength = cent->saberLengthOld;
+		} else {
+			saberLen = cent->saberLengthOld;
+		}
+	} else {
+		saberLen = cent->saberLength;
+		cent->saberLengthOld = saberLen;
 	}
 
 /*
@@ -4448,7 +4446,10 @@ Ghoul2 Insert Start
 				{//only put marks on architecture
 					// Let's do some cool burn/glowing mark bits!!!
 					CG_CreateSaberMarks( client->saberTrail.oldPos[i], trace.endpos, trace.plane.normal );
-				
+
+					if (client->saberHitWallSoundDebounceTime > cg.time) {
+						client->saberHitWallSoundDebounceTime = 0;
+					}
 					//make a sound
 					if ( cg.time - client->saberHitWallSoundDebounceTime >= 100 )
 					{//ugh, need to have a real sound debouncer... or do this game-side
@@ -4528,7 +4529,9 @@ CheckTrail:
 	//	the system with very small trail slices...but perhaps doing it by distance would yield better results?
 	if ( cg.time > saberTrail->lastTime + 2 ) // 2ms
 	{
-		if ( (saberMoveData[cent->currentState.saberMove].trailLength > 0 || ((cent->currentState.powerups & (1 << PW_SPEED) && cg_speedTrail.integer)) || cent->currentState.saberInFlight) && cg.time < saberTrail->lastTime + 2000 ) // if we have a stale segment, don't draw until we have a fresh one
+		if ((saberMoveData[cent->currentState.saberMove].trailLength > 0
+			|| ((cent->currentState.powerups & (1 << PW_SPEED) && (cg_speedTrail.integer || cg_saberTrail.integer == 2))) || cent->currentState.saberInFlight)
+			&& cg.time < saberTrail->lastTime + 2000 ) // if we have a stale segment, don't draw until we have a fresh one
 		{
 			vec3_t	rgb1={255.0f,255.0f,255.0f};
 
@@ -4569,7 +4572,7 @@ CheckTrail:
 			VectorCopy( saberTrail->tip, fx.mVerts[2].origin );
 			VectorCopy( saberTrail->base, fx.mVerts[3].origin );
 
-			diff = cg.time - saberTrail->lastTime;
+			diff = (cg.time - saberTrail->lastTime) + cg.timeFraction;
 
 			// I'm not sure that clipping this is really the best idea
 			//This prevents the trail from showing at all in low framerate situations.
@@ -4687,6 +4690,8 @@ CheckTrail:
 	}
 
 JustDoIt:
+	if (cg_saberTrail.integer && cg.time < saberTrail->lastTime)
+		saberTrail->lastTime = cg.time;
 
 	if (client && cent->currentState.bolt2)
 	{
@@ -4755,8 +4760,11 @@ void CG_DrawPlayerSphere(centity_t *cent, vec3_t origin, float scale, int shader
 	refEntity_t ent;
 	
 	// Don't draw the shield when the player is dead.
-	if (cent->currentState.eFlags & EF_DEAD)
-	{
+	if (cent->currentState.eFlags & EF_DEAD) {
+		return;
+	}
+
+	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number && !cg.renderingThirdPerson) {
 		return;
 	}
 
@@ -5281,7 +5289,7 @@ static void CG_G2EntRunLerpFrame( centity_t *cent, lerpFrame_t *lf, int newAnima
 	if ( lf->frameTime == lf->oldFrameTime ) {
 		lf->backlerp = 0;
 	} else {
-		lf->backlerp = 1.0 - (float)( cg.time - lf->oldFrameTime ) / ( lf->frameTime - lf->oldFrameTime );
+		lf->backlerp = 1.0 - ((cg.time - lf->oldFrameTime) + cg.timeFraction) / (lf->frameTime - lf->oldFrameTime);
 	}
 }
 
@@ -5629,7 +5637,7 @@ void CG_DrawNoForceSphere(centity_t *cent, vec3_t origin, float scale, int shade
 	VectorScale(ent.axis[1], scale, ent.axis[1]);
 	VectorScale(ent.axis[2], -scale, ent.axis[2]);
 
-	ent.shaderRGBA[3] = (cent->currentState.genericenemyindex - cg.time)/8;
+	ent.shaderRGBA[3] = ((cent->currentState.genericenemyindex - cg.time) - cg.timeFraction) / 8.0f;
 	ent.renderfx |= RF_RGB_TINT;
 	if (ent.shaderRGBA[3] > 200)
 	{
@@ -5720,7 +5728,7 @@ void CG_G2Animated( centity_t *cent )
 		weapon = &cg_weapons[cent->currentState.weapon];
 		if (weapon)
 		{
-			if ( cg.time - cent->muzzleFlashTime <= MUZZLE_FLASH_TIME + 10 )
+			if ((cg.time - cent->muzzleFlashTime) + cg.timeFraction <= MUZZLE_FLASH_TIME + 10)
 			{	// Handle muzzle flashes
 				vec3_t flashorigin, flashdir;
 				mdxaBone_t boltMatrix;
@@ -5802,9 +5810,9 @@ void CG_G2Animated( centity_t *cent )
 
 	// Electricity
 	//------------------------------------------------
-	if ( cent->currentState.emplacedOwner > cg.time ) 
+	if (cent->currentState.emplacedOwner > cg.time) 
 	{
-		int	dif = cent->currentState.emplacedOwner - cg.time;
+		float dif = (cent->currentState.emplacedOwner - cg.time) - cg.timeFraction;
 
 		if ( dif > 0 && random() > 0.4f )
 		{
@@ -5834,7 +5842,10 @@ void CG_G2Animated( centity_t *cent )
 
 			trap_R_AddRefEntityToScene( &legs );
 
-			if ( random() > 0.9f )
+			if ((random() > 0.9f)
+				&& cg.frametime > 0
+				&& ((cg.frametime < 50 && cg.time % 50 <= cg.frametime)
+				|| cg.frametime >= 50))
 				trap_S_StartSound ( NULL, cent->currentState.number, CHAN_AUTO, cgs.media.crackleSound );
 		}
 	} 
@@ -6072,48 +6083,39 @@ void CG_Player( centity_t *cent ) {
 	}
 
 	//If this client has tricked you.
-	if (CG_IsMindTricked(cent->currentState.trickedentindex,
+	if (cg.playerCent && CG_IsMindTricked(cent->currentState.trickedentindex,
 		cent->currentState.trickedentindex2,
 		cent->currentState.trickedentindex3,
 		cent->currentState.trickedentindex4,
-		cg.snap->ps.clientNum))
-	{
-		if (cent->trickAlpha > 1)
-		{
+		cg.playerCent->currentState.number)) {
+		if (cent->trickAlpha > 1) {
 			cent->trickAlpha -= (cg.time - cent->trickAlphaTime)*0.5;
 			cent->trickAlphaTime = cg.time;
 
-			if (cent->trickAlpha < 0)
-			{
+			if (cent->trickAlpha < 0) {
 				cent->trickAlpha = 0;
 			}
 
 			doAlpha = 1;
-		}
-		else
-		{
+		} else {
 			doAlpha = 1;
 			cent->trickAlpha = 1;
 			cent->trickAlphaTime = cg.time;
 			iwantout = 1;
 		}
-	}
-	else
-	{
-		if (cent->trickAlpha < 255)
-		{
+	} else {
+		if (cent->trickAlpha < 255) {
 			cent->trickAlpha += (cg.time - cent->trickAlphaTime);
 			cent->trickAlphaTime = cg.time;
 
-			if (cent->trickAlpha > 255)
-			{
+			if (cent->trickAlpha > 255) {
+				cent->trickAlpha = 255;
+			} else if (cent->trickAlpha < 0) {
 				cent->trickAlpha = 255;
 			}
 
 			doAlpha = 1;
-		}
-		else
-		{
+		} else {
 			cent->trickAlpha = 255;
 			cent->trickAlphaTime = cg.time;
 		}
@@ -6121,20 +6123,17 @@ void CG_Player( centity_t *cent ) {
 
 	// get the player model information
 	renderfx = 0;
-	if ( cent->currentState.number == cg.snap->ps.clientNum) {
+	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
+		if ( mov_filterMask.integer & movMaskClient) {
+			return;
+		}
 		if (!cg.renderingThirdPerson) {
-			if (!cg_fpls.integer || cent->currentState.weapon != WP_SABER)
-			{
+			if (!cg_fpls.integer || cent->currentState.weapon != WP_SABER) {
 				renderfx = RF_THIRD_PERSON;			// only draw in mirrors
 			}
 		} else {
 			if (cg_cameraMode.integer) {
 				iwantout = 1;
-
-				
-				// goto minimal_add;
-				
-				// NOTENOTE Temporary
 				return;
 			}
 		}
@@ -6152,8 +6151,7 @@ void CG_Player( centity_t *cent ) {
 	// Save the old weapon, to verify that it is or is not the same as the new weapon.
 	// rww - Make sure weapons don't get set BEFORE cent->ghoul2 is initialized or else we'll have no
 	// weapon bolted on
-	if (cent->currentState.saberInFlight)
-	{
+	if (cent->currentState.saberInFlight) {
 		cent->ghoul2weapon = g2WeaponInstances[WP_SABER];
 	}
 
@@ -6220,13 +6218,15 @@ skipEffectOverride:
 
 // minimal_add:
 
-	team = cgs.clientinfo[ cent->currentState.clientNum ].team;
+	team = ci->team;
 
 	if (cgs.gametype >= GT_TEAM && cg_drawFriend.integer &&
-		cent->currentState.number != cg.snap->ps.clientNum)			// Don't show a sprite above a player's own head in 3rd person.
+		cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number) // Don't show a sprite above a player's own head in 3rd person.
 	{	// If the view is either a spectator or on the same team as this character, show a symbol above their head.
-		if ((cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR || cg.snap->ps.persistant[PERS_TEAM] == team) &&
-			!(cent->currentState.eFlags & EF_DEAD))
+		if (((cg.playerPredicted
+			&& (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR || cg.snap->ps.persistant[PERS_TEAM] == team))
+			|| (!cg.playerPredicted && cgs.clientinfo[cg.playerCent->currentState.number].team == team))
+			&& !(cent->currentState.eFlags & EF_DEAD))
 		{
 			if (team == TEAM_RED)
 			{
@@ -6240,14 +6240,16 @@ skipEffectOverride:
 	}
 
 	if (cgs.gametype == GT_JEDIMASTER && cg_drawFriend.integer &&
-		cent->currentState.number != cg.snap->ps.clientNum)			// Don't show a sprite above a player's own head in 3rd person.
+		cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number) // Don't show a sprite above a player's own head in 3rd person.
 	{	// If the view is either a spectator or on the same team as this character, show a symbol above their head.
-		if ((cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR || cg.snap->ps.persistant[PERS_TEAM] == team) &&
-			!(cent->currentState.eFlags & EF_DEAD))
+		if (((cg.playerPredicted
+			&& (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR || cg.snap->ps.persistant[PERS_TEAM] == team))
+			|| (!cg.playerPredicted && cgs.clientinfo[cg.playerCent->currentState.number].team == team))
+			&& !(cent->currentState.eFlags & EF_DEAD))
 		{
 			if (CG_ThereIsAMaster())
 			{
-				if (!cg.snap->ps.isJediMaster)
+				if (cg.playerPredicted?!cg.snap->ps.isJediMaster:cg.playerCent->currentState.isJediMaster)
 				{
 					if (!cent->currentState.isJediMaster)
 					{
@@ -6278,7 +6280,7 @@ skipEffectOverride:
 		seeker.renderfx = 0; //renderfx;
 							 //don't show in first person?
 
-		angle = ((cg.time / 12) & 255) * (M_PI * 2) / 255;
+		angle = (((cg.time / 12) & 255) + cg.timeFraction / 12) * (M_PI * 2) / 255;
 		dir[0] = cos(angle) * 20;
 		dir[1] = sin(angle) * 20;
 		dir[2] = cos(angle) * 5;
@@ -6286,22 +6288,17 @@ skipEffectOverride:
 
 		VectorCopy(seeker.origin, seekorg);
 
-		if (cent->currentState.genericenemyindex > 1024)
-		{
-			prefig = (cent->currentState.genericenemyindex-cg.time)/80;
+		if (cent->currentState.genericenemyindex > 1024) {
+			prefig = ((cent->currentState.genericenemyindex-cg.time)-cg.timeFraction)/80;
 
 			if (prefig > 55)
-			{
 				prefig = 55;
-			}
 			else if (prefig < 1)
-			{
 				prefig = 1;
-			}
 
 			elevated[2] -= 55-prefig;
 
-			angle = ((cg.time / 12) & 255) * (M_PI * 2) / 255;
+			angle = (((cg.time / 12) & 255) + cg.timeFraction / 12) * (M_PI * 2) / 255;
 			dir[0] = cos(angle) * 20;
 			dir[1] = sin(angle) * 20;
 			dir[2] = cos(angle) * 5;
@@ -6393,7 +6390,7 @@ doEssentialOne:
 	}
 	else
 	{
-		if (cg_fpls.integer && cent->currentState.weapon == WP_SABER && cg.snap && cent->currentState.number == cg.snap->ps.clientNum)
+		if (cg_fpls.integer && cent->currentState.weapon == WP_SABER && cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number)
 		{
 
 			if (cgFPLSState != cg_fpls.integer)
@@ -6668,8 +6665,8 @@ doEssentialTwo:
 		efOrg[1] = lHandMatrix.matrix[1][3];
 		efOrg[2] = lHandMatrix.matrix[2][3];
 
-		if ( (cent->currentState.forcePowersActive & (1 << FP_GRIP)) &&
-			(cg.renderingThirdPerson || cent->currentState.number != cg.snap->ps.clientNum) )
+		if ((cent->currentState.forcePowersActive & (1 << FP_GRIP)) &&
+			(cg.renderingThirdPerson || (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number)))
 		{
 			vec3_t boltDir;
 			vec3_t origBolt;
@@ -6685,7 +6682,7 @@ doEssentialTwo:
 				char *limbName;
 				char *limbCapName;
 				vec3_t armAng;
-				float wv = sin( cg.time * 0.003f ) * 0.08f + 0.1f;
+				float wv = sin(cg.time * 0.003 + cg.timeFraction * 0.003) * 0.08f + 0.1f;
 
 				rotateBone = "lradius";
 				limbName = "l_arm";
@@ -6781,9 +6778,9 @@ doEssentialTwo:
 		}
 	}
 
-	if (cg_entities[cent->currentState.number].teamPowerEffectTime > cg.time)
+	if (cent->teamPowerEffectTime > cg.time && cent->teamPowerEffectTime <= cg.time + 1000)
 	{
-		if (cg_entities[cent->currentState.number].teamPowerType == 3)
+		if (cent->teamPowerEffectTime == 3)
 		{ //absorb is a somewhat different effect entirely
 			//Guess I'll take care of it where it's always been, just checking these values instead.
 		}
@@ -6821,7 +6818,7 @@ doEssentialTwo:
 				legs.shaderRGBA[2] = 0;
 			}
 
-			legs.shaderRGBA[3] = ((cg_entities[cent->currentState.number].teamPowerEffectTime - cg.time)/8);
+			legs.shaderRGBA[3] = (((cent->teamPowerEffectTime - cg.time) - cg.timeFraction) / 8);
 
 			legs.customShader = trap_R_RegisterShader( "powerups/ysalimarishell" );
 			trap_R_AddRefEntityToScene(&legs);
@@ -6836,10 +6833,10 @@ doEssentialTwo:
 	}
 
 	//If you've tricked this client.
-	if (CG_IsMindTricked(cg.snap->ps.fd.forceMindtrickTargetIndex,
-		cg.snap->ps.fd.forceMindtrickTargetIndex2,
-		cg.snap->ps.fd.forceMindtrickTargetIndex3,
-		cg.snap->ps.fd.forceMindtrickTargetIndex4,
+	if (cg.playerCent && CG_IsMindTricked(cg.playerCent->currentState.trickedentindex,
+		cg.playerCent->currentState.trickedentindex2,
+		cg.playerCent->currentState.trickedentindex3,
+		cg.playerCent->currentState.trickedentindex4,
 		cent->currentState.number))
 	{
 		if (cent->ghoul2)
@@ -6892,7 +6889,8 @@ doEssentialTwo:
 		}
 	}
 
-	if (cgs.gametype == GT_HOLOCRON && cent->currentState.time2 && (cg.renderingThirdPerson || cg.snap->ps.clientNum != cent->currentState.number))
+	if (cgs.gametype == GT_HOLOCRON && cent->currentState.time2
+		&& (cg.renderingThirdPerson || (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number)))
 	{
 		int i = 0;
 		int renderedHolos = 0;
@@ -6913,7 +6911,7 @@ doEssentialTwo:
 
 				if (renderedHolos == 0)
 				{
-					angle = ((cg.time / 8) & 255) * (M_PI * 2) / 255;
+					angle = (((cg.time / 8) & 255) + cg.timeFraction / 8) * (M_PI * 2) / 255;
 					dir[0] = cos(angle) * 20;
 					dir[1] = sin(angle) * 20;
 					dir[2] = cos(angle) * 20;
@@ -6928,7 +6926,7 @@ doEssentialTwo:
 				}
 				else if (renderedHolos == 1)
 				{
-					angle = ((cg.time / 8) & 255) * (M_PI * 2) / 255 + M_PI;
+					angle = (((cg.time / 8) & 255) + cg.timeFraction / 8) * (M_PI * 2) / 255 + M_PI;
 					if (angle > M_PI * 2)
 						angle -= (float)M_PI * 2;
 					dir[0] = sin(angle) * 20;
@@ -6945,7 +6943,7 @@ doEssentialTwo:
 				}
 				else
 				{
-					angle = ((cg.time / 6) & 255) * (M_PI * 2) / 255 + 0.5 * M_PI;
+					angle = (((cg.time / 6) & 255) + cg.timeFraction / 6) * (M_PI * 2) / 255 + 0.5 * M_PI;
 					if (angle > M_PI * 2)
 						angle -= (float)M_PI * 2;
 					dir[0] = sin(angle) * 20;
@@ -6973,7 +6971,7 @@ doEssentialTwo:
 					holoCenter[1] = holoRef.origin[1] + holoRef.axis[2][1]*18;
 					holoCenter[2] = holoRef.origin[2] + holoRef.axis[2][2]*18;
 
-					wv = sin( cg.time * 0.004f ) * 0.08f + 0.1f;
+					wv = sin(cg.time * 0.004 + cg.timeFraction * 0.004) * 0.08f + 0.1f;
 
 					VectorCopy(holoCenter, fxSArgs.origin);
 					VectorClear(fxSArgs.vel);
@@ -7078,7 +7076,7 @@ stillDoSaber:
 	{
 		if (!cent->currentState.saberInFlight && !(cent->currentState.eFlags & EF_DEAD))
 		{
-			if (cg.snap->ps.clientNum == cent->currentState.number)
+			if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number)
 			{
 				trap_S_AddLoopingSound( cent->currentState.number, cg.refdef.vieworg, vec3_origin, 
 					trap_S_RegisterSound( "sound/weapons/saber/saberhum1.wav" ) );
@@ -7171,7 +7169,7 @@ stillDoSaber:
 				{
 					if (cent->bolt3 < 90)
 					{
-						cent->bolt3 += (cg.time - cent->bolt2)*0.5;
+						cent->bolt3 += ((cg.time - cent->bolt2) + cg.timeFraction) * 0.5f;
 
 						if (cent->bolt3 > 90)
 						{
@@ -7180,7 +7178,7 @@ stillDoSaber:
 					}
 					else if (cent->bolt3 > 90)
 					{
-						cent->bolt3 -= (cg.time - cent->bolt2)*0.5;
+						cent->bolt3 -= ((cg.time - cent->bolt2) + cg.timeFraction) * 0.5f;
 
 						if (cent->bolt3 < 90)
 						{
@@ -7241,7 +7239,7 @@ stillDoSaber:
 					efOrg[1] = boltMatrix.matrix[1][3];
 					efOrg[2] = boltMatrix.matrix[2][3];
 
-					wv = sin( cg.time * 0.003f ) * 0.08f + 0.1f;
+					wv = sin(cg.time * 0.003 + cg.timeFraction * 0.003) * 0.08f + 0.1f;
 
 					//trap_FX_AddSprite( NULL, efOrg, NULL, NULL, 8.0f, 8.0f, wv, wv, 0.0f, 0.0f, 1.0f, cgs.media.yellowSaberGlowShader, 0x08000000 );
 					VectorCopy(efOrg, fxSArgs.origin);
@@ -7306,7 +7304,9 @@ stillDoSaber:
 		goto endOfCall;
 	}
 
-	if ((cg.snap->ps.fd.forcePowersActive & (1 << FP_SEE)) && cg.snap->ps.clientNum != cent->currentState.number)
+	if (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number
+		&& (cg.playerCent->currentState.forcePowersActive & (1 << FP_SEE))
+		&& cg_auraShell.integer)
 	{
 		legs.shaderRGBA[0] = 255;
 		legs.shaderRGBA[1] = 255;
@@ -7487,7 +7487,7 @@ doEssentialThree:
 		}
 
 		cent->frame_hold.renderfx |= RF_FORCE_ENT_ALPHA;
-		cent->frame_hold.shaderRGBA[3] = (cent->frame_hold_time - cg.time);
+		cent->frame_hold.shaderRGBA[3] = (cent->frame_hold_time - cg.time) - cg.timeFraction;
 		if (cent->frame_hold.shaderRGBA[3] > 254)
 		{
 			cent->frame_hold.shaderRGBA[3] = 254;
@@ -7514,9 +7514,8 @@ doEssentialThree:
 	// add powerups floating behind the player
 	CG_PlayerPowerups( cent, &legs );
 
-	if ((cent->currentState.forcePowersActive & (1 << FP_RAGE)) &&
-		(cg.renderingThirdPerson || cent->currentState.number != cg.snap->ps.clientNum))
-	{
+	if ((cent->currentState.forcePowersActive & (1 << FP_RAGE)) && (cg.renderingThirdPerson
+		|| (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number))) {
 		//legs.customShader = cgs.media.rageShader;
 		legs.renderfx &= ~RF_FORCE_ENT_ALPHA;
 		legs.renderfx &= ~RF_MINLIGHT;
@@ -7526,15 +7525,11 @@ doEssentialThree:
 		legs.shaderRGBA[1] = legs.shaderRGBA[2] = 0;
 		legs.shaderRGBA[3] = 255;
 
-		if ( rand() & 1 )
-		{
+		if ( rand() & 1 ) {
 			legs.customShader = cgs.media.electricBodyShader;	
-		}
-		else
-		{
+		} else {
 			legs.customShader = cgs.media.electricBody2Shader;
 		}
-
 		trap_R_AddRefEntityToScene(&legs);
 	}
 
@@ -7568,8 +7563,8 @@ doEssentialThree:
 	}
 	//if (cent->currentState.forcePowersActive & (1 << FP_ABSORB))
 	//Showing only when the power has been active (absorbed something) recently now, instead of always.
-	if (cg_entities[cent->currentState.number].teamPowerEffectTime > cg.time && cg_entities[cent->currentState.number].teamPowerType == 3)
-	{ //aborb is represented by blue..
+	if (cent->teamPowerEffectTime > cg.time && cent->teamPowerEffectTime <= cg.time + 1000 && cent->teamPowerType == 3)
+	{ //absorb is represented by blue..
 		legs.shaderRGBA[0] = 0;
 		legs.shaderRGBA[1] = 0;
 		legs.shaderRGBA[2] = 255;
@@ -7598,11 +7593,13 @@ doEssentialThree:
 		legs.renderfx &= ~RF_NODEPTH;
 	}
 
-	if ((cg.snap->ps.fd.forcePowersActive & (1 << FP_SEE)) && cg.snap->ps.clientNum != cent->currentState.number && cg_auraShell.integer)
+	if (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number
+		&& (cg.playerCent->currentState.forcePowersActive & (1 << FP_SEE))
+		&& cg_auraShell.integer)
 	{
 		if (cgs.gametype >= GT_TEAM)
 		{	// A team game
-			switch(cgs.clientinfo[ cent->currentState.clientNum ].team)
+			switch(ci->team)
 			{
 			case TEAM_RED:
 				legs.shaderRGBA[0] = 255;
@@ -7637,7 +7634,7 @@ doEssentialThree:
 */		{	// See through walls.
 			legs.renderfx |= RF_MINLIGHT | RF_NODEPTH;
 
-			if (cg.snap->ps.fd.forcePowerLevel[FP_SEE] < FORCE_LEVEL_2)
+			if (cg.snap->ps.fd.forcePowerLevel[FP_SEE] < FORCE_LEVEL_2 && cg.playerPredicted)
 			{ //only level 2+ can see players through walls
 				legs.renderfx &= ~RF_NODEPTH;
 			}
@@ -7652,9 +7649,8 @@ doEssentialThree:
 
 	// Electricity
 	//------------------------------------------------
-	if ( cent->currentState.emplacedOwner > cg.time ) 
-	{
-		int	dif = cent->currentState.emplacedOwner - cg.time;
+	if ( cent->currentState.emplacedOwner > cg.time ) {
+		float dif = (cent->currentState.emplacedOwner - cg.time) - cg.timeFraction;
 
 		if ( dif > 0 && random() > 0.4f )
 		{
@@ -7684,13 +7680,15 @@ doEssentialThree:
 
 			trap_R_AddRefEntityToScene( &legs );
 
-			if ( random() > 0.9f )
+			if ((random() > 0.9f)
+				&& cg.frametime > 0
+				&& ((cg.frametime < 50 && cg.time % 50 <= cg.frametime)
+				|| cg.frametime >= 50))
 				trap_S_StartSound ( NULL, cent->currentState.number, CHAN_AUTO, cgs.media.crackleSound );
 		}
 	} 
 
-	if (cent->currentState.powerups & (1 << PW_SHIELDHIT))
-	{
+	if (cent->currentState.powerups & (1 << PW_SHIELDHIT)) {
 		/*
 		legs.shaderRGBA[0] = legs.shaderRGBA[1] = legs.shaderRGBA[2] = 255.0f * 0.5f;//t;
 		legs.shaderRGBA[3] = 255;
@@ -7729,8 +7727,9 @@ CG_ResetPlayerEntity
 A player just came into view or teleported, so reset all animation info
 ===============
 */
-void CG_ResetPlayerEntity( centity_t *cent ) 
-{
+void CG_ResetPlayerEntity( centity_t *cent ) {
+	int maxs;
+
 	cent->errorTime = -99999;		// guarantee no error decay added
 	cent->extrapolated = qfalse;	
 
@@ -7754,6 +7753,17 @@ void CG_ResetPlayerEntity( centity_t *cent )
 	cent->pe.torso.yawing = qfalse;
 	cent->pe.torso.pitchAngle = cent->rawAngles[PITCH];
 	cent->pe.torso.pitching = qfalse;
+
+	//mme
+	cent->pe.landTime = 0;
+	cent->pe.duckTime = 0;
+	cent->pe.stepTime = 0;
+
+	maxs = ((cent->currentState.solid >> 16) & 255) - 32;
+	if ( maxs == 46 )
+		cent->pe.viewHeight = DEFAULT_VIEWHEIGHT;
+	else
+		cent->pe.viewHeight = CROUCH_VIEWHEIGHT;
 
 	if ((cent->ghoul2 == NULL) && trap_G2_HaveWeGhoul2Models(cgs.clientinfo[cent->currentState.clientNum].ghoul2Model))
 	{

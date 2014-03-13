@@ -232,7 +232,7 @@ void TurretClientRun(centity_t *ent)
 			ent->dustTrailTime = cg.time;
 		}
 
-		turnAmount = (cg.time-ent->dustTrailTime)*0.03;
+		turnAmount = ((cg.time - ent->dustTrailTime) + cg.timeFraction) * 0.03f;
 
 		if (turnAmount > 360)
 		{

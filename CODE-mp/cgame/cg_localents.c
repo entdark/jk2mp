@@ -236,13 +236,13 @@ void CG_AddFragment( localEntity_t *le ) {
 
 	if ( le->pos.trType == TR_STATIONARY ) {
 		// sink into the ground if near the removal time
-		int		t;
+		float	t;
 		float	t_e;
 		
-		t = le->endTime - cg.time;
+		t = (le->endTime - cg.time) + cg.timeFraction;
 		if ( t < (SINK_TIME*2) ) {
 			le->refEntity.renderfx |= RF_FORCE_ENT_ALPHA;
-			t_e = (float)((float)(le->endTime - cg.time)/(SINK_TIME*2));
+			t_e = (float)(t/(SINK_TIME*2));
 			t_e = (int)((t_e)*255);
 
 			if (t_e > 255)
@@ -343,7 +343,7 @@ void CG_AddFadeRGB( localEntity_t *le ) {
 
 	re = &le->refEntity;
 
-	c = ( le->endTime - cg.time ) * le->lifeRate;
+	c = ((le->endTime - cg.time) - cg.timeFraction) * le->lifeRate;
 	c *= 0xff;
 
 	re->shaderRGBA[0] = le->color[0] * c;
@@ -479,7 +479,7 @@ static void CG_AddScaleFade( localEntity_t *le ) {
 	re = &le->refEntity;
 
 	// fade / grow time
-	c = ( le->endTime - cg.time ) * le->lifeRate;
+	c = ((le->endTime - cg.time) - cg.timeFraction) * le->lifeRate;
 
 	re->shaderRGBA[3] = 0xff * c * le->color[3];
 	re->radius = le->radius * ( 1.0 - c ) + 8;
@@ -516,7 +516,7 @@ static void CG_AddFallScaleFade( localEntity_t *le ) {
 	re = &le->refEntity;
 
 	// fade time
-	c = ( le->endTime - cg.time ) * le->lifeRate;
+	c = ((le->endTime - cg.time) - cg.timeFraction) * le->lifeRate;
 
 	re->shaderRGBA[3] = 0xff * c * le->color[3];
 
@@ -555,7 +555,7 @@ static void CG_AddExplosion( localEntity_t *ex ) {
 	if ( ex->light ) {
 		float		light;
 
-		light = (float)( cg.time - ex->startTime ) / ( ex->endTime - ex->startTime );
+		light = (float)((cg.time - ex->startTime) + cg.timeFraction) / (ex->endTime - ex->startTime);
 		if ( light < 0.5 ) {
 			light = 1.0;
 		} else {
@@ -577,7 +577,7 @@ static void CG_AddSpriteExplosion( localEntity_t *le ) {
 
 	re = le->refEntity;
 
-	c = ( le->endTime - cg.time ) / ( float ) ( le->endTime - le->startTime );
+	c = ((le->endTime - cg.time) - cg.timeFraction) / (float)(le->endTime - le->startTime);
 	if ( c > 1 ) {
 		c = 1.0;	// can happen during connection problems
 	}
@@ -596,7 +596,7 @@ static void CG_AddSpriteExplosion( localEntity_t *le ) {
 	if ( le->light ) {
 		float		light;
 
-		light = (float)( cg.time - le->startTime ) / ( le->endTime - le->startTime );
+		light = (( cg.time - le->startTime ) + cg.timeFraction) / ( le->endTime - le->startTime );
 		if ( light < 0.5 ) {
 			light = 1.0;
 		} else {
@@ -636,7 +636,7 @@ void CG_AddScorePlum( localEntity_t *le ) {
 
 	re = &le->refEntity;
 
-	c = ( le->endTime - cg.time ) * le->lifeRate;
+	c = ((le->endTime - cg.time) - cg.timeFraction ) * le->lifeRate;
 
 	score = le->radius;
 	if (score < 0) {
@@ -721,7 +721,7 @@ void CG_AddOLine( localEntity_t *le )
 
 	re = &le->refEntity;
 
-	frac = (cg.time - le->startTime) / ( float ) ( le->endTime - le->startTime );
+	frac = ((cg.time - le->startTime) + cg.timeFraction) / (float) (le->endTime - le->startTime);
 	if ( frac > 1 ) 
 		frac = 1.0;	// can happen during connection problems
 	else if (frac < 0)

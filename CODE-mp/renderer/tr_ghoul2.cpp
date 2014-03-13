@@ -455,6 +455,9 @@ static int G2_GetBonePoolIndex(	const mdxaHeader_t *pMDXAHeader, int iFrame, int
 
 #define DEBUG_G2_TIMING (0)
 
+static int incomingTimeLast = 0;
+static float incomingTimeFractionLast = 0.0f;
+
 // transform each individual bone's information - making sure to use any override information provided, both for angles and for animations, as
 // well as multiplying each bone's matrix by it's parents matrix 
 void G2_TransformBone (CTransformBone &TB)
@@ -491,7 +494,23 @@ void G2_TransformBone (CTransformBone &TB)
 
 		if (boneList[boneListIndex].flags & BONE_ANIM_BLEND)
 		{
-			float blendTime = TB.incomingTime - boneList[boneListIndex].blendStart;
+			//float blendTime = TB.incomingTime - boneList[boneListIndex].blendStart;
+			float blendTime;
+			//hmm maybe this thing is not even needed...
+			if (!tr.refdef.time) {
+				blendTime = (TB.incomingTime - boneList[boneListIndex].blendStart);
+			} else if (tr.refdef.time == incomingTimeLast) {
+				if (tr.refdef.timeFraction >= incomingTimeFractionLast) {
+					blendTime = (tr.refdef.time - boneList[boneListIndex].blendStart) + tr.refdef.timeFraction;
+					incomingTimeFractionLast = tr.refdef.timeFraction;
+				} else {
+					blendTime = (tr.refdef.time - boneList[boneListIndex].blendStart) + incomingTimeFractionLast;
+				}
+			} else {
+				blendTime = (tr.refdef.time - boneList[boneListIndex].blendStart) + tr.refdef.timeFraction;
+				incomingTimeLast = tr.refdef.time;
+				incomingTimeFractionLast = tr.refdef.timeFraction;
+			}
 			// only set up the blend anim if we actually have some blend time left on this bone anim - otherwise we might corrupt some blend higher up the hiearchy
 			if (blendTime>=0.0f&&blendTime < boneList[boneListIndex].blendTime)
 			{
@@ -520,7 +539,7 @@ void G2_TransformBone (CTransformBone &TB)
 			}
 			else
 			{			
-				time = (TB.incomingTime - boneList[boneListIndex].startTime) / 50.0f;
+				time = ((tr.refdef.time ? tr.refdef.time : TB.incomingTime - boneList[boneListIndex].startTime) + tr.refdef.timeFraction) / 50.0f;
 			}
 			if (time<0)
 			{
@@ -872,10 +891,10 @@ void G2_TransformBone (CTransformBone &TB)
 		Multiply_3x4Matrix(&firstPass, &TB.bonePtr[TB.parent].second, &tbone[2]);
 
 		// are we attempting to blend with the base animation? and still within blend time?
-		if (boneOverride.boneBlendTime && (((boneOverride.boneBlendTime + boneOverride.boneBlendStart) < TB.incomingTime)))
+		if (boneOverride.boneBlendTime && (((boneOverride.boneBlendTime + boneOverride.boneBlendStart) < tr.refdef.time?tr.refdef.time:TB.incomingTime)))
 		{
 			// ok, we are supposed to be blending. Work out lerp
-			const float blendTime = TB.incomingTime - boneList[boneListIndex].boneBlendStart;
+			const float blendTime = (tr.refdef.time?tr.refdef.time:TB.incomingTime - boneList[boneListIndex].boneBlendStart) + tr.refdef.timeFraction;
 			float blendLerp = (blendTime / boneList[boneListIndex].boneBlendTime);
 			if (blendLerp <= 1)
 			{

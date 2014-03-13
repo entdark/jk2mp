@@ -949,6 +949,9 @@ typedef struct {
 #define FUNCTABLE_SIZE2		10
 #define FUNCTABLE_MASK		(FUNCTABLE_SIZE-1)
 
+float NewSinTable (double jediOutcast);
+float NewCosTable (double jediOutcast);
+
 
 // the renderer front end should never modify glstate_t
 typedef struct {
@@ -1274,7 +1277,7 @@ extern cvar_t	*mme_saveShot;
 extern cvar_t	*mme_saveDepth;
 
 
-float R_NoiseGet4f( float x, float y, float z, float t );
+float R_NoiseGet4f( float x, float y, float z, double t );
 void  R_NoiseInit( void );
 
 void R_SwapBuffers( int );

@@ -199,10 +199,6 @@ PROTOCOL
 //v1.03 #define	PROTOCOL_VERSION	15
 #define	PROTOCOL_VERSION	16	//v1.04
 
-// maintain a list of compatible protocols for demo playing
-// NOTE: that stuff only works with two digits protocols
-extern int demo_protocols[];
-
 #define	UPDATE_SERVER_NAME		"updatejk2.ravensoft.com"
 #define MASTER_SERVER_NAME		"masterjk2.ravensoft.com"
 
@@ -1041,3 +1037,5 @@ extern huffman_t clientHuffTables;
 #define CL_DECODE_START		4
 
 #endif // _QCOMMON_H_
+
+extern qboolean demo15detected;

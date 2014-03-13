@@ -183,7 +183,7 @@ static int demoSetupView( void) {
 			
 			if ( cent->currentState.number < MAX_CLIENTS ) {
 				cg.playerCent = cent;
-				cg.playerPredicted = cent == &cg_entities[cg.snap->ps.clientNum];
+				cg.playerPredicted = cent == &cg.predictedPlayerEntity;
 				if (!cg.playerPredicted ) {
 					//Make sure lerporigin of playercent is val
 					CG_CalcEntityLerpPositions( cg.playerCent );
@@ -199,7 +199,7 @@ static int demoSetupView( void) {
 						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4));
 				inwater = CG_DemosCalcViewValues();
 				// first person blend blobs, done after AnglesToAxis
-				if ( !cg.renderingThirdPerson && cg.predictedPlayerState.pm_type != PM_SPECTATOR) {
+				if (!cg.renderingThirdPerson) {
 					CG_DamageBlendBlob();
 				}
 				VectorCopy( cg.refdef.vieworg, demo.viewOrigin );
@@ -276,8 +276,7 @@ static int demoSetupView( void) {
 		cg.refdef.fov_y = atan2( cg.refdef.height, (cg.refdef.width / tan( demo.viewFov / 360 * M_PI )) ) * 360 / M_PI;
 		contents = CG_PointContents( cg.refdef.vieworg, -1 );
 		if ( contents & ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) ){
-			double phase = (cg.time + cg.timeFraction) / 1000.0 * WAVE_FREQUENCY * M_PI * 2;
-			double v = WAVE_AMPLITUDE * sin( phase );
+			double v = WAVE_AMPLITUDE * sin(((double)cg.time + (double)cg.timeFraction) / 1000.0 * WAVE_FREQUENCY * M_PI * 2);
 			cg.refdef.fov_x += v;
 			cg.refdef.fov_y -= v;
 			inwater = qtrue;
@@ -308,7 +307,7 @@ void demoProcessSnapShots(qboolean hadSkip) {
 		cg.nextSnap = 0;
 
 		for (i=-1;i<MAX_GENTITIES;i++) {
-			centity_t *cent = i < 0 ? &cg_entities[cg.predictedPlayerState.clientNum] : &cg_entities[i];
+			centity_t *cent = i < 0 ? &cg.predictedPlayerEntity : &cg_entities[i];
 			cent->trailTime = cg.time;
 			cent->snapShotTime = cg.time;
 			cent->currentValid = qfalse;
@@ -635,7 +634,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	CG_AddParticles ();
 	CG_AddLocalEntities();
 
-	if ( cg.playerPredicted ) {
+	if ( cg.playerCent == &cg.predictedPlayerEntity ) {
 		// warning sounds when powerup is wearing off
 		CG_PowerupTimerSounds();
 		CG_AddViewWeapon( &cg.predictedPlayerState  );

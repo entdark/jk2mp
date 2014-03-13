@@ -152,6 +152,15 @@ typedef struct {
 	int				painDirection;	// flip from 0 to 1
 	int				lightningFiring;
 
+	//mme
+	int				viewHeight;
+	int				stepTime;
+	float			stepChange;
+	int				landTime;
+	float			landChange;
+	int				duckTime;
+	float			duckChange;
+
 	// machinegun spinning
 	float			barrelAngle;
 	int				barrelTime;
@@ -181,6 +190,7 @@ typedef struct centity_s {
 
 	vec3_t			damageAngles;
 	int				damageTime;
+	int				damageStartTime;
 
 	int				snapShotTime;	// last time this entity was found in a snapshot
 
@@ -213,10 +223,11 @@ typedef struct centity_s {
 	//at times
 	int				bolt1;
 	int				bolt2;
-	int				bolt3;
+	float			bolt3;
 	int				bolt4;
 
 	float			saberLength;
+	float			saberLengthOld;
 	int				saberExtendTime;
 
 	int				rootBone;
@@ -697,14 +708,14 @@ typedef struct {
 	int			eventSequence;
 	int			predictableEvents[MAX_PREDICTED_EVENTS];
 
-	float		stepChange;				// for stair up smoothing
-	int			stepTime;
+//	float		stepChange;				// for stair up smoothing
+//	int			stepTime;
 
-	float		duckChange;				// for duck viewheight smoothing
-	int			duckTime;
+//	float		duckChange;				// for duck viewheight smoothing
+//	int			duckTime;
 
-	float		landChange;				// for landing hard
-	int			landTime;
+//	float		landChange;				// for landing hard
+//	int			landTime;
 
 	// input state sent to server
 	int			weaponSelect;
@@ -879,6 +890,9 @@ Ghoul2 Insert End
 	float			eventOldRadius;
 	float			eventCoeff;
 	float			eventOldCoeff;
+
+	int				chargeTime;
+	qboolean		charging;
 } cg_t;
 
 #define MAX_TICS	14

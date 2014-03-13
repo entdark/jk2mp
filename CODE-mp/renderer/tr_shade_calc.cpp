@@ -5,6 +5,46 @@
 
 #define	WAVEVALUE( table, base, amplitude, phase, freq )  ((base) + table[ myftol( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
 
+float WAVEVALUENEW(genFunc_t func, float base, float amplitude, float phase, float freq) {
+	double angle;
+
+	switch (func) {
+	case GF_SIN:
+		angle = (double)phase + (tr.refdef.time ? (double)(tr.refdef.time * 0.001) : (double)tess.shaderTime) * (double)freq + (double)tr.refdef.timeFraction * (double)freq * 0.001;
+		angle = fmod(angle, 1.0);
+		return base + sin(DEG2RAD(angle * 360.0)) * amplitude;
+	case GF_TRIANGLE:
+		return WAVEVALUE(tr.triangleTable, base, amplitude, phase, freq);
+	case GF_SQUARE:
+		return WAVEVALUE(tr.squareTable, base, amplitude, phase, freq);
+	case GF_SAWTOOTH:
+		//maybe some other shaders require that too
+		//linear + clamp require tess.shaderTime
+		angle = (double)phase + ((!Q_stricmp(tess.shader->name, "halfShieldShell")) ? (double)(tr.refdef.time * 0.001) : (double)tess.shaderTime) * (double)freq + (double)tr.refdef.timeFraction * (double)freq * 0.001;
+		angle = fmod(angle, 1.0);
+		return base + angle * amplitude;
+	case GF_INVERSE_SAWTOOTH:
+		angle = (double)phase + ((!Q_stricmp(tess.shader->name, "halfShieldShell")) ? (double)(tr.refdef.time * 0.001) : (double)tess.shaderTime) * (double)freq + (double)tr.refdef.timeFraction * (double)freq * 0.001;
+		angle = fmod(angle, 1.0);
+		return base + (1.0 - angle) * amplitude;
+	case GF_NONE:
+	default:
+		break;
+	}
+	Com_Printf("WAVEVALUENEW called with invalid function '%d' in shader '%s'\n", func, tess.shader->name);
+	return 0.0f;
+}
+
+// not even a table
+float NewSinTable (double jediOutcast) {
+	jediOutcast = fmod(jediOutcast, 1.0);
+	return sin(DEG2RAD(jediOutcast * 360.0));
+}
+float NewCosTable (double jediOutcast) {
+	jediOutcast = fmod(jediOutcast, 1.0);
+	return cos(DEG2RAD(jediOutcast * 360.0));
+}
+
 static float *TableForFunc( genFunc_t func ) 
 {
 	switch ( func )
@@ -39,7 +79,7 @@ static float EvalWaveForm( const waveForm_t *wf )
 	float	*table;
 
 	if ( wf->func == GF_NOISE ) {
-		return  ( wf->base + R_NoiseGet4f( 0, 0, 0, ( backEnd.refdef.floatTime + wf->phase ) * wf->frequency ) * wf->amplitude );
+		return  ( wf->base + R_NoiseGet4f( 0, 0, 0, ( backEnd.refdef.floatTime + wf->phase + tr.refdef.timeFraction * 0.001 ) * wf->frequency ) * wf->amplitude );
 	} else if (wf->func == GF_RAND) {
 		if( GetNoiseTime( backEnd.refdef.time + wf->phase ) <= wf->frequency ) {
 			return (wf->base + wf->amplitude);
@@ -49,7 +89,8 @@ static float EvalWaveForm( const waveForm_t *wf )
 	}
 	table = TableForFunc( wf->func );
 
-	return WAVEVALUE( table, wf->base, wf->amplitude, wf->phase, wf->frequency );
+//	return WAVEVALUE( table, wf->base, wf->amplitude, wf->phase, wf->frequency );
+	return WAVEVALUENEW( wf->func, wf->base, wf->amplitude, wf->phase, wf->frequency );
 }
 
 static float EvalWaveFormClamped( const waveForm_t *wf )
@@ -134,7 +175,12 @@ void RB_CalcDeformVertexes( deformStage_t *ds )
 		{
 			float off = ( xyz[0] + xyz[1] + xyz[2] ) * ds->deformationSpread;
 
-			scale = WAVEVALUE( table, ds->deformationWave.base, 
+/*			scale = WAVEVALUE( table, ds->deformationWave.base, 
+				ds->deformationWave.amplitude,
+				ds->deformationWave.phase + off,
+				ds->deformationWave.frequency );*/
+			scale = WAVEVALUENEW( ds->deformationWave.func,
+				ds->deformationWave.base,
 				ds->deformationWave.amplitude,
 				ds->deformationWave.phase + off,
 				ds->deformationWave.frequency );
@@ -164,17 +210,17 @@ void RB_CalcDeformNormals( deformStage_t *ds ) {
 	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 ) {
 		scale = 0.98f;
 		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+			/*tess.shaderTime*/tr.refdef.time * 0.001 * ds->deformationWave.frequency + tr.refdef.timeFraction * 0.001 * ds->deformationWave.frequency );
 		normal[ 0 ] += ds->deformationWave.amplitude * scale;
 
 		scale = 0.98f;
 		scale = R_NoiseGet4f( 100 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+			/*tess.shaderTime*/tr.refdef.time * 0.001 * ds->deformationWave.frequency + tr.refdef.timeFraction * 0.001 * ds->deformationWave.frequency );
 		normal[ 1 ] += ds->deformationWave.amplitude * scale;
 
 		scale = 0.98f;
 		scale = R_NoiseGet4f( 200 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+			/*tess.shaderTime*/tr.refdef.time * 0.001 * ds->deformationWave.frequency + tr.refdef.timeFraction * 0.001 * ds->deformationWave.frequency );
 		normal[ 2 ] += ds->deformationWave.amplitude * scale;
 
 		VectorNormalizeFast( normal );
@@ -236,13 +282,14 @@ void RB_CalcBulgeVertexes( deformStage_t *ds )
 		float		now;
 		int			off;
 
-		now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
+		now = backEnd.refdef.time * ds->bulgeSpeed * 0.001 + tr.refdef.timeFraction * ds->bulgeSpeed * 0.001;
 
 		for ( i = 0; i < tess.numVertexes; i++, xyz += 4, st += 2 * NUM_TEX_COORDS, normal += 4 ) 
 		{
-			off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( st[0] * ds->bulgeWidth + now );
+			//off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( st[0] * ds->bulgeWidth + now );
+			off = (st[0] * ds->bulgeWidth + now) / (M_PI*2);
 
-			scale = tr.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
+			scale = NewSinTable(off)/*tr.sinTable[ off & FUNCTABLE_MASK ]*/ * ds->bulgeHeight;
 				
 			xyz[0] += normal[0] * scale;
 			xyz[1] += normal[1] * scale;
@@ -268,7 +315,12 @@ void RB_CalcMoveVertexes( deformStage_t *ds ) {
 
 	table = TableForFunc( ds->deformationWave.func );
 
-	scale = WAVEVALUE( table, ds->deformationWave.base, 
+/*	scale = WAVEVALUE( table, ds->deformationWave.base, 
+		ds->deformationWave.amplitude,
+		ds->deformationWave.phase,
+		ds->deformationWave.frequency );*/
+	scale = WAVEVALUENEW( ds->deformationWave.func,
+		ds->deformationWave.base,
 		ds->deformationWave.amplitude,
 		ds->deformationWave.phase,
 		ds->deformationWave.frequency );
@@ -714,7 +766,7 @@ void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
 
 
   if ( wf->func == GF_NOISE ) {
-		glow = wf->base + R_NoiseGet4f( 0, 0, 0, ( tess.shaderTime + wf->phase ) * wf->frequency ) * wf->amplitude;
+		glow = wf->base + R_NoiseGet4f( 0, 0, 0, ( (!tr.refdef.time ? tess.shaderTime : (tr.refdef.time * 0.001)) + wf->phase + tr.refdef.timeFraction * 0.001 ) * wf->frequency ) * wf->amplitude;
 	} else {
 		glow = EvalWaveForm( wf ) * tr.identityLight;
 	}
@@ -949,17 +1001,19 @@ void RB_CalcEnvironmentTexCoords( float *st )
 void RB_CalcTurbulentTexCoords( const waveForm_t *wf, float *st )
 {
 	int i;
-	float now;
+	double now;
 
-	now = ( wf->phase + tess.shaderTime * wf->frequency );
+	now = (wf->phase + /*tess.shaderTime*/tr.refdef.time * 0.001 * wf->frequency + tr.refdef.timeFraction * 0.001 * wf->frequency);
 
 	for ( i = 0; i < tess.numVertexes; i++, st += 2 )
 	{
 		float s = st[0];
 		float t = st[1];
 
-		st[0] = s + tr.sinTable[ ( ( int ) ( ( ( tess.xyz[i][0] + tess.xyz[i][2] )* 1.0/128 * 0.125 + now ) * FUNCTABLE_SIZE ) ) & ( FUNCTABLE_MASK ) ] * wf->amplitude;
-		st[1] = t + tr.sinTable[ ( ( int ) ( ( tess.xyz[i][1] * 1.0/128 * 0.125 + now ) * FUNCTABLE_SIZE ) ) & ( FUNCTABLE_MASK ) ] * wf->amplitude;
+//		st[0] = s + tr.sinTable[ ( ( int ) ( ( ( tess.xyz[i][0] + tess.xyz[i][2] )* 1.0/128 * 0.125 + now ) * FUNCTABLE_SIZE ) ) & ( FUNCTABLE_MASK ) ] * wf->amplitude;
+//		st[1] = t + tr.sinTable[ ( ( int ) ( ( tess.xyz[i][1] * 1.0/128 * 0.125 + now ) * FUNCTABLE_SIZE ) ) & ( FUNCTABLE_MASK ) ] * wf->amplitude;
+		st[0] = s + NewSinTable( ( tess.xyz[i][0] + tess.xyz[i][2] )* 1.0/128 * 0.125 + now ) * wf->amplitude;
+		st[1] = t + NewSinTable( tess.xyz[i][1] * 1.0/128 * 0.125 + now ) * wf->amplitude;
 	}
 }
 
@@ -983,8 +1037,8 @@ void RB_CalcScaleTexCoords( const float scale[2], float *st )
 void RB_CalcScrollTexCoords( const float scrollSpeed[2], float *st )
 {
 	int i;
-	float timeScale = tess.shaderTime;
-	float adjustedScrollS, adjustedScrollT;
+	double timeScale = (!tr.refdef.time ? tess.shaderTime : (tr.refdef.time * 0.001)) + tr.refdef.timeFraction * 0.001;
+	double adjustedScrollS, adjustedScrollT;
 
 	adjustedScrollS = scrollSpeed[0] * timeScale;
 	adjustedScrollT = scrollSpeed[1] * timeScale;
@@ -1023,17 +1077,20 @@ void RB_CalcTransformTexCoords( const texModInfo_t *tmi, float *st  )
 */
 void RB_CalcRotateTexCoords( float degsPerSecond, float *st )
 {
-	float timeScale = tess.shaderTime;
-	float degs;
-	int index;
+	double timeScale = (!tr.refdef.time ? tess.shaderTime : (tr.refdef.time * 0.001));
+	double degs;
+	double index;
 	float sinValue, cosValue;
 	texModInfo_t tmi;
 
-	degs = -degsPerSecond * timeScale;
-	index = degs * ( FUNCTABLE_SIZE / 360.0f );
+	degs = -degsPerSecond * timeScale + -degsPerSecond * tr.refdef.timeFraction * 0.001;
+	//index = degs * ( FUNCTABLE_SIZE / 360.0f );
+	index = degs / 360.0;
 
-	sinValue = tr.sinTable[ index & FUNCTABLE_MASK ];
-	cosValue = tr.sinTable[ ( index + FUNCTABLE_SIZE / 4 ) & FUNCTABLE_MASK ];
+//	sinValue = tr.sinTable[ index & FUNCTABLE_MASK ];
+//	cosValue = tr.sinTable[ ( index + FUNCTABLE_SIZE / 4 ) & FUNCTABLE_MASK ];
+	sinValue = NewSinTable(index);
+	cosValue = NewCosTable(index);
 
 	tmi.matrix[0][0] = cosValue;
 	tmi.matrix[1][0] = -sinValue;

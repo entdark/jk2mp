@@ -56,6 +56,7 @@ const float randomchart[256] = {
 #define WIND_GUST_DECAY (1.0 / WIND_GUST_TIME)
 
 int		lastSSUpdateTime = 0;
+float	lastSSUpdateTimeFraction = 0;
 float	curWindSpeed=0;
 float	curWindGust=5;
 float	curWeatherAmount=1;
@@ -90,9 +91,10 @@ static void R_SurfaceSpriteFrameUpdate(void)
 	vec3_t up={0,0,1};
 
 	if (backEnd.refdef.time == lastSSUpdateTime)
-		return;
+		if (tr.refdef.timeFraction == lastSSUpdateTimeFraction)
+			return;
 
-	if (backEnd.refdef.time < lastSSUpdateTime)
+	if (backEnd.refdef.time < lastSSUpdateTime || (backEnd.refdef.time == lastSSUpdateTime && tr.refdef.timeFraction < lastSSUpdateTimeFraction))
 	{	// Time is BEFORE the last update time, so reset everything.
 		curWindGust = 5;
 		curWindSpeed = r_windSpeed->value;
@@ -197,7 +199,7 @@ static void R_SurfaceSpriteFrameUpdate(void)
 			// Add an amount to the target wind speed
 			targetspeed *= 1.0 + gustLeft;
 
-			gustLeft -= (float)(backEnd.refdef.time - lastSSUpdateTime)*WIND_GUST_DECAY;
+			gustLeft -= ((float)(backEnd.refdef.time - lastSSUpdateTime) + tr.refdef.timeFraction)*WIND_GUST_DECAY;
 			if (gustLeft <= 0)
 			{
 				nextGustTime = backEnd.refdef.time + (curWindGust*1000)*flrand(1.0f,4.0f);
@@ -246,7 +248,7 @@ static void R_SurfaceSpriteFrameUpdate(void)
 
 	// Start calculating a smoothing factor so wind doesn't change abruptly between speeds.
 	dampfactor = 1.0-r_windDampFactor->value;	// We must exponent the amount LEFT rather than the amount bled off
-	dtime = (float)(backEnd.refdef.time - lastSSUpdateTime) * (1.0/(float)WIND_DAMP_INTERVAL);	// Our dampfactor is geared towards a time interval equal to "1".
+	dtime = ((float)(backEnd.refdef.time - lastSSUpdateTime) + tr.refdef.timeFraction) * (1.0/(float)WIND_DAMP_INTERVAL);	// Our dampfactor is geared towards a time interval equal to "1".
 
 	// Note that since there are a finite number of "practical" delta millisecond values possible, 
 	// the ratio should be initialized into a chart ultimately.
@@ -265,6 +267,7 @@ static void R_SurfaceSpriteFrameUpdate(void)
 	VectorMA(targetWindGrassDir, -ratio, diff, curWindGrassDir);
 
 	lastSSUpdateTime = backEnd.refdef.time;
+	lastSSUpdateTimeFraction = tr.refdef.timeFraction;
 
 	curWindPointForce = r_windPointForce->value - (ratio * (r_windPointForce->value - curWindPointForce));
 	if (curWindPointForce < 0.01)
@@ -317,7 +320,7 @@ static void RB_VerticalSurfaceSprite(vec3_t loc, float width, float height, byte
 	float points[16];
 	color4ub_t color;
 
-	angle = ((loc[0]+loc[1])*0.02+(tr.refdef.time*0.0015));
+	angle = ((loc[0] + loc[1]) * 0.02f + (tr.refdef.time * 0.0015f) + (tr.refdef.timeFraction * 0.0015f));
 
 	if (windidle>0.0)
 	{
@@ -420,7 +423,7 @@ static void RB_VerticalSurfaceSpriteWindPoint(vec3_t loc, float width, float hei
 
 //	wind += 1.0-windforce;
 
-	angle = (loc[0]+loc[1])*0.02+(tr.refdef.time*0.0015);
+	angle = (loc[0] + loc[1]) * 0.02f + (tr.refdef.time * 0.0015f) + (tr.refdef.timeFraction * 0.0015f);
 
 	if (curWindSpeed <80.0)
 	{
@@ -450,7 +453,7 @@ static void RB_VerticalSurfaceSpriteWindPoint(vec3_t loc, float width, float hei
 
 	loc2[0] += height*winddiff[0]*windforce;
 	loc2[1] += height*winddiff[1]*windforce;
-	loc2[2] -= height*windforce*(0.75 + 0.15*sin((tr.refdef.time + 500*windforce)*0.01));
+	loc2[2] -= height*windforce*(0.75 + 0.15*(sin((tr.refdef.time + tr.refdef.timeFraction + 500*windforce)*0.01)));
 
 	VectorScale(ssrightvectors[rightvectorcount], width*0.5, right);
 
@@ -1290,7 +1293,7 @@ static void RB_DrawEffectSurfaceSprites( shaderStage_t *stage, shaderCommands_t 
 		{
 			for (posj=0; posj<(1.0-posi); posj+=step)
 			{
-				effecttime = (tr.refdef.time+10000.0*randomchart[randomindex])/stage->ss.fxDuration;
+				effecttime = (tr.refdef.time+10000*randomchart[randomindex] + tr.refdef.timeFraction)/stage->ss.fxDuration;
 				effectpos = (float)effecttime - (int)effecttime;
 
 				randomindex2 = randomindex+effecttime;

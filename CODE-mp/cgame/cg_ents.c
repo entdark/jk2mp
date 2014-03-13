@@ -820,7 +820,7 @@ static void CG_General( centity_t *cent ) {
 		if (empOwn)
 		{
 		
-			if (cg.snap->ps.clientNum == empOwn->currentState.number &&
+			if (cg.playerCent == empOwn &&
 				!cg.renderingThirdPerson)
 			{
 				VectorCopy(cg.refdefViewAngles, empAngles);
@@ -1057,34 +1057,20 @@ Ghoul2 Insert End
 	}
 
 	// player model
-	if (s1->number == cg.snap->ps.clientNum) {
+	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
 		ent.renderfx |= RF_THIRD_PERSON;	// only draw from mirrors
 	}
-/*
-Ghoul2 Insert Start
-*/
-	// are we bolted to a Ghoul2 model?
-/* 
-//g2r	if (s1->boltInfo)
-	{
-		G2_BoltToGhoul2Model(s1, &ent);
-	}
-	else */
-	{
-		// convert angles to axis
-		AnglesToAxis( cent->lerpAngles, ent.axis );
-	}
 
-/*
-Ghoul2 Insert End
-*/
+	// convert angles to axis
+	AnglesToAxis( cent->lerpAngles, ent.axis );
+
 	if ( cent->currentState.time > cg.time && cent->currentState.weapon == WP_EMPLACED_GUN )
 	{
 		// make the gun pulse red to warn about it exploding
-		val = (1.0f - (float)(cent->currentState.time - cg.time) / 3200.0f ) * 0.3f;
+		val = (1.0f - ((cent->currentState.time - cg.time) - cg.timeFraction) / 3200.0f ) * 0.3f;
 
 		ent.customShader = trap_R_RegisterShader( "gfx/effects/turretflashdie" );
-		ent.shaderRGBA[0] = (sin( cg.time * 0.04f ) * val * 0.4f + val) * 255;
+		ent.shaderRGBA[0] = (sin((double)(cg.time + cg.timeFraction)* 0.04) * val * 0.4f + val) * 255;
 		ent.shaderRGBA[1] = ent.shaderRGBA[2] = 0;
 
 		ent.shaderRGBA[3] = 100;
@@ -1097,13 +1083,11 @@ Ghoul2 Insert End
 		//trap_R_AddRefEntityToScene( &ent );
 	}
 
-	if ((cent->currentState.eFlags & EF_DISINTEGRATION) && cent->currentState.eType == ET_BODY)
-	{
+	if ((cent->currentState.eFlags & EF_DISINTEGRATION) && cent->currentState.eType == ET_BODY) {
 		vec3_t tempAng, hitLoc;
 		float tempLength;
 
-		if (!cent->dustTrailTime)
-		{
+		if (!cent->dustTrailTime) {
 			cent->dustTrailTime = cg.time;
 		}
 
@@ -1159,7 +1143,7 @@ Ghoul2 Insert End
 
 		ent.customShader = cgs.media.solidWhite;
 		ent.renderfx = RF_RGB_TINT;
-		wv = sin( cg.time * 0.003f ) * 0.08f + 0.1f;
+		wv = sin(cg.time * 0.003 + cg.timeFraction * 0.003) * 0.08f + 0.1f;
 		ent.shaderRGBA[0] = wv * 255;
 		ent.shaderRGBA[1] = wv * 255;
 		ent.shaderRGBA[2] = wv * 0;
@@ -1196,7 +1180,7 @@ Ghoul2 Insert End
 
 		ent.customShader = cgs.media.solidWhite;
 		ent.renderfx = RF_RGB_TINT;
-		wv = sin( cg.time * 0.005f ) * 0.08f + 0.1f; //* 0.08f + 0.1f;
+		wv = sin(cg.time * 0.005 + cg.timeFraction * 0.005) * 0.08f + 0.1f; //* 0.08f + 0.1f;
 
 		if (cent->currentState.trickedentindex3 == 1)
 		{ //dark
@@ -1241,7 +1225,7 @@ Ghoul2 Insert End
 
 		org[2] += 18;
 
-		wv = sin( cg.time * 0.002f ) * 0.08f + 0.1f; //* 0.08f + 0.1f;
+		wv = sin(cg.time * 0.002 + cg.timeFraction * 0.002) * 0.08f + 0.1f; //* 0.08f + 0.1f;
 
 		VectorCopy(org, fxSArgs.origin);
 		VectorClear(fxSArgs.vel);
@@ -1392,7 +1376,7 @@ static void CG_Item( centity_t *cent ) {
 	refEntity_t		ent;
 	entityState_t	*es;
 	gitem_t			*item;
-	int				msec;
+	float			msec;
 	float			scale;
 	weaponInfo_t	*wi;
 
@@ -1490,7 +1474,7 @@ Ghoul2 Insert End
 			ent.shaderRGBA[0] = 200;
 			ent.shaderRGBA[1] = 200;
 			ent.shaderRGBA[2] = 200;
-			ent.shaderRGBA[3] = 150 + sin(cg.time*0.01)*30;
+			ent.shaderRGBA[3] = 150 + sin(cg.time * 0.01 + cg.timeFraction * 0.01) * 30;
 		}
 		else
 		{
@@ -1528,8 +1512,9 @@ Ghoul2 Insert End
 		(item->giType == IT_WEAPON || item->giType == IT_POWERUP))
 	{
 		// items bob up and down continuously
-		scale = 0.005 + cent->currentState.number * 0.00001;
-		cent->lerpOrigin[2] += 4 + cos( ( cg.time + 1000 ) *  scale ) * 4;
+		scale = (2 * M_PI) / 1300;
+		//0.005 + cent->currentState.number * 0.00001;
+		cent->lerpOrigin[2] += 4 + cos( scale * (cg.timeFraction + (cg.time % 1300)) ) * 4;
 	}
 	else
 	{
@@ -1659,7 +1644,7 @@ Ghoul2 Insert End
 
 	// if just respawned, slowly scale up
 	
-	msec = cg.time - cent->miscTime;
+	msec = (cg.time - cent->miscTime) + cg.timeFraction;
 
 	if (CG_GreyItem(item->giType, item->giTag, cg.snap->ps.fd.forceSide))
 	{
@@ -1978,11 +1963,11 @@ Ghoul2 Insert End
 		{
 			if ( s1->eFlags & EF_MISSILE_STICK )
 			{
-				RotateAroundDirection( ent.axis, cg.time * 0.5f );//Did this so regular missiles don't get broken
+				RotateAroundDirection(ent.axis, 0.5 * cg.timeFraction + ((cg.time / 2) % 360));//Did this so regular missiles don't get broken
 			}
 			else
 			{
-				RotateAroundDirection( ent.axis, cg.time * 0.25f );//JFM:FLOAT FIX
+				RotateAroundDirection(ent.axis, 0.25 * cg.timeFraction + ((cg.time / 4) % 360));//JFM:FLOAT FIX
 			}
 		} 
 		else 
@@ -2021,7 +2006,7 @@ Ghoul2 Insert End
 
 		ent.customShader = cgs.media.solidWhite;
 		ent.renderfx = RF_RGB_TINT;
-		wv = sin( cg.time * 0.003f ) * 0.08f + 0.1f;
+		wv = sin(cg.time * 0.003 + cg.timeFraction * 0.003) * 0.08f + 0.1f;
 		ent.shaderRGBA[0] = wv * 255;
 		ent.shaderRGBA[1] = wv * 255;
 		ent.shaderRGBA[2] = wv * 0;
@@ -2476,10 +2461,10 @@ void CG_AddPacketEntities( void ) {
 	// add each entity sent over by the server
 	for ( num = 0 ; num < cg.snap->numEntities ; num++ ) {
 		// Don't re-add ents that have been predicted.
-		if (cg.snap->entities[ num ].number != cg.snap->ps.clientNum) {
+//		if (cg.snap->entities[ num ].number != cg.snap->ps.clientNum) {
 			cent = &cg_entities[ cg.snap->entities[ num ].number ];
 			CG_AddCEntity( cent );
-		}
+//		}
 	}
 }
 

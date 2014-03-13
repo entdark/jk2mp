@@ -42,6 +42,19 @@ static void CG_TransitionEntity( centity_t *cent ) {
 	// reset if the entity wasn't in the last frame or was teleported
 	if ( !cent->interpolate ) {
 		CG_ResetEntity( cent );
+	} else {	//mme
+		int newHeight;
+		int maxs = ((cent->currentState.solid >> 16) & 255) - 32;
+		if ( maxs > 16 )
+			newHeight = DEFAULT_VIEWHEIGHT;
+		else
+			newHeight = CROUCH_VIEWHEIGHT;
+
+		if ( newHeight != cent->pe.viewHeight ) {
+			cent->pe.duckTime = cg.snap->serverTime;
+			cent->pe.duckChange = newHeight - cent->pe.viewHeight;
+			cent->pe.viewHeight = newHeight;
+		}
 	}
 
 	// clear the next state.  if will be set by the next CG_SetNextSnap

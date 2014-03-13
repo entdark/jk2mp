@@ -3708,6 +3708,7 @@ static void UI_LoadMovies() {
 UI_LoadDemos
 ===============
 */
+#if 0
 static void UI_LoadDemos() {
 	char	demolist[4096];
 	char demoExt[32];
@@ -3737,6 +3738,117 @@ static void UI_LoadDemos() {
 	}
 
 }
+#else
+
+// SMod - browsing demos code 
+// original by Teh/Dumbledore
+// modified by Sil
+// added to jaMME by ent
+
+vmCvar_t	ui_autodemo;
+vmCvar_t	ui_autodemo_startPos;
+vmCvar_t	ui_autodemo_cursorPos;
+vmCvar_t	ui_autodemo_folder;
+static char uiCurrentDemoFolder[256] = "";
+
+void UI_SetDemoListPosition(menuDef_t *menu, int startPos, int cursorPos) {
+	itemDef_t *item = NULL;
+	int i;
+
+
+	if (menu){
+		for (i = 0; i < menu->itemCount; i++) {
+			if (!strcmp(menu->items[i]->window.name,"demolist")) {
+				item = menu->items[i];
+				break;
+			}
+		}
+	}
+
+}
+
+//muj pokus o upravu
+static int UI_GetDemos( char *folder, char *demolist, int demolistSize, char *demoExt ) {
+	char realFolders[2048], *folders = realFolders;
+	int numFolders, num;
+
+	//TODO: change this with own file list load ordered by date 
+	int ret = trap_FS_GetFileList( folder, demoExt, demolist, demolistSize );
+                    
+	for( num = 0; num < ret && demolistSize > 0; num++ )
+	{
+		demolistSize -= strlen( demolist ) + 1;
+		demolist += strlen( demolist ) + 1;
+	}
+
+	numFolders = trap_FS_GetFileList( folder, "/", realFolders, sizeof( realFolders ) );
+
+	// now load folders
+	for( num = 0; num < numFolders; num++, folders++ )
+	{
+		if( *folders && Q_stricmp( folders, "." ) && (Q_stricmp( uiCurrentDemoFolder, "" )  || Q_stricmp( folders, ".." )) )
+		{
+			Q_strncpyz( demolist, va( "/%s", folders ), demolistSize );
+			ret++;
+			demolistSize -= strlen( demolist ) + 1;
+			demolist += strlen(demolist) + 1;
+			
+		}
+		for( ; *folders != 0; folders++ );
+	}
+
+
+	return ret;
+}
+
+static void UI_LoadDemos( void ) {
+	int d = 0;
+	while(demo_protocols[d]) {
+		char demolist[4096*20];
+		char demoExt[32];
+		char *demoname;
+		int i, len;
+		char game[32];
+
+		trap_Cvar_VariableStringBuffer("fs_game",game,sizeof(game));
+
+		if (!strcmp(game, ""))
+			strcpy(game,"base");
+
+		Com_sprintf(demoExt, sizeof(demoExt), "dm_%d", demo_protocols[d]);
+
+		//SMod - fix for specific jka mod, we go back and forth so we end up in desired folder
+		//(otherwise we would always end up in base/demos)
+		uiInfo.demoCount = UI_GetDemos( va("..\\%s\\demos%s",game,uiCurrentDemoFolder), demolist, sizeof( demolist ), demoExt );
+
+		Com_sprintf(demoExt, sizeof(demoExt), ".dm_%d", demo_protocols[d]);
+
+		if (uiInfo.demoCount) 
+		{
+			if (uiInfo.demoCount > MAX_DEMOS){
+				Com_Printf("^1Too many demo files and folders found, can't show them all. (%i > %i)\n",uiInfo.demoCount,MAX_DEMOS);
+				uiInfo.demoCount = MAX_DEMOS;
+			}
+
+			demoname = demolist;
+			for ( i = uiInfo.demoCount - 1; i >= 0 ; i-- ) 
+			{
+				len = strlen( demoname );
+
+				if (!Q_stricmp(demoname + len - strlen(demoExt), demoExt))
+					demoname[len-strlen(demoExt)] = '\0';
+
+				//Q_strupr(demoname);
+				uiInfo.demoList[i] = String_Alloc(demoname);
+				//Com_sprintf(uiInfo.demoList[i], 2048, String_Alloc(demoname));
+			
+				demoname += len + 1;
+			}
+		}
+		d++;
+	}
+}
+#endif
 
 
 static qboolean UI_SetNextMap(int actual, int index) {
@@ -4059,6 +4171,58 @@ static qboolean UI_DeferMenuScript ( char **args )
 	return qfalse;
 }
 
+//SMod - demo browsing routines
+static void UI_RunDemo(){
+	menuDef_t*	menu;
+	if (!Q_stricmp(uiInfo.demoList[uiInfo.demoIndex],"/..")) {
+		//we go back in directory hierarchy
+		int i = strlen(uiCurrentDemoFolder)-1;
+		for( ; uiCurrentDemoFolder[i] != '/'; i--);
+		uiCurrentDemoFolder[i] = '\0';
+		menu = Menus_ActivateByName("demo");
+
+		UI_SetDemoListPosition(menu, 0, 0);
+
+	}else if (uiInfo.demoList[uiInfo.demoIndex][0] == '/') {
+		//load demos in this folder
+		Q_strncpyz( uiCurrentDemoFolder, 
+			va("%s%s",uiCurrentDemoFolder,uiInfo.demoList[uiInfo.demoIndex]), 
+			sizeof( uiCurrentDemoFolder ) );
+		menu = Menus_ActivateByName("demo");
+
+		UI_SetDemoListPosition(menu, 0, 0);
+
+	} else	{
+		//demo file, run it, but save list parameters so we can reopen demo window
+		int startPos = uiInfo.demoIndex;
+		menuDef_t *menu = NULL;
+		itemDef_t *item = NULL;
+		int i;
+
+		menu = Menus_FindByName("demo");
+
+		//extracting startPos of list
+		if (menu){ //we do this shit only to find out startPos....
+			for (i = 0; i < menu->itemCount; i++) {
+				if (!strcmp(menu->items[i]->window.name,"demolist")) {
+					item = menu->items[i];
+					break;
+				}
+			}
+		}
+
+		trap_Cvar_Set( "ui_autodemo", "1" );
+		trap_Cvar_Set( "ui_autodemo_cursorPos", va("%i",uiInfo.demoIndex) );
+		trap_Cvar_Set( "ui_autodemo_startPos", va("%i",startPos) );
+		trap_Cvar_Set( "ui_autodemo_folder", uiCurrentDemoFolder );				
+
+		if (Q_stricmp(uiCurrentDemoFolder,""))
+			trap_Cmd_ExecuteText( EXEC_APPEND, va("demo \"%s/%s\"\n", uiCurrentDemoFolder,uiInfo.demoList[uiInfo.demoIndex]));
+		else
+			trap_Cmd_ExecuteText( EXEC_APPEND, va("demo \"%s\"\n", uiInfo.demoList[uiInfo.demoIndex]));
+	}
+}
+
 /*
 =================
 UI_UpdateVideoSetup
@@ -4323,7 +4487,8 @@ static void UI_RunMenuScript(char **args)
 			trap_Cvar_Set( "fs_game", uiInfo.modList[uiInfo.modIndex].modName);
 			trap_Cmd_ExecuteText( EXEC_APPEND, "vid_restart;" );
 		} else if (Q_stricmp(name, "RunDemo") == 0) {
-			trap_Cmd_ExecuteText( EXEC_APPEND, va("demo \"%s\"\n", uiInfo.demoList[uiInfo.demoIndex]));
+//			trap_Cmd_ExecuteText( EXEC_APPEND, va("demo \"%s\"\n", uiInfo.demoList[uiInfo.demoIndex]));
+			UI_RunDemo();
 		} else if (Q_stricmp(name, "Quake3") == 0) {
 			trap_Cvar_Set( "fs_game", "");
 			trap_Cmd_ExecuteText( EXEC_APPEND, "vid_restart;" );

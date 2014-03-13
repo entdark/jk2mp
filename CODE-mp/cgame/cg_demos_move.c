@@ -493,7 +493,7 @@ void chaseUpdate( int time, float timeFraction ) {
 		chaseEntityOrigin( targetCent, demo.chase.origin );
 		demo.chase.cent = targetCent;
 	} else {
-		demo.chase.cent = &cg_entities[cg.predictedPlayerState.clientNum];
+		demo.chase.cent = &cg.predictedPlayerEntity;
 	}
 }
 

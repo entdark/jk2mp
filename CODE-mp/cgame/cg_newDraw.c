@@ -214,7 +214,7 @@ float CG_GetValue(int ownerDraw) {
 
 qboolean CG_OtherTeamHasFlag(void) {
 	if (cgs.gametype == GT_CTF || cgs.gametype == GT_CTY) {
-		int team = cg.snap->ps.persistant[PERS_TEAM];
+		int team = cgs.clientinfo[cg.playerCent->currentState.number].team;
 		if (team == TEAM_RED && cgs.redflag == FLAG_TAKEN) {
 			return qtrue;
 		} else if (team == TEAM_BLUE && cgs.blueflag == FLAG_TAKEN) {
@@ -228,7 +228,7 @@ qboolean CG_OtherTeamHasFlag(void) {
 
 qboolean CG_YourTeamHasFlag(void) {
 	if (cgs.gametype == GT_CTF || cgs.gametype == GT_CTY) {
-		int team = cg.snap->ps.persistant[PERS_TEAM];
+		int team = cgs.clientinfo[cg.playerCent->currentState.number].team;
 		if (team == TEAM_RED && cgs.blueflag == FLAG_TAKEN) {
 			return qtrue;
 		} else if (team == TEAM_BLUE && cgs.redflag == FLAG_TAKEN) {

@@ -19,6 +19,8 @@
 #include "../qcommon/INetProfile.h"
 #endif
 
+qboolean demo15detected = qfalse;
+
 cvar_t	*cl_nodelta;
 cvar_t	*cl_debugMove;
 
@@ -505,6 +507,8 @@ static void CL_WalkDemoExt(const char *arg, char *name, int *demofile) {
 		FS_FOpenFileRead( name, demofile, qtrue );
 		if (*demofile) {
 			Com_Printf("Demo file: %s\n", name);
+			if (demo_protocols[i] == 15)
+				demo15detected = qtrue;
 			break;
 		}
 		else

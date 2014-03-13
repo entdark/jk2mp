@@ -213,8 +213,8 @@ CG_AddMarks
 void CG_AddMarks( void ) {
 	int			j;
 	markPoly_t	*mp, *next;
-	int			t;
-	int			fade;
+	float		t;
+	float		fade;
 
 	if ( !cg_addMarks.integer ) {
 		return;
@@ -235,7 +235,7 @@ void CG_AddMarks( void ) {
 		// fade out the energy bursts
 		if ( mp->markShader == cgs.media.energyMarkShader ) {
 
-			fade = 450 - 450 * ( (cg.time - mp->time ) / 3000.0 );
+			fade = 450 - 450 * (((cg.time - mp->time) + cg.timeFraction) / 3000.0);
 			if ( fade < 255 ) {
 				if ( fade < 0 ) {
 					fade = 0;
@@ -251,7 +251,7 @@ void CG_AddMarks( void ) {
 		}
 
 		// fade all marks out with time
-		t = mp->time + MARK_TOTAL_TIME - cg.time;
+		t = (mp->time + MARK_TOTAL_TIME - cg.time) - cg.timeFraction;
 		if ( t < MARK_FADE_TIME ) {
 			fade = 255 * t / MARK_FADE_TIME;
 			if ( mp->alphaFade ) {
@@ -577,9 +577,9 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		vec3_t	rotate_ang;
 
 		VectorSet (color, 1.0, 1.0, 0.5);
-		time = cg.time - p->time;
+		time = (cg.time - p->time) + cg.timeFraction;
 		time2 = p->endtime - p->time;
-		ratio = time / time2;
+		ratio = ((cg.time - p->time) + cg.timeFraction) / time2;
 
 		width = p->width + ( ratio * ( p->endwidth - p->width) );
 		height = p->height + ( ratio * ( p->endheight - p->height) );
@@ -672,13 +672,13 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		else
 			VectorSet (color, 1.0, 1.0, 1.0);
 
-		time = cg.time - p->time;
+		time = (cg.time - p->time) + cg.timeFraction;
 		time2 = p->endtime - p->time;
-		ratio = time / time2;
+		ratio = ((cg.time - p->time) + cg.timeFraction) / time2;
 		
 		if (cg.time > p->startfade)
 		{
-			invratio = 1 - ( (cg.time - p->startfade) / (p->endtime - p->startfade) );
+			invratio = 1 - ((cg.time - p->startfade) + cg.timeFraction) / (p->endtime - p->startfade);
 
 			if (p->color == EMISIVEFADE)
 			{
@@ -858,9 +858,9 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		else
 			VectorSet (color, 0.5, 0.5, 0.5);
 		
-		time = cg.time - p->time;
+		time = (cg.time - p->time) + cg.timeFraction;
 		time2 = p->endtime - p->time;
-		ratio = time / time2;
+		ratio = ((cg.time - p->time) + cg.timeFraction) / time2;
 
 		width = p->width + ( ratio * ( p->endwidth - p->width) );
 		height = p->height + ( ratio * ( p->endheight - p->height) );
@@ -964,9 +964,9 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		vec3_t	rotate_ang;
 		int i, j;
 
-		time = cg.time - p->time;
+		time = (cg.time - p->time) + cg.timeFraction;
 		time2 = p->endtime - p->time;
-		ratio = time / time2;
+		ratio = ((cg.time - p->time) + cg.timeFraction) / time2;
 		if (ratio >= 1.0f) {
 			ratio = 0.9999f;
 		}
@@ -1085,7 +1085,7 @@ void CG_AddParticles (void)
 	VectorCopy( cg.refdef.viewaxis[2], pvup );
 
 	vectoangles( cg.refdef.viewaxis[0], rotate_ang );
-	roll += ((cg.time - oldtime) * 0.1) ;
+	roll += ((cg.time - oldtime) + cg.timeFraction) * 0.1f;
 	rotate_ang[ROLL] += (roll*0.9);
 	AngleVectors ( rotate_ang, rforward, rright, rup);
 	
@@ -1099,7 +1099,7 @@ void CG_AddParticles (void)
 
 		next = p->next;
 
-		time = (cg.time - p->time)*0.001;
+		time = ((cg.time - p->time) + cg.timeFraction)*0.001;
 
 		alpha = p->alpha + time*p->alphavel;
 		if (alpha <= 0)

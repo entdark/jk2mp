@@ -517,50 +517,50 @@ qboolean String_Parse(char **p, const char **out) {
 	return qfalse;
 }
 
+static qboolean isBack = qfalse;
 /*
 =================
 PC_String_Parse
 =================
 */
-qboolean PC_String_Parse(int handle, const char **out) 
-{
+qboolean PC_String_Parse(int handle, const char **out) {
 	static char*	squiggy = "}";
 	pc_token_t		token;
 
-	if (!trap_PC_ReadToken(handle, &token))
-	{
+	if (!trap_PC_ReadToken(handle, &token)) {
 		return qfalse;
 	}
 
-	if (token.string[0] == '@')	// Is it a localized text?
-	{
+	if (!Q_stricmp(token.string, "@MENUS_PLAY")
+		|| !Q_stricmp(token.string, "@MENUS_NEW")
+		|| !Q_stricmp(token.string, "@MENUS2_PLAY")
+		|| !Q_stricmp(token.string, "@MENUS2")) {
+		strcpy(token.string, "Demos");
+	} else if (!Q_stricmp(token.string, "@MENUS_START_PLAYING_NOW")) {
+		strcpy(token.string, "@MENUS_PLAY_BACK_A_RECORDED");
+	} else if (!Q_stricmp(token.string, "@MENUS_BACK")) {
+		isBack = qtrue;
+	}
+
+	if (token.string[0] == '@') { 	// Is it a localized text?
 		char *temp;
 		char	text[MAX_STRING_CHARS*4];
-		temp = &token.string[0];
-		
+		temp = &token.string[0];		
 									// The +1 is to offset the @ at the beginning of the text
 //		trap_SP_GetStringTextString(va("%s_%s",stripedFile,(temp+1)), text, sizeof(text));
 		trap_SP_GetStringTextString(                        temp+1  , text, sizeof(text));	// findmeste
 
-		if (text[0] == 0)		// Couldn't find it
-		{
+		if (text[0] == 0) {			// Couldn't find it
 			Com_Printf(va(S_COLOR_YELLOW "Unable to locate StripEd text '%s'\n", token.string));
 			*(out) = String_Alloc( token.string );
-		} 
-		else 
-		{
+		} else {
 			*(out) = String_Alloc(text);
 		}
-	}
-	else
-	{
+	} else {
 		// Save some memory by not return the end squiggy as an allocated string
-		if ( !Q_stricmp ( token.string, "}" ) )
-		{
+		if ( !Q_stricmp ( token.string, "}" ) ) {
 			*(out) = squiggy;
-		}
-		else
-		{
+		} else {
 			*(out) = String_Alloc(token.string);
 		}
 	}
@@ -590,7 +590,12 @@ qboolean PC_Script_Parse(int handle, const char **out) {
 	while ( 1 ) {
 		if (!trap_PC_ReadToken(handle, &token))
 			return qfalse;
-
+		if (!Q_stricmp(token.string, "multiplayermenu") && isBack) {
+			strcpy(token.string, "mainMenu");
+			isBack = qfalse;
+		} else if (!Q_stricmp(token.string, "multiplayermenu")) {
+			strcpy(token.string, "demo");
+		}
 		if (Q_stricmp(token.string, "}") == 0) {
 			*out = String_Alloc(script);
 			return qtrue;
