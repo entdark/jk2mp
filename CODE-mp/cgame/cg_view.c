@@ -976,8 +976,11 @@ static int CG_CalcFov( void ) {
 
 		//will probably only work with base and base-based mods
 		if (!cg.playerPredicted
-			&& (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4)) {
+			&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+			||
+			((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))) {
 			fov_x *= 0.46f;
 			goto notZoom;
 		}

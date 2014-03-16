@@ -17,7 +17,14 @@ int GetIDForString ( stringID_table_t *table, const char *string )
 	while ( ( table[index].name != NULL ) &&
 			( table[index].name[0] != 0 ) )
 	{
-		if ( !Q_stricmp( table[index].name, string ) )
+		char in[32];
+		char *match;
+		strcpy(in, table[index].name);
+		match = strstr(in, "_15");
+		if (match) {
+			*match = '\0';
+		}
+		if ( !Q_stricmp( in, string ) )
 			return table[index].id;
 
 		index++;
@@ -963,6 +970,85 @@ void Q_strcat( char *dest, int size, const char *src ) {
 }
 
 
+vec3_t defaultColors[10] =
+{
+	{0.0f, 0.0f, 0.0f},
+	{1.0f, 0.0f, 0.0f},
+	{0.0f, 1.0f, 0.0f},
+	{1.0f, 1.0f, 0.0f},
+	{0.0f, 0.0f, 1.0f},
+	{0.0f, 1.0f, 1.0f},
+	{1.0f, 0.0f, 1.0f},
+	{1.0f, 1.0f, 1.0f},
+	{0.6f, 0.6f, 0.6f},
+	{0.3f, 0.3f, 0.3f},
+};
+
+int Q_parseColor( const char *p, const vec3_t numberColors[10], float *color ) {
+	char c = *p++;
+	if (c >= '0' && c <='9') {
+		if (!color)
+			return 1;
+		memcpy( color, numberColors + c - '0', sizeof( vec3_t ));
+		return 1;
+	} else if ( ( c >= 'a' && c < 'x') || (c >= 'A' && c < 'X') ) {
+		int deg;
+		float angle, v;
+		if (!color)
+			return 1;
+		deg = (((c|32) - 'a') * 360) / 24;
+		angle = (DEG2RAD(deg % 120));
+		v = ((cos(angle) / cos((M_PI / 3) - angle)) + 1) / 3;
+		if ( deg <= 120) {
+			color[0] = v;
+			color[1] = 1-v;
+			color[2] = 0;
+		} else if ( deg <= 240) {
+			color[0] = 0;
+			color[1] = v;
+			color[2] = 1-v;
+		} else {
+			color[0] = 1-v;
+			color[1] = 0;
+			color[2] = v;
+		}
+		return 1;
+	} else if ( c == 'x' || c == 'X' )  {
+		int i;
+		int val;
+		for (i = 0;i<6;i++) {
+            int readHex;
+			c = p[i];
+			if ( c >= '0' && c<= '9') {
+                readHex = c - '0';
+			} else if ( c >= 'a' && c<= 'f') {
+				readHex = 0xa + c - 'a';
+			} else if ( c >= 'A' && c<= 'F') {
+				readHex = 0xa + c - 'A';
+			} else {
+				if (color) {
+					color[0] = color[1] = color[2] = 1.0f;
+				}
+				return 1;
+			}
+			if (!color)
+				continue;
+			if ( i & 1) {
+				val|= readHex;
+				color[i >> 1] = val * (1 / 255.0f);
+			} else {
+				val = readHex << 4;
+			}
+		}
+		return 7;
+	}
+	if (color) {
+		color[0] = color[1] = color[2] = 1.0f;
+	}
+	return 0;
+}
+
+
 int Q_PrintStrlen( const char *string ) {
 	int			len;
 	const char	*p;
@@ -1005,6 +1091,90 @@ char *Q_CleanStr( char *string ) {
 	*d = '\0';
 
 	return string;
+}
+
+
+/*
+==================
+Q_StripColor
+ 
+Strips coloured strings in-place using multiple passes: "fgs^^56fds" -> "fgs^6fds" -> "fgsfds"
+
+(Also strips ^8 and ^9)
+==================
+*/
+void Q_StripColor(char *text)
+{
+	qboolean doPass = qtrue;
+	char *read;
+	char *write;
+
+	while ( doPass )
+	{
+		doPass = qfalse;
+		read = write = text;
+		while ( *read )
+		{
+			if ( Q_IsColorStringExt(read) )
+			{
+				doPass = qtrue;
+				read += 2;
+			}
+			else
+			{
+				// Avoid writing the same data over itself
+				if (write != read)
+				{
+					*write = *read;
+				}
+				write++;
+				read++;
+			}
+		}
+		if ( write < read )
+		{
+			// Add trailing NUL byte if string has shortened
+			*write = '\0';
+		}
+	}
+}
+
+/*
+==================
+Q_StripColorNew
+ 
+Strips coloured strings in-place: "fgs^^^223fds" -> "fgs^^23fds"
+==================
+*/
+void Q_StripColorNew(char *text)
+{
+	qboolean doPass = qtrue;
+	char *read;
+	char *write;
+
+	read = write = text;
+	while ( *read )
+	{
+		if ( Q_IsColorStringExt(read) )
+		{
+			read += 2;
+		}
+		else
+		{
+			// Avoid writing the same data over itself
+			if (write != read)
+			{
+				*write = *read;
+			}
+			write++;
+			read++;
+		}
+	}
+	if ( write < read )
+	{
+		// Add trailing NUL byte if string has shortened
+		*write = '\0';
+	}
 }
 
 
@@ -1405,5 +1575,4 @@ int Q_irand(int value1, int value2)
 
 //====================================================================
 
-int demo_protocols[] =
-{ 15, 16 };
+//qboolean demo15detected;

@@ -700,7 +700,7 @@ int RE_Font_StrLenPixels(const char *psText, const int iFontHandle, const float 
 		unsigned int uiLetter = AnyLanguage_ReadCharFromString( psText, &iAdvanceCount, NULL );
 		psText += iAdvanceCount;
 
-		if (uiLetter == '^' && *psText >= '0' && *psText <= '7')
+		if (uiLetter == '^' && *psText >= '0' && *psText <= '9')
 		{
 			// then this is colour, so skip it from width considerations
 		}

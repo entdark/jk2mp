@@ -11,6 +11,8 @@ displayContextDef_t cgDC;
 	#include "cg_lights.h"
 #endif
 
+//qboolean demo15detected;
+
 /*
 Ghoul2 Insert Start
 */
@@ -570,7 +572,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawEnemyInfo, "cg_drawEnemyInfo", "1", CVAR_ARCHIVE  },
 	{ &cg_drawCrosshair, "cg_drawCrosshair", "1", CVAR_ARCHIVE },
 	{ &cg_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE },
-	{ &cg_drawScores,		  "cg_drawScores", "1", CVAR_ARCHIVE },
+	{ &cg_drawScores, "cg_drawScores", "1", CVAR_ARCHIVE },
 	{ &cg_dynamicCrosshair, "cg_dynamicCrosshair", "1", CVAR_ARCHIVE },
 	{ &cg_drawRewards, "cg_drawRewards", "0", CVAR_ARCHIVE },
 	{ &cg_crosshairSize, "cg_crosshairSize", "24", CVAR_ARCHIVE },
@@ -700,7 +702,7 @@ Ghoul2 Insert End
 */
 	{ &mme_demoFileName,	"mme_demoFileName",		"",			0		},
 	{ &mov_chatBeep,		"mov_chatBeep",			"1",		CVAR_ARCHIVE	},
-	{ &mov_fragsOnly,		"mov_fragOnly",			"0",		CVAR_ARCHIVE	},
+	{ &mov_fragsOnly,		"mov_fragsOnly",		"0",		CVAR_ARCHIVE	},
 	{ &mov_filterMask,		"mov_filterMask",		"0",		CVAR_ARCHIVE	},
 	{ &mov_seekInterval,	"mov_seekInterval",		"4",		CVAR_ARCHIVE	},
 	{ &mov_deltaYaw,		"mov_deltaYaw",			"0",		CVAR_ARCHIVE	},
@@ -718,7 +720,7 @@ Ghoul2 Insert End
 	{ &mov_saberTeamColour,	"mov_saberTeamColour",	"1",		CVAR_ARCHIVE	},
 	{ &mov_wallhack,		"mov_wallhack",			"0",		CVAR_ARCHIVE	},
 	{ &fx_Vibrate,			"fx_Vibrate",			"1",		CVAR_ARCHIVE	},
-	{ &fx_vfps,				"fx_vfps",				"340",		CVAR_ARCHIVE	},
+	{ &fx_vfps,				"fx_vfps",				"1000",		CVAR_ARCHIVE	},
 };
 
 static int  cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
@@ -2614,7 +2616,8 @@ Ghoul2 Insert End
 	// check version
 	s = CG_ConfigString( CS_GAME_VERSION );
 	if ( strcmp( s, GAME_VERSION ) ) {
-		CG_Error( "Client/Server game mismatch: %s/%s", GAME_VERSION, s );
+//		CG_Error( "Client/Server game mismatch: %s/%s", GAME_VERSION, s );
+		Com_Printf( "^1Client/Server game mismatch: %s/%s", GAME_VERSION, s );
 	}
 
 	s = CG_ConfigString( CS_LEVEL_START_TIME );

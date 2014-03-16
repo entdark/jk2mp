@@ -73,6 +73,7 @@ qboolean PM_SpinningAnim( int anim );
 qboolean PM_InOnGroundAnim ( int anim );
 qboolean PM_InRollComplete( playerState_t *ps, int anim );
 int PM_AnimLength( int index, animNumber_t anim );
+int PM_AnimLength15( int index, animNumber15_t anim );
 
 int PM_GetSaberStance(void);
 float PM_GroundDistance(void);

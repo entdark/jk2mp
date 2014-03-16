@@ -1181,6 +1181,7 @@ void CTail::CalcNewEndpoint()
 	//if old and new origins are too close to each other then direction is counted wrong...
 	//let's be based on velocity
 	VectorCopy( mVel, temp );
+	VectorNegate( temp, temp );
 
 	// I wish we didn't have to do a VectorNormalize every frame.....
 	VectorNormalize( temp );

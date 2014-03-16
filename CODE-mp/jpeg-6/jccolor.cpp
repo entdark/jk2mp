@@ -19,7 +19,7 @@ typedef struct {
   struct jpeg_color_converter pub; /* public fields */
 
   /* Private state for RGB->YCC conversion */
-  INT32 * rgb_ycc_tab;		/* => table for RGB to YCbCr conversion */
+  JINT32 * rgb_ycc_tab;		/* => table for RGB to YCbCr conversion */
 } my_color_converter;
 
 typedef my_color_converter * my_cconvert_ptr;
@@ -56,9 +56,9 @@ typedef my_color_converter * my_cconvert_ptr;
  */
 
 #define SCALEBITS	16	/* speediest right-shift on some machines */
-#define CBCR_OFFSET	((INT32) CENTERJSAMPLE << SCALEBITS)
-#define ONE_HALF	((INT32) 1 << (SCALEBITS-1))
-#define FIX(x)		((INT32) ((x) * (1L<<SCALEBITS) + 0.5))
+#define CBCR_OFFSET	((JINT32) CENTERJSAMPLE << SCALEBITS)
+#define ONE_HALF	((JINT32) 1 << (SCALEBITS-1))
+#define FIX(x)		((JINT32) ((x) * (1L<<SCALEBITS) + 0.5))
 
 /* We allocate one big table and divide it up into eight parts, instead of
  * doing eight alloc_small requests.  This lets us use a single table base
@@ -86,13 +86,13 @@ METHODDEF void
 rgb_ycc_start (j_compress_ptr cinfo)
 {
   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
-  INT32 * rgb_ycc_tab;
-  INT32 i;
+  JINT32 * rgb_ycc_tab;
+  JINT32 i;
 
   /* Allocate and fill in the conversion tables. */
-  cconvert->rgb_ycc_tab = rgb_ycc_tab = (INT32 *)
+  cconvert->rgb_ycc_tab = rgb_ycc_tab = (JINT32 *)
     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-				(TABLE_SIZE * SIZEOF(INT32)));
+				(TABLE_SIZE * SIZEOF(JINT32)));
 
   for (i = 0; i <= MAXJSAMPLE; i++) {
     rgb_ycc_tab[i+R_Y_OFF] = FIX(0.29900) * i;
@@ -133,7 +133,7 @@ rgb_ycc_convert (j_compress_ptr cinfo,
 {
   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
   register int r, g, b;
-  register INT32 * ctab = cconvert->rgb_ycc_tab;
+  register JINT32 * ctab = cconvert->rgb_ycc_tab;
   register JSAMPROW inptr;
   register JSAMPROW outptr0, outptr1, outptr2;
   register JDIMENSION col;
@@ -149,7 +149,8 @@ rgb_ycc_convert (j_compress_ptr cinfo,
       r = GETJSAMPLE(inptr[RGB_RED]);
       g = GETJSAMPLE(inptr[RGB_GREEN]);
       b = GETJSAMPLE(inptr[RGB_BLUE]);
-      inptr += RGB_PIXELSIZE;
+//      inptr += RGB_PIXELSIZE;
+	  inptr += cinfo->input_components;
       /* If the inputs are 0..MAXJSAMPLE, the outputs of these equations
        * must be too; we do not need an explicit range-limiting operation.
        * Hence the value being shifted is never negative, and we don't
@@ -189,7 +190,7 @@ rgb_gray_convert (j_compress_ptr cinfo,
 {
   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
   register int r, g, b;
-  register INT32 * ctab = cconvert->rgb_ycc_tab;
+  register JINT32 * ctab = cconvert->rgb_ycc_tab;
   register JSAMPROW inptr;
   register JSAMPROW outptr;
   register JDIMENSION col;
@@ -228,7 +229,7 @@ cmyk_ycck_convert (j_compress_ptr cinfo,
 {
   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
   register int r, g, b;
-  register INT32 * ctab = cconvert->rgb_ycc_tab;
+  register JINT32 * ctab = cconvert->rgb_ycc_tab;
   register JSAMPROW inptr;
   register JSAMPROW outptr0, outptr1, outptr2, outptr3;
   register JDIMENSION col;
@@ -368,11 +369,11 @@ jinit_color_converter (j_compress_ptr cinfo)
     break;
 
   case JCS_RGB:
-#if RGB_PIXELSIZE != 3
-    if (cinfo->input_components != RGB_PIXELSIZE)
-      ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+//#if RGB_PIXELSIZE != 3
+//    if (cinfo->input_components != RGB_PIXELSIZE)
+//      ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
     break;
-#endif /* else share code with YCbCr */
+//#endif /* else share code with YCbCr */
 
   case JCS_YCbCr:
     if (cinfo->input_components != 3)

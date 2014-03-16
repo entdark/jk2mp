@@ -257,6 +257,11 @@ qboolean CG_DrawOldScoreboard( void ) {
 		return qfalse;
 	}
 
+	if ( demo15detected && cgs.gametype == GT_SINGLE_PLAYER && cg.predictedPlayerState.pm_type == PM_INTERMISSION ) {
+		cg.deferredPlayerLoading = 0;
+		return qfalse;
+	}
+
 	// don't draw scoreboard during death while warmup up
 	if ( cg.warmup && !cg.showScores ) {
 		return qfalse;

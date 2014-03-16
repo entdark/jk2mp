@@ -149,8 +149,9 @@ typedef unsigned short UINT16;
 typedef unsigned int UINT16;
 #endif /* HAVE_UNSIGNED_SHORT */
 
-// compile warning for VC6 with CPP being defined
-// typedef long INT32;
+#ifndef DONT_TYPEDEF_INT32
+typedef long JINT32;
+#endif
 
 /* INT16 must hold at least the values -32768..32767. */
 
@@ -158,10 +159,10 @@ typedef unsigned int UINT16;
 typedef short INT16;
 #endif
 
-/* INT32 must hold at least signed 32-bit values. */
+/* JINT32 must hold at least signed 32-bit values. */
 
-//#ifndef XMD_H			/* X11/xmd.h correctly defines INT32 */
-//typedef long INT32;
+//#ifndef XMD_H			/* X11/xmd.h correctly defines JINT32 */
+//typedef long JINT32;
 //#endif
 
 /* Datatype used for image dimensions.  The JPEG standard only supports

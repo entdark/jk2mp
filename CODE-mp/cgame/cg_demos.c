@@ -13,6 +13,7 @@ extern void CG_PlayBufferedSounds( void );
 extern void CG_PowerupTimerSounds( void );
 extern void CG_UpdateSoundTrackers();
 extern void CG_Draw2D( void );
+extern void CG_SaberClashFlare( void );
 extern float CG_DrawFPS( float y );
 extern void CG_InterpolatePlayerState( qboolean grabAngles );
 
@@ -22,6 +23,7 @@ extern void trap_MME_Capture( const char *baseName, float fps, float focus );
 extern void trap_MME_CaptureStereo( const char *baseName, float fps, float focus );
 extern int trap_MME_SeekTime( int seekTime );
 extern void trap_MME_Music( const char *musicName, float time, float length );
+extern qboolean trap_S_Demo15Detection( void );
 extern void trap_R_RandomSeed( int time, float timeFraction );
 extern void trap_FX_RandomSeed( int time, float timeFraction );
 extern void trap_S_UpdatePitch( float pitch );
@@ -148,7 +150,9 @@ static void CG_SetPredictedThirdPerson(void) {
 //		&& ((cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
 //		|| (cg.playerCent->currentState.weapon != WP_SABER && !cg_trueGuns.integer)))
 
-		|| (cg.predictedPlayerState.fallingToDeath)
+		|| (cg.predictedPlayerState.fallingToDeath) || cg.predictedPlayerState.usingATST
+		|| cg.predictedPlayerState.forceHandExtend == HANDEXTEND_KNOCKDOWN
+		|| cg.predictedPlayerState.weapon == WP_SABER
 		|| (CG_InKnockDown(cg.predictedPlayerState.torsoAnim) || CG_InKnockDown(cg.predictedPlayerState.legsAnim)
 //		&& ((cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
 //		|| (cg.playerCent->currentState.weapon != WP_SABER && !cg_trueGuns.integer))
@@ -194,9 +198,12 @@ static int demoSetupView( void) {
 					cg.renderingThirdPerson = ((cg_thirdPerson.integer || cent->currentState.eFlags & EF_DEAD
 						//|| (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
 						//|| (cg.playerCent->currentState.weapon == WP_MELEE && !cg_trueGuns.integer)
-						)
-						&& !(cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4));
+						|| cg.playerCent->currentState.weapon == WP_SABER)
+						&& !(((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+						||
+						((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected)));
 				inwater = CG_DemosCalcViewValues();
 				// first person blend blobs, done after AnglesToAxis
 				if (!cg.renderingThirdPerson) {
@@ -714,8 +721,10 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	CG_DrawRect(0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
 	if ( demo.viewType == viewChase && cg.playerCent && ( cg.playerCent->currentState.number < MAX_CLIENTS ) )
 		CG_Draw2D();
-	else if ( cg_drawFPS.integer )
+	else if ( cg_draw2D.integer && cg_drawFPS.integer ) {
+		CG_SaberClashFlare();
 		CG_DrawFPS(0.0f);
+	}
 
 	CG_UpdateFallVector();
 
@@ -995,6 +1004,8 @@ void demoPlaybackInit(void) {
 	trap_AddCommand("clientOverride");
 	trap_AddCommand("musicPlay");
 	trap_AddCommand("stopLoop");
+
+	demo15detected = trap_S_Demo15Detection();
 
 	demo.media.additiveWhiteShader = trap_R_RegisterShader( "mme_additiveWhite" );
 	demo.media.mouseCursor = trap_R_RegisterShaderNoMip( "menu/art/3_cursor2" );

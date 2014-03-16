@@ -106,7 +106,7 @@ void CG_DrawInformation( void ) {
 	int			value, valueNOFP;
 	qhandle_t	levelshot;
 	char		buf[1024];
-	int			iPropHeight = 18;	// I know, this is total crap, but as a post release asian-hack....  -Ste
+	int			iPropHeight = demo15detected?PROP_HEIGHT:18;	// I know, this is total crap, but as a post release asian-hack....  -Ste
 
 	info = CG_ConfigString( CS_SERVERINFO );
 	sysInfo = CG_ConfigString( CS_SYSTEMINFO );
@@ -167,7 +167,7 @@ void CG_DrawInformation( void ) {
 			y += iPropHeight;
 		}
 
-		{	// display global MOTD at bottom (mirrors ui_main UI_DrawConnectScreen
+		if (!demo15detected) {	// display global MOTD at bottom (mirrors ui_main UI_DrawConnectScreen
 			char motdString[1024];
 			trap_Cvar_VariableStringBuffer( "cl_motdString", motdString, sizeof( motdString ) );
 

@@ -893,6 +893,9 @@ int trap_MME_SeekTime( int seekTime ) {
 void trap_MME_Music( const char *musicName, float time, float length ) {
 	syscall( CG_MME_MUSIC, musicName, PASSFLOAT(time), PASSFLOAT(length) );
 }
+qboolean trap_S_Demo15Detection( void ) {
+	return syscall( CG_MME_DEMO15DETECTION );
+}
 void trap_R_RandomSeed( int time, float timeFraction ) {
 	syscall( CG_R_RANDOMSEED, time, PASSFLOAT(timeFraction) );
 }

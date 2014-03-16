@@ -334,7 +334,8 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 	}
 
 	// health changes of more than -3 should make pain sounds
-	if (cg_oldPainSounds.integer)
+	//needed?
+	if (demo15detected || cg_oldPainSounds.integer)
 	{
 		if ( ps->stats[STAT_HEALTH] < (ops->stats[STAT_HEALTH] - 3))
 		{

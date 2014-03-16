@@ -19,8 +19,6 @@
 #include "../qcommon/INetProfile.h"
 #endif
 
-qboolean demo15detected = qfalse;
-
 cvar_t	*cl_nodelta;
 cvar_t	*cl_debugMove;
 
@@ -576,14 +574,19 @@ void CL_PlayDemo_f( void ) {
 
 	Cvar_Set( "mme_demoFileName", testName );
 
+	demo15detected = qfalse; //reset
 	if ( haveConvert ) {
 		Com_sprintf (name, MAX_OSPATH, "mmedemos/%s.mme", testName );
 		if (FS_FileExists( name )) {
+			char empty1[MAX_OSPATH];
+			int empty2;
+			CL_WalkDemoExt( testName, empty1, &empty2 ); //do that to set demo15detected if needed
 			if (demoPlay( name ))
 				return;
 		}
 	}
 
+	demo15detected = qfalse; //reset
 	CL_WalkDemoExt( testName, name, &clc.demofile );
 	if (!clc.demofile) {
 		Com_Error( ERR_DROP, "couldn't open %s", name);
@@ -1074,6 +1077,7 @@ CL_Disconnect_f
 ==================
 */
 void CL_Disconnect_f( void ) {
+	demo15detected = qfalse;
 	SCR_StopCinematic();
 	Cvar_Set("ui_singlePlayerActive", "0");
 	if ( cls.state != CA_DISCONNECTED && cls.state != CA_CINEMATIC ) {
@@ -2185,11 +2189,12 @@ void CL_Frame ( int msec ) {
 	}
 
 	// if recording an avi, lock to a fixed fps
-	if ( cl_avidemo->integer && msec) {
+	if (cl_avidemo->integer > 0 && msec) {
 		// save the current screen
 		if ( cls.state == CA_ACTIVE || cl_forceavidemo->integer) {
 			if (cl_avidemo->integer > 0) {
-				float stereoSep;
+				//3d went to cl_mme_capture->integer
+/*				float stereoSep;
 				stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
 				if (stereoSep != 0) {
 					float camOffset;
@@ -2218,6 +2223,8 @@ void CL_Frame ( int msec ) {
 				} else {
 					Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme\n" );
 				}
+*/
+				Cbuf_ExecuteText( EXEC_NOW, "screenshot_tga silent\n" );
 			} else {
 				Cbuf_ExecuteText( EXEC_NOW, "screenshot_tga silent\n" );
 			}
@@ -2702,6 +2709,8 @@ void CL_Init( void ) {
 	mme_demoFileName = Cvar_Get ("mme_demoFileName", "", CVAR_TEMP | CVAR_NORESTART );
 	mme_demoStartProject = Cvar_Get ("mme_demoStartProject", "", CVAR_TEMP );
 	mme_demoAutoQuit = Cvar_Get ("mme_demoAutoQuit", "0", CVAR_ARCHIVE );
+
+	demo15detected = qfalse;
 
 	//
 	// register our commands

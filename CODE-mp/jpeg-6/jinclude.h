@@ -72,7 +72,7 @@
 
 #ifndef WIN32
 #include <stdint.h>
-typedef int32_t INT32;
+typedef int32_t JINT32;
 #endif
 
 /*

@@ -1178,10 +1178,12 @@ Ghoul2 Insert End
 		return 0;
 	case CG_MME_MUSIC:
 		S_MMEMusic( (const char *)VMA(1), VMF(2), VMF(3) );
-        return 0; 	
+        return 0;
+	case CG_MME_DEMO15DETECTION:
+        return demo15detected;
 	case CG_R_RANDOMSEED:
 		re.DemoRandomSeed( args[1], VMF(2) );
-        return 0; 
+        return 0;
 	case CG_FX_RANDOMSEED:
 		FX_DemoRandomSeed( args[1], VMF(2) );
         return 0;

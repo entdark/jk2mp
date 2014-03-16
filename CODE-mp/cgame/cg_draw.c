@@ -66,9 +66,12 @@ int MenuFontToHandle(int iMenuFont)
 
 int CG_Text_Width(const char *text, float scale, int iMenuFont) 
 {
+	char s[1024];	
 	int iFontIndex = MenuFontToHandle(iMenuFont);
+	Q_strncpyz(s, text, sizeof(s) - 2);
+	Q_StripColorNew(s);
 
-	return trap_R_Font_StrLenPixels(text, iFontIndex, scale);
+	return trap_R_Font_StrLenPixels(s, iFontIndex, scale);
 }
 
 int CG_Text_Height(const char *text, float scale, int iMenuFont) 
@@ -273,8 +276,11 @@ static void CG_DrawZoomMask( void )
 	}
 	else if (cg.playerPredicted && cg.predictedPlayerState.zoomMode
 		|| (!cg.playerPredicted
-		&& (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4)))
+		&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+		||
+		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))))
 	{
 		// disruptor zoom mode
 		level = (float)(50.0f - zoomFov) / 50.0f;//(float)(80.0f - zoomFov) / 80.0f;
@@ -290,8 +296,11 @@ static void CG_DrawZoomMask( void )
 		}
 
 		if (!cg.playerPredicted
-			&& (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4))
+			&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+		||
+		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected)))
 			level = 0.46f;
 
 		// Using a magic number to convert the zoom level to a rotation amount that correlates more or less with the zoom artwork. 
@@ -383,9 +392,12 @@ static void CG_DrawZoomMask( void )
 
 		if ((cg.playerPredicted && cg.predictedPlayerState.weaponstate == WEAPON_CHARGING_ALT)
 			|| (!cg.playerPredicted
-			&& (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && cg.charging
-			&& cg.chargeTime && cg.time > cg.chargeTime))
+			&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+			||
+			((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))
+			&& cg.charging && cg.chargeTime && cg.time > cg.chargeTime))
 		{
 			trap_R_SetColor( colorTable[CT_WHITE] );
 
@@ -2490,7 +2502,7 @@ CG_DrawCenterString
 ===================
 */
 static void CG_DrawCenterString( void ) {
-	char	*start;
+	char	*start, s[1024];
 	int		l;
 	int		x, y, w;
 	int h;
@@ -2508,6 +2520,9 @@ static void CG_DrawCenterString( void ) {
 
 	trap_R_SetColor( color );
 
+	Q_strncpyz(s, cg.centerPrint, sizeof(s) - 2);
+	Q_StripColorNew(s);
+
 	start = cg.centerPrint;
 
 	if( mov_fragsOnly.integer != 0 ) {
@@ -2519,7 +2534,7 @@ static void CG_DrawCenterString( void ) {
 	y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
 
 	while ( 1 ) {
-		char linebuffer[1024];
+		char linebuffer[1024], linebufferFix[1024];
 
 		for ( l = 0; l < 50; l++ ) {
 			if ( !start[l] || start[l] == '\n' ) {
@@ -2529,8 +2544,18 @@ static void CG_DrawCenterString( void ) {
 		}
 		linebuffer[l] = 0;
 
-		w = CG_Text_Width(linebuffer, scale, FONT_MEDIUM);
-		h = CG_Text_Height(linebuffer, scale, FONT_MEDIUM);
+		for ( l = 0; l < 50; l++ ) {
+			if ( !s[l] || s[l] == '\n' ) {
+				break;
+			}
+			linebufferFix[l] = s[l];
+		}
+		linebufferFix[l] = 0;
+
+//		w = CG_Text_Width(linebuffer, scale, FONT_MEDIUM);
+//		h = CG_Text_Height(linebuffer, scale, FONT_MEDIUM);
+		w = CG_Text_Width(linebufferFix, scale, FONT_MEDIUM);
+		h = CG_Text_Height(linebufferFix, scale, FONT_MEDIUM);
 		x = (SCREEN_WIDTH - w) / 2;
 		CG_Text_Paint(x, y + h, scale, color, linebuffer, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE, FONT_MEDIUM);
 		y += h + 6;
@@ -2578,8 +2603,11 @@ static void CG_DrawCrosshair( vec3_t worldPoint, int chEntValid ) {
 	//not while scoped
 	if ((cg.playerPredicted && cg.predictedPlayerState.zoomMode != 0)
 		|| (!cg.playerPredicted
-		&& (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4))) {
+		&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+		||
+		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected)))) {
 		return;
 	}
 
@@ -2762,8 +2790,7 @@ CG_SaberClashFlare
 */
 int g_saberFlashTime = 0;
 vec3_t g_saberFlashPos = {0, 0, 0};
-void CG_SaberClashFlare( void ) 
-{
+void CG_SaberClashFlare( void ) {
 	int maxTime = 150;
 	float t;
 	vec3_t dif;
@@ -2883,8 +2910,11 @@ static void CG_DrawActivePowers(void)
 
 	if ((cg.playerPredicted && cg.snap->ps.zoomMode)
 		|| (!cg.playerPredicted
-		&& (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4)))
+		&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+		||
+		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))))
 	{ //don't display over zoom mask
 		return;
 	}
@@ -3562,7 +3592,7 @@ static qboolean CG_DrawFollow( void )
 
 	if ( !(cg.snap->ps.pm_flags & PMF_FOLLOW) ) 
 	{
-//		return qfalse;
+		return qfalse;
 	}
 
 //	s = "following";
@@ -4185,6 +4215,7 @@ void CG_Draw2D( void ) {
 			CG_DrawActivePowers();
 		CG_DrawZoomMask();
 		CG_DrawCrosshairNames();
+		CG_SaberClashFlare();
 		if (cg_drawStatus.integer)
 			CG_DrawFlagStatus();
 		CG_DrawVote();

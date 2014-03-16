@@ -25,8 +25,8 @@
 
 typedef struct {
   /* Basic tables: (element [0] of each array is unused) */
-  INT32 mincode[17];		/* smallest code of length k */
-  INT32 maxcode[18];		/* largest code of length k (-1 if none) */
+  JINT32 mincode[17];		/* smallest code of length k */
+  JINT32 maxcode[18];		/* largest code of length k (-1 if none) */
   /* (maxcode[17] is a sentinel to ensure jpeg_huff_decode terminates) */
   int valptr[17];		/* huffval[] index of 1st symbol of length k */
 
@@ -65,7 +65,7 @@ EXTERN void jpeg_make_d_derived_tbl JPP((j_decompress_ptr cinfo,
  * necessary.
  */
 
-typedef INT32 bit_buf_type;	/* type of bit-extraction buffer */
+typedef JINT32 bit_buf_type;	/* type of bit-extraction buffer */
 #define BIT_BUF_SIZE  32	/* size of buffer in bits */
 
 /* If long is > 32 bits on your machine, and shifting/masking longs is
@@ -100,7 +100,7 @@ typedef struct {		/* Bitreading working state within an MCU */
 #define BITREAD_STATE_VARS  \
 	register bit_buf_type get_buffer;  \
 	register int bits_left;  \
-	bitread_working_state br_state
+	bitread_working_state br_state = {0}
 
 #define BITREAD_LOAD_STATE(cinfop,permstate)  \
 	br_state.cinfo = cinfop; \

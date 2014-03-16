@@ -468,6 +468,10 @@ void G2_TransformBone (CTransformBone &TB)
 	boneInfo_v		&boneList = TB.rootBoneList;
 	int				i, j, boneListIndex;
 	int				angleOverride = 0;
+	int				incomingTime = TB.incomingTime;
+
+	if (abs(TB.incomingTime - tr.refdef.time) <= 1)
+		incomingTime = tr.refdef.time;
 
 #if DEBUG_G2_TIMING
 	bool printTiming=false;
@@ -495,22 +499,8 @@ void G2_TransformBone (CTransformBone &TB)
 		if (boneList[boneListIndex].flags & BONE_ANIM_BLEND)
 		{
 			//float blendTime = TB.incomingTime - boneList[boneListIndex].blendStart;
-			float blendTime;
-			//hmm maybe this thing is not even needed...
-			if (!tr.refdef.time) {
-				blendTime = (TB.incomingTime - boneList[boneListIndex].blendStart);
-			} else if (tr.refdef.time == incomingTimeLast) {
-				if (tr.refdef.timeFraction >= incomingTimeFractionLast) {
-					blendTime = (tr.refdef.time - boneList[boneListIndex].blendStart) + tr.refdef.timeFraction;
-					incomingTimeFractionLast = tr.refdef.timeFraction;
-				} else {
-					blendTime = (tr.refdef.time - boneList[boneListIndex].blendStart) + incomingTimeFractionLast;
-				}
-			} else {
-				blendTime = (tr.refdef.time - boneList[boneListIndex].blendStart) + tr.refdef.timeFraction;
-				incomingTimeLast = tr.refdef.time;
-				incomingTimeFractionLast = tr.refdef.timeFraction;
-			}
+			//float blendTime = tr.refdef.time?tr.refdef.time:TB.incomingTime - boneList[boneListIndex].blendStart + tr.refdef.timeFraction;
+			float blendTime = (incomingTime - boneList[boneListIndex].blendStart) + tr.refdef.timeFraction;
 			// only set up the blend anim if we actually have some blend time left on this bone anim - otherwise we might corrupt some blend higher up the hiearchy
 			if (blendTime>=0.0f&&blendTime < boneList[boneListIndex].blendTime)
 			{
@@ -539,7 +529,9 @@ void G2_TransformBone (CTransformBone &TB)
 			}
 			else
 			{			
-				time = ((tr.refdef.time ? tr.refdef.time : TB.incomingTime - boneList[boneListIndex].startTime) + tr.refdef.timeFraction) / 50.0f;
+				//time = ((tr.refdef.time ? tr.refdef.time : TB.incomingTime - boneList[boneListIndex].startTime) + tr.refdef.timeFraction) / 50.0f;
+				//time = (TB.incomingTime - boneList[boneListIndex].startTime) / 50.0f;
+				time = ((incomingTime - boneList[boneListIndex].startTime) + tr.refdef.timeFraction) / 50.0f;
 			}
 			if (time<0)
 			{
@@ -891,10 +883,12 @@ void G2_TransformBone (CTransformBone &TB)
 		Multiply_3x4Matrix(&firstPass, &TB.bonePtr[TB.parent].second, &tbone[2]);
 
 		// are we attempting to blend with the base animation? and still within blend time?
-		if (boneOverride.boneBlendTime && (((boneOverride.boneBlendTime + boneOverride.boneBlendStart) < tr.refdef.time?tr.refdef.time:TB.incomingTime)))
+		if (boneOverride.boneBlendTime && (((boneOverride.boneBlendTime + boneOverride.boneBlendStart) < /*tr.refdef.time?tr.refdef.time:*/TB.incomingTime)))
 		{
 			// ok, we are supposed to be blending. Work out lerp
-			const float blendTime = (tr.refdef.time?tr.refdef.time:TB.incomingTime - boneList[boneListIndex].boneBlendStart) + tr.refdef.timeFraction;
+			//const float blendTime = (tr.refdef.time?tr.refdef.time:TB.incomingTime - boneList[boneListIndex].boneBlendStart) + tr.refdef.timeFraction;
+			//const float blendTime = TB.incomingTime - boneList[boneListIndex].boneBlendStart;
+			const float blendTime = (incomingTime - boneList[boneListIndex].boneBlendStart) + tr.refdef.timeFraction;
 			float blendLerp = (blendTime / boneList[boneListIndex].boneBlendTime);
 			if (blendLerp <= 1)
 			{
@@ -1688,19 +1682,22 @@ void R_AddGhoulSurfaces( trRefEntity_t *ent ) {
 				VectorNormalize((float*)&ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position.matrix[1]);
 				VectorNormalize((float*)&ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position.matrix[2]);
 				mdxaBone_t		tempMatrix;
-				tempMatrix.matrix[0][0]=1.0f;
-				tempMatrix.matrix[0][1]=0.0f;
-				tempMatrix.matrix[0][2]=0.0f;
-				tempMatrix.matrix[0][3]=-ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position.matrix[0][3];
-				tempMatrix.matrix[1][0]=0.0f;
-				tempMatrix.matrix[1][1]=1.0f;
-				tempMatrix.matrix[1][2]=0.0f;
-				tempMatrix.matrix[1][3]=-ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position.matrix[1][3];
-				tempMatrix.matrix[2][0]=0.0f;
-				tempMatrix.matrix[2][1]=0.0f;
-				tempMatrix.matrix[2][2]=1.0f;
-				tempMatrix.matrix[2][3]=-ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position.matrix[2][3];
-				//Inverse_Matrix(&ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position, &tempMatrix);
+				if (demo15detected) {
+					Inverse_Matrix(&ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position, &tempMatrix);
+				} else {
+					tempMatrix.matrix[0][0]=1.0f;
+					tempMatrix.matrix[0][1]=0.0f;
+					tempMatrix.matrix[0][2]=0.0f;
+					tempMatrix.matrix[0][3]=-ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position.matrix[0][3];
+					tempMatrix.matrix[1][0]=0.0f;
+					tempMatrix.matrix[1][1]=1.0f;
+					tempMatrix.matrix[1][2]=0.0f;
+					tempMatrix.matrix[1][3]=-ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position.matrix[1][3];
+					tempMatrix.matrix[2][0]=0.0f;
+					tempMatrix.matrix[2][1]=0.0f;
+					tempMatrix.matrix[2][2]=1.0f;
+					tempMatrix.matrix[2][3]=-ghoul2[i].mBltlist[ghoul2[i].mNewOrigin].position.matrix[2][3];
+				}
 				Multiply_3x4Matrix(&rootMatrix, &tempMatrix, (mdxaBone_t*)&identityMatrix);
 
 				setNewOrigin = true;

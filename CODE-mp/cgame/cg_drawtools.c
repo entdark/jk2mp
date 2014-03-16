@@ -606,7 +606,12 @@ void UI_DrawProportionalString( int x, int y, const char* str, int style, vec4_t
 	//	is dumb, but for now...
 	//
 	int iStyle = 0;
+	char s[1024];
 	int iMenuFont = (style & UI_SMALLFONT) ? FONT_SMALL : FONT_MEDIUM;
+
+	// the best fix in the world
+	Q_strncpyz(s, str, sizeof(s) - 2);
+	Q_StripColorNew(s);
 
 	switch (style & (UI_LEFT|UI_CENTER|UI_RIGHT))
 	{
@@ -619,13 +624,15 @@ void UI_DrawProportionalString( int x, int y, const char* str, int style, vec4_t
 
 		case UI_CENTER:
 		{
-			x -= CG_Text_Width(str, 1.0, iMenuFont) / 2;
+//			x -= CG_Text_Width(str, 1.0, iMenuFont) / 2;
+			x -= CG_Text_Width(s, 1.0, iMenuFont) / 2;
 		}
 		break;
 
 		case UI_RIGHT:
 		{
-			x -= CG_Text_Width(str, 1.0, iMenuFont) / 2;
+//			x -= CG_Text_Width(str, 1.0, iMenuFont) / 2;
+			x -= CG_Text_Width(s, 1.0, iMenuFont) / 2;
 		}
 		break;
 	}

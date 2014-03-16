@@ -144,28 +144,38 @@ float forceJumpStrength[NUM_FORCE_POWER_LEVELS] =
 	840
 };
 
-int PM_GetSaberStance(void)
-{
-	if (pm->ps->fd.saberAnimLevel == FORCE_LEVEL_2)
-	{ //medium
-		return BOTH_STAND2;
+int PM_GetSaberStance(void) {
+	if (demo15detected) {
+		if (pm->ps->fd.saberAnimLevel == FORCE_LEVEL_2) { //medium
+			return BOTH_STAND2_15;
+		}
+		if (pm->ps->fd.saberAnimLevel == FORCE_LEVEL_3) { //strong
+			return BOTH_SABERSLOW_STANCE_15;
+		}
+		//fast
+		return BOTH_SABERFAST_STANCE_15;
+	} else {
+		if (pm->ps->fd.saberAnimLevel == FORCE_LEVEL_2) { //medium
+			return BOTH_STAND2;
+		}
+		if (pm->ps->fd.saberAnimLevel == FORCE_LEVEL_3) { //strong
+			return BOTH_SABERSLOW_STANCE;
+		}
+		//fast
+		return BOTH_SABERFAST_STANCE;
 	}
-	if (pm->ps->fd.saberAnimLevel == FORCE_LEVEL_3)
-	{ //strong
-		return BOTH_SABERSLOW_STANCE;
-	}
-
-	//fast
-	return BOTH_SABERFAST_STANCE;
 }
 
-qboolean PM_DoSlowFall(void)
-{
-	if ( ( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT || (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT ) && pm->ps->legsTimer > 500 )
-	{
+qboolean PM_DoSlowFall(void) {
+	if ( ( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT )
+		&& pm->ps->legsTimer > 500 && !demo15detected ) {
+		return qtrue;
+	} else if ( ( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT_15
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT_15 )
+		&& pm->ps->legsTimer > 500 && demo15detected ) {
 		return qtrue;
 	}
-
 	return qfalse;
 }
 
@@ -476,37 +486,49 @@ qboolean PM_ForceJumpingUp(void)
 	return qfalse;
 }
 
-static void PM_JumpForDir( void )
-{
-	int anim = BOTH_JUMP1;
-	if ( pm->cmd.forwardmove > 0 ) 
-	{
-		anim = BOTH_JUMP1;
-		pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
-	} 
-	else if ( pm->cmd.forwardmove < 0 )
-	{
-		anim = BOTH_JUMPBACK1;
-		pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
-	}
-	else if ( pm->cmd.rightmove > 0 ) 
-	{
-		anim = BOTH_JUMPRIGHT1;
-		pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
-	}
-	else if ( pm->cmd.rightmove < 0 ) 
-	{
-		anim = BOTH_JUMPLEFT1;
-		pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
-	}
-	else
-	{
-		anim = BOTH_JUMP1;
-		pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
-	}
-	if(!BG_InDeathAnim(pm->ps->legsAnim))
-	{
-		PM_SetAnim(SETANIM_LEGS,anim,SETANIM_FLAG_OVERRIDE, 100);
+static void PM_JumpForDir( void ) {
+	if (demo15detected) {
+		int anim = BOTH_JUMP1_15;
+		if ( pm->cmd.forwardmove > 0 ) {
+			anim = BOTH_JUMP1_15;
+			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+		} else if ( pm->cmd.forwardmove < 0 ) {
+			anim = BOTH_JUMPBACK1_15;
+			pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
+		} else if ( pm->cmd.rightmove > 0 ) {
+			anim = BOTH_JUMPRIGHT1_15;
+			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+		} else if ( pm->cmd.rightmove < 0 ) {
+			anim = BOTH_JUMPLEFT1_15;
+			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+		} else {
+			anim = BOTH_JUMP1_15;
+			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+		}
+		if(!BG_InDeathAnim(pm->ps->legsAnim)) {
+			PM_SetAnim(SETANIM_LEGS,anim,SETANIM_FLAG_OVERRIDE, 100);
+		}
+	} else {
+		int anim = BOTH_JUMP1;
+		if ( pm->cmd.forwardmove > 0 ) {
+			anim = BOTH_JUMP1;
+			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+		} else if ( pm->cmd.forwardmove < 0 ) {
+			anim = BOTH_JUMPBACK1;
+			pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
+		} else if ( pm->cmd.rightmove > 0 ) {
+			anim = BOTH_JUMPRIGHT1;
+			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+		} else if ( pm->cmd.rightmove < 0 ) {
+			anim = BOTH_JUMPLEFT1;
+			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+		} else {
+			anim = BOTH_JUMP1;
+			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+		}
+		if(!BG_InDeathAnim(pm->ps->legsAnim)) {
+			PM_SetAnim(SETANIM_LEGS,anim,SETANIM_FLAG_OVERRIDE, 100);
+		}
 	}
 }
 
@@ -524,10 +546,15 @@ void PM_SetPMViewAngle(playerState_t *ps, vec3_t angle, usercmd_t *ucmd)
 	VectorCopy (angle, ps->viewangles);
 }
 
-qboolean PM_AdjustAngleForWallRun( playerState_t *ps, usercmd_t *ucmd, qboolean doMove )
-{
-	if (( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT || (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT ) && ps->legsTimer > 500 )
-	{//wall-running and not at end of anim
+qboolean PM_AdjustAngleForWallRun( playerState_t *ps, usercmd_t *ucmd, qboolean doMove ) {
+	if ((((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT
+		|| (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT)
+		&& ps->legsTimer > 500 && !demo15detected)
+		||
+		(((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT_15
+		|| (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT_15)
+		&& ps->legsTimer > 500 && demo15detected)) {
+		//wall-running and not at end of anim
 		//stick to wall, if there is one
 		vec3_t	rt, traceTo, mins, maxs, fwdAngles;
 		trace_t	trace;
@@ -538,13 +565,13 @@ qboolean PM_AdjustAngleForWallRun( playerState_t *ps, usercmd_t *ucmd, qboolean 
 		VectorSet(fwdAngles, 0, pm->ps->viewangles[YAW], 0);
 
 		AngleVectors( fwdAngles, NULL, rt, NULL );
-		if ( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT )
-		{
+		if (((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT && !demo15detected)) {
 			dist = 128;
 			yawAdjust = -90;
-		}
-		else
-		{
+		} else if (((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT_15 && demo15detected)) {
+			dist = 128;
+			yawAdjust = -90;
+		} else {
 			dist = -128;
 			yawAdjust = 90;
 		}
@@ -552,18 +579,15 @@ qboolean PM_AdjustAngleForWallRun( playerState_t *ps, usercmd_t *ucmd, qboolean 
 		
 		pm->trace( &trace, ps->origin, mins, maxs, traceTo, ps->clientNum, MASK_PLAYERSOLID );
 
-		if ( trace.fraction < 1.0f )
-		{//still a wall there
-			if ( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT )
-			{
+		if ( trace.fraction < 1.0f ) { //still a wall there
+			if (((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT && !demo15detected)) {
 				ucmd->rightmove = 127;
-			}
-			else
-			{
+			} else if (((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT_15 && demo15detected)) {
+				ucmd->rightmove = 127;
+			} else {
 				ucmd->rightmove = -127;
 			}
-			if ( ucmd->upmove < 0 )
-			{
+			if ( ucmd->upmove < 0 ) {
 				ucmd->upmove = 0;
 			}
 			//make me face perpendicular to the wall
@@ -572,24 +596,19 @@ qboolean PM_AdjustAngleForWallRun( playerState_t *ps, usercmd_t *ucmd, qboolean 
 			PM_SetPMViewAngle(ps, ps->viewangles, ucmd);
 
 			ucmd->angles[YAW] = ANGLE2SHORT( ps->viewangles[YAW] ) - ps->delta_angles[YAW];
-			if ( doMove )
-			{
+			if (doMove) {
 				//push me forward
 				vec3_t	fwd;
 				float	zVel = ps->velocity[2];
-				if ( ps->legsTimer > 500 )
-				{//not at end of anim yet
+				if ( ps->legsTimer > 500 ) { //not at end of anim yet
 					float speed = 175;
 
 					fwdAngles[YAW] = ps->viewangles[YAW];
 					AngleVectors( fwdAngles, fwd, NULL, NULL );
 
-					if ( ucmd->forwardmove < 0 )
-					{//slower
+					if ( ucmd->forwardmove < 0 ) { //slower
 						speed = 100;
-					}
-					else if ( ucmd->forwardmove > 0 )
-					{
+					} else if ( ucmd->forwardmove > 0 ) {
 						speed = 250;//running speed
 					}
 					VectorScale( fwd, speed, ps->velocity );
@@ -600,29 +619,27 @@ qboolean PM_AdjustAngleForWallRun( playerState_t *ps, usercmd_t *ucmd, qboolean 
 			}
 			ucmd->forwardmove = 0;
 			return qtrue;
-		}
-		else if ( doMove )
-		{//stop it
-			if ( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT )
-			{
+		} else if (doMove && !demo15detected) { //stop it
+			if ( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT ) {
 				PM_SetAnim(SETANIM_BOTH, BOTH_WALL_RUN_RIGHT_STOP, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0);
-			}
-			else if ( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT )
-			{
+			} else if ( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT ) {
 				PM_SetAnim(SETANIM_BOTH, BOTH_WALL_RUN_LEFT_STOP, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0);
+			}
+		} else if (doMove && demo15detected) { //stop it
+			if ( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT_15 ) {
+				PM_SetAnim(SETANIM_BOTH, BOTH_WALL_RUN_RIGHT_STOP_15, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0);
+			} else if ( (ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT_15 ) {
+				PM_SetAnim(SETANIM_BOTH, BOTH_WALL_RUN_LEFT_STOP_15, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0);
 			}
 		}
 	}
-
 	return qfalse;
 }
 
 //Set the height for when a force jump was started. If it's 0, nuge it up (slight hack to prevent holding jump over slopes)
-void PM_SetForceJumpZStart(float value)
-{
+void PM_SetForceJumpZStart(float value) {
 	pm->ps->fd.forceJumpZStart = value;
-	if (!pm->ps->fd.forceJumpZStart)
-	{
+	if (!pm->ps->fd.forceJumpZStart) {
 		pm->ps->fd.forceJumpZStart -= 0.1;
 	}
 }
@@ -632,15 +649,12 @@ void PM_SetForceJumpZStart(float value)
 PM_CheckJump
 =============
 */
-static qboolean PM_CheckJump( void ) 
-{
-	if (pm->ps->usingATST)
-	{
+static qboolean PM_CheckJump( void ) {
+	if (pm->ps->usingATST) {
 		return qfalse;
 	}
 
-	if (pm->ps->forceHandExtend == HANDEXTEND_KNOCKDOWN)
-	{
+	if (pm->ps->forceHandExtend == HANDEXTEND_KNOCKDOWN) {
 		return qfalse;
 	}
 
@@ -649,55 +663,61 @@ static qboolean PM_CheckJump( void )
 		return qfalse;		
 	}
 
-	if ( PM_InKnockDown( pm->ps ) || BG_InRoll( pm->ps, pm->ps->legsAnim ) ) 
-	{//in knockdown
+	//in knockdown
+	if ( PM_InKnockDown( pm->ps ) || BG_InRoll( pm->ps, pm->ps->legsAnim ) ) {
 		return qfalse;		
 	}
 
-	if (pm->ps->groundEntityNum != ENTITYNUM_NONE || pm->ps->origin[2] < pm->ps->fd.forceJumpZStart)
-	{
+	if (pm->ps->groundEntityNum != ENTITYNUM_NONE || pm->ps->origin[2] < pm->ps->fd.forceJumpZStart) {
 		pm->ps->fd.forcePowersActive &= ~(1<<FP_LEVITATION);
 	}
 
-	if (pm->ps->fd.forcePowersActive & (1 << FP_LEVITATION))
-	{ //Force jump is already active.. continue draining power appropriately until we land.
-		if (pm->ps->fd.forcePowerDebounce[FP_LEVITATION] < pm->cmd.serverTime)
-		{
+	if (pm->ps->fd.forcePowersActive & (1 << FP_LEVITATION)) {
+	//Force jump is already active.. continue draining power appropriately until we land.
+		if (pm->ps->fd.forcePowerDebounce[FP_LEVITATION] < pm->cmd.serverTime) {
 			BG_ForcePowerDrain( pm->ps, FP_LEVITATION, 5 );
-			if (pm->ps->fd.forcePowerLevel[FP_LEVITATION] >= FORCE_LEVEL_2)
-			{
+			if (pm->ps->fd.forcePowerLevel[FP_LEVITATION] >= FORCE_LEVEL_2) {
 				pm->ps->fd.forcePowerDebounce[FP_LEVITATION] = pm->cmd.serverTime + 300;
-			}
-			else
-			{
+			} else {
 				pm->ps->fd.forcePowerDebounce[FP_LEVITATION] = pm->cmd.serverTime + 200;
 			}
 		}
 	}
 
-	if (pm->ps->forceJumpFlip)
-	{ //Forced jump anim
+	if (pm->ps->forceJumpFlip && !demo15detected) { //Forced jump anim
 		int anim = BOTH_FORCEINAIR1;
 		int	parts = SETANIM_BOTH;
 
-		if ( pm->cmd.forwardmove > 0 )
-		{
+		if ( pm->cmd.forwardmove > 0 ) {
 			anim = BOTH_FLIP_F;
-		}
-		else if ( pm->cmd.forwardmove < 0 )
-		{
+		} else if ( pm->cmd.forwardmove < 0 ) {
 			anim = BOTH_FLIP_B;
-		}
-		else if ( pm->cmd.rightmove > 0 )
-		{
+		} else if ( pm->cmd.rightmove > 0 ) {
 			anim = BOTH_FLIP_R;
-		}
-		else if ( pm->cmd.rightmove < 0 )
-		{
+		} else if ( pm->cmd.rightmove < 0 ) {
 			anim = BOTH_FLIP_L;
 		}
-		if ( pm->ps->weaponTime )
-		{//FIXME: really only care if we're in a saber attack anim...
+		if ( pm->ps->weaponTime ) { //FIXME: really only care if we're in a saber attack anim...
+			parts = SETANIM_LEGS;
+		}
+
+		PM_SetAnim( parts, anim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150 );
+		pm->ps->forceJumpFlip = qfalse;
+		return qtrue;
+	} else if (pm->ps->forceJumpFlip && demo15detected) { //Forced jump anim
+		int anim = BOTH_FORCEINAIR1_15;
+		int	parts = SETANIM_BOTH;
+
+		if ( pm->cmd.forwardmove > 0 ) {
+			anim = BOTH_FLIP_F_15;
+		} else if ( pm->cmd.forwardmove < 0 ) {
+			anim = BOTH_FLIP_B_15;
+		} else if ( pm->cmd.rightmove > 0 ) {
+			anim = BOTH_FLIP_R_15;
+		} else if ( pm->cmd.rightmove < 0 ) {
+			anim = BOTH_FLIP_L_15;
+		}
+		if ( pm->ps->weaponTime ) { //FIXME: really only care if we're in a saber attack anim...
 			parts = SETANIM_LEGS;
 		}
 
@@ -706,23 +726,21 @@ static qboolean PM_CheckJump( void )
 		return qtrue;
 	}
 #if METROID_JUMP
-	if ( pm->waterlevel < 2 ) 
-	{
-		if ( pm->ps->gravity > 0 )
-		{//can't do this in zero-G
-			if ( PM_ForceJumpingUp() )
-			{//holding jump in air
+	if ( pm->waterlevel < 2 ) {
+		if ( pm->ps->gravity > 0 ) {
+		//can't do this in zero-G
+			if ( PM_ForceJumpingUp() ) {
+			//holding jump in air
 				float curHeight = pm->ps->origin[2] - pm->ps->fd.forceJumpZStart;
 				//check for max force jump level and cap off & cut z vel
 				if ( ( curHeight<=forceJumpHeight[0] ||//still below minimum jump height
 						(pm->ps->fd.forcePower&&pm->cmd.upmove>=10) ) &&////still have force power available and still trying to jump up 
 					curHeight < forceJumpHeight[pm->ps->fd.forcePowerLevel[FP_LEVITATION]] &&
-					pm->ps->fd.forceJumpZStart)//still below maximum jump height
-				{//can still go up
-					if ( curHeight > forceJumpHeight[0] )
-					{//passed normal jump height  *2?
-						if ( !(pm->ps->fd.forcePowersActive&(1<<FP_LEVITATION)) )//haven't started forcejump yet
-						{
+					pm->ps->fd.forceJumpZStart) { //still below maximum jump height
+					//can still go up
+					if ( curHeight > forceJumpHeight[0] ) {
+					//passed normal jump height  *2?
+						if ( !(pm->ps->fd.forcePowersActive&(1<<FP_LEVITATION)) ) { //haven't started forcejump yet
 							//start force jump
 							pm->ps->fd.forcePowersActive |= (1<<FP_LEVITATION);
 							pm->ps->fd.forceJumpSound = 1;
@@ -731,36 +749,43 @@ static qboolean PM_CheckJump( void )
 								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_F &&//not already flipping
 								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_B &&
 								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_R &&
-								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_L )
-							{ 
+								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_L && !demo15detected) { 
 								int anim = BOTH_FORCEINAIR1;
 								int	parts = SETANIM_BOTH;
 
-								if ( pm->cmd.forwardmove > 0 )
-								{
+								if ( pm->cmd.forwardmove > 0 ) {
 									anim = BOTH_FLIP_F;
-								}
-								else if ( pm->cmd.forwardmove < 0 )
-								{
+								} else if ( pm->cmd.forwardmove < 0 ) {
 									anim = BOTH_FLIP_B;
-								}
-								else if ( pm->cmd.rightmove > 0 )
-								{
+								} else if ( pm->cmd.rightmove > 0 ) {
 									anim = BOTH_FLIP_R;
-								}
-								else if ( pm->cmd.rightmove < 0 )
-								{
+								} else if ( pm->cmd.rightmove < 0 ) {
 									anim = BOTH_FLIP_L;
-								}
-								if ( pm->ps->weaponTime )
-								{
+								} if ( pm->ps->weaponTime ) {
 									parts = SETANIM_LEGS;
 								}
-
 								PM_SetAnim( parts, anim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150 );
-							}
-							else if ( pm->ps->fd.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_1 )
-							{
+							} else if ((pm->cmd.forwardmove || pm->cmd.rightmove) && //pushing in a dir
+								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_F_15 &&//not already flipping
+								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_B_15 &&
+								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_R_15 &&
+								(pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_FLIP_L_15 && demo15detected) { 
+								int anim = BOTH_FORCEINAIR1_15;
+								int	parts = SETANIM_BOTH;
+
+								if ( pm->cmd.forwardmove > 0 ) {
+									anim = BOTH_FLIP_F_15;
+								} else if ( pm->cmd.forwardmove < 0 ) {
+									anim = BOTH_FLIP_B_15;
+								} else if ( pm->cmd.rightmove > 0 ) {
+									anim = BOTH_FLIP_R_15;
+								} else if ( pm->cmd.rightmove < 0 ) {
+									anim = BOTH_FLIP_L_15;
+								} if ( pm->ps->weaponTime ) {
+									parts = SETANIM_LEGS;
+								}
+								PM_SetAnim( parts, anim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150 );
+							} else if ( pm->ps->fd.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_1 ) {
 								vec3_t facingFwd, facingRight, facingAngles;
 								int	anim = -1;
 								float dotR, dotF;
@@ -771,48 +796,43 @@ static qboolean PM_CheckJump( void )
 								dotR = DotProduct( facingRight, pm->ps->velocity );
 								dotF = DotProduct( facingFwd, pm->ps->velocity );
 
-								if ( fabs(dotR) > fabs(dotF) * 1.5 )
-								{
+								if (fabs(dotR) > fabs(dotF) * 1.5 && !demo15detected) {
 									if ( dotR > 150 )
-									{
 										anim = BOTH_FORCEJUMPRIGHT1;
-									}
 									else if ( dotR < -150 )
-									{
 										anim = BOTH_FORCEJUMPLEFT1;
-									}
-								}
-								else
-								{
+								} else if (fabs(dotR) > fabs(dotF) * 1.5 && demo15detected) {
+									if ( dotR > 150 )
+										anim = BOTH_FORCEJUMPRIGHT1_15;
+									else if ( dotR < -150 )
+										anim = BOTH_FORCEJUMPLEFT1_15;
+								} else if (!demo15detected) {
 									if ( dotF > 150 )
-									{
 										anim = BOTH_FORCEJUMP1;
-									}
 									else if ( dotF < -150 )
-									{
 										anim = BOTH_FORCEJUMPBACK1;
-									}
+								} else if (demo15detected) {
+									if ( dotF > 150 )
+										anim = BOTH_FORCEJUMP1_15;
+									else if ( dotF < -150 )
+										anim = BOTH_FORCEJUMPBACK1_15;
 								}
-								if ( anim != -1 )
-								{
+								if ( anim != -1 ) {
 									int parts = SETANIM_BOTH;
-									if ( pm->ps->weaponTime )
-									{//FIXME: really only care if we're in a saber attack anim...
+									if ( pm->ps->weaponTime ) {
+									//FIXME: really only care if we're in a saber attack anim...
 										parts = SETANIM_LEGS;
 									}
-
 									PM_SetAnim( parts, anim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150 );
 								}
 							}
-						}
-						else
-						{ //jump is already active (the anim has started)
-							if ( pm->ps->legsTimer < 1 )
-							{//not in the middle of a legsAnim
+						} else {
+						//jump is already active (the anim has started)
+							if (pm->ps->legsTimer < 1 && !demo15detected) {
+							//not in the middle of a legsAnim
 								int anim = (pm->ps->legsAnim&~ANIM_TOGGLEBIT);
 								int newAnim = -1;
-								switch ( anim )
-								{
+								switch ( anim ) {
 								case BOTH_FORCEJUMP1:
 									newAnim = BOTH_FORCELAND1;//BOTH_FORCEINAIR1;
 									break;
@@ -825,15 +845,35 @@ static qboolean PM_CheckJump( void )
 								case BOTH_FORCEJUMPRIGHT1:
 									newAnim = BOTH_FORCELANDRIGHT1;//BOTH_FORCEINAIRRIGHT1;
 									break;
-								}
-								if ( newAnim != -1 )
-								{
+								} if ( newAnim != -1 ) {
 									int parts = SETANIM_BOTH;
-									if ( pm->ps->weaponTime )
-									{
+									if ( pm->ps->weaponTime ) {
 										parts = SETANIM_LEGS;
 									}
-
+									PM_SetAnim( parts, newAnim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150 );
+								}
+							} else if (pm->ps->legsTimer < 1 && demo15detected) {
+							//not in the middle of a legsAnim
+								int anim = (pm->ps->legsAnim&~ANIM_TOGGLEBIT);
+								int newAnim = -1;
+								switch ( anim ) {
+								case BOTH_FORCEJUMP1_15:
+									newAnim = BOTH_FORCELAND1_15;//BOTH_FORCEINAIR1_15;
+									break;
+								case BOTH_FORCEJUMPBACK1_15:
+									newAnim = BOTH_FORCELANDBACK1_15;//BOTH_FORCEINAIRBACK1_15;
+									break;
+								case BOTH_FORCEJUMPLEFT1_15:
+									newAnim = BOTH_FORCELANDLEFT1_15;//BOTH_FORCEINAIRLEFT1_15;
+									break;
+								case BOTH_FORCEJUMPRIGHT1_15:
+									newAnim = BOTH_FORCELANDRIGHT1_15;//BOTH_FORCEINAIRRIGHT1_15;
+									break;
+								} if ( newAnim != -1 ) {
+									int parts = SETANIM_BOTH;
+									if ( pm->ps->weaponTime ) {
+										parts = SETANIM_LEGS;
+									}
 									PM_SetAnim( parts, newAnim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150 );
 								}
 							}
@@ -877,15 +917,14 @@ static qboolean PM_CheckJump( void )
 	}
 
 	// must wait for jump to be released
-	if ( pm->ps->pm_flags & PMF_JUMP_HELD ) 
-	{
+	if ( pm->ps->pm_flags & PMF_JUMP_HELD ) {
 		// clear upmove so cmdscale doesn't lower running speed
 		pm->cmd.upmove = 0;
 		return qfalse;
 	}
 
-	if ( pm->ps->gravity <= 0 )
-	{//in low grav, you push in the dir you're facing as long as there is something behind you to shove off of
+	if ( pm->ps->gravity <= 0 ) {
+	//in low grav, you push in the dir you're facing as long as there is something behind you to shove off of
 		vec3_t	forward, back;
 		trace_t	trace;
 
@@ -893,61 +932,56 @@ static qboolean PM_CheckJump( void )
 		VectorMA( pm->ps->origin, -8, forward, back );
 		pm->trace( &trace, pm->ps->origin, pm->mins, pm->maxs, back, pm->ps->clientNum, pm->tracemask );
 
-		if ( trace.fraction <= 1.0f )
-		{
+		if ( trace.fraction <= 1.0f ) {
 			VectorMA( pm->ps->velocity, JUMP_VELOCITY*2, forward, pm->ps->velocity );
-			PM_SetAnim(SETANIM_LEGS,BOTH_FORCEJUMP1,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD|SETANIM_FLAG_RESTART, 150);
+			if (demo15detected)
+				PM_SetAnim(SETANIM_LEGS,BOTH_FORCEJUMP1_15,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD|SETANIM_FLAG_RESTART, 150);
+			else
+				PM_SetAnim(SETANIM_LEGS,BOTH_FORCEJUMP1,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD|SETANIM_FLAG_RESTART, 150);
 		}//else no surf close enough to push off of
 		pm->cmd.upmove = 0;
-	}
-	else if ( pm->cmd.upmove > 0 && pm->waterlevel < 2 &&
+	} else if ( pm->cmd.upmove > 0 && pm->waterlevel < 2 &&
 		pm->ps->fd.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_0 &&
 		!(pm->ps->pm_flags&PMF_JUMP_HELD) &&
 		pm->ps->weapon == WP_SABER &&
 		!BG_HasYsalamiri(pm->gametype, pm->ps) &&
-		BG_CanUseFPNow(pm->gametype, pm->ps, pm->cmd.serverTime, FP_LEVITATION) )
-	{
-		if ( pm->ps->groundEntityNum != ENTITYNUM_NONE )
-		{//on the ground
+		BG_CanUseFPNow(pm->gametype, pm->ps, pm->cmd.serverTime, FP_LEVITATION) ) {
+		if ( pm->ps->groundEntityNum != ENTITYNUM_NONE ) {
+		//on the ground
 			//check for left-wall and right-wall special jumps
 			int anim = -1;
 			float	vertPush = 0;
-			if ( pm->cmd.rightmove > 0 && pm->ps->fd.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_1 )
-			{//strafing right
-				if ( pm->cmd.forwardmove > 0 )
-				{//wall-run
+			if ( pm->cmd.rightmove > 0 && pm->ps->fd.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_1 ) {
+			//strafing right
+				if ( pm->cmd.forwardmove > 0 ) {
+				//wall-run
 					vertPush = forceJumpStrength[FORCE_LEVEL_2]/2.0f;
-					anim = BOTH_WALL_RUN_RIGHT;
-				}
-				else if ( pm->cmd.forwardmove == 0 )
-				{//wall-flip
+					anim = demo15detected?BOTH_WALL_RUN_RIGHT_15:BOTH_WALL_RUN_RIGHT;
+				} else if ( pm->cmd.forwardmove == 0 ) {
+				//wall-flip
 					vertPush = forceJumpStrength[FORCE_LEVEL_2]/2.25f;
-					anim = BOTH_WALL_FLIP_RIGHT;
+					anim = demo15detected?BOTH_WALL_FLIP_RIGHT_15:BOTH_WALL_FLIP_RIGHT;
 				}
-			}
-			else if ( pm->cmd.rightmove < 0 && pm->ps->fd.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_1 )
-			{//strafing left
-				if ( pm->cmd.forwardmove > 0 )
-				{//wall-run
+			} else if ( pm->cmd.rightmove < 0 && pm->ps->fd.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_1 ) {
+			//strafing left
+				if ( pm->cmd.forwardmove > 0 ) {
+				//wall-run
 					vertPush = forceJumpStrength[FORCE_LEVEL_2]/2.0f;
-					anim = BOTH_WALL_RUN_LEFT;
-				}
-				else if ( pm->cmd.forwardmove == 0 )
-				{//wall-flip
+					anim = demo15detected?BOTH_WALL_RUN_LEFT_15:BOTH_WALL_RUN_LEFT;
+				} else if ( pm->cmd.forwardmove == 0 ) {
+				//wall-flip
 					vertPush = forceJumpStrength[FORCE_LEVEL_2]/2.25f;
-					anim = BOTH_WALL_FLIP_LEFT;
+					anim = demo15detected?BOTH_WALL_FLIP_LEFT_15:BOTH_WALL_FLIP_LEFT;
 				}
-			}
-			else if ( pm->cmd.forwardmove < 0 && !(pm->cmd.buttons&BUTTON_ATTACK) )
-			{//backflip
+			} else if ( pm->cmd.forwardmove < 0 && !(pm->cmd.buttons&BUTTON_ATTACK) ) {
+			//backflip
 				vertPush = JUMP_VELOCITY;
-				anim = BOTH_FLIP_BACK1;//PM_PickAnim( BOTH_FLIP_BACK1, BOTH_FLIP_BACK3 );
+				anim = demo15detected?BOTH_FLIP_BACK1_15:BOTH_FLIP_BACK1;//PM_PickAnim( BOTH_FLIP_BACK1, BOTH_FLIP_BACK3 );
 			}
 
 			vertPush += 128; //give them an extra shove
 
-			if ( anim != -1 )
-			{
+			if ( anim != -1 ) {
 				vec3_t fwd, right, traceto, mins, maxs, fwdAngles;
 				vec3_t	idealNormal;
 				trace_t	trace;
@@ -963,87 +997,104 @@ static qboolean PM_CheckJump( void )
 				AngleVectors( fwdAngles, fwd, right, NULL );
 
 				//trace-check for a wall, if necc.
-				switch ( anim )
-				{
-				case BOTH_WALL_FLIP_LEFT:
-					//NOTE: purposely falls through to next case!
-				case BOTH_WALL_RUN_LEFT:
-					doTrace = qtrue;
-					VectorMA( pm->ps->origin, -16, right, traceto );
-					break;
+				if (demo15detected) {
+					switch ( anim ) {
+					case BOTH_WALL_FLIP_LEFT_15:
+						//NOTE: purposely falls through to next case!
+					case BOTH_WALL_RUN_LEFT_15:
+						doTrace = qtrue;
+						VectorMA( pm->ps->origin, -16, right, traceto );
+						break;
 
-				case BOTH_WALL_FLIP_RIGHT:
-					//NOTE: purposely falls through to next case!
-				case BOTH_WALL_RUN_RIGHT:
-					doTrace = qtrue;
-					VectorMA( pm->ps->origin, 16, right, traceto );
-					break;
+					case BOTH_WALL_FLIP_RIGHT_15:
+						//NOTE: purposely falls through to next case!
+					case BOTH_WALL_RUN_RIGHT_15:
+						doTrace = qtrue;
+						VectorMA( pm->ps->origin, 16, right, traceto );
+						break;
 
-				case BOTH_WALL_FLIP_BACK1:
-					doTrace = qtrue;
-					VectorMA( pm->ps->origin, 16, fwd, traceto );
-					break;
+					case BOTH_WALL_FLIP_BACK1_15:
+						doTrace = qtrue;
+						VectorMA( pm->ps->origin, 16, fwd, traceto );
+						break;
+					}
+
+				} else {
+					switch ( anim ) {
+					case BOTH_WALL_FLIP_LEFT:
+						//NOTE: purposely falls through to next case!
+					case BOTH_WALL_RUN_LEFT:
+						doTrace = qtrue;
+						VectorMA( pm->ps->origin, -16, right, traceto );
+						break;
+
+					case BOTH_WALL_FLIP_RIGHT:
+						//NOTE: purposely falls through to next case!
+					case BOTH_WALL_RUN_RIGHT:
+						doTrace = qtrue;
+						VectorMA( pm->ps->origin, 16, right, traceto );
+						break;
+
+					case BOTH_WALL_FLIP_BACK1:
+						doTrace = qtrue;
+						VectorMA( pm->ps->origin, 16, fwd, traceto );
+						break;
+					}
 				}
 
-				if ( doTrace )
-				{
+				if ( doTrace ) {
 					pm->trace( &trace, pm->ps->origin, mins, maxs, traceto, pm->ps->clientNum, contents );
 					VectorSubtract( pm->ps->origin, traceto, idealNormal );
 					VectorNormalize( idealNormal );
 				}
 
-				if ( !doTrace || (trace.fraction < 1.0f && (trace.entityNum < MAX_CLIENTS || DotProduct(trace.plane.normal,idealNormal) > 0.7)) )
-				{//there is a wall there.. or hit a client
+				if ( !doTrace || (trace.fraction < 1.0f &&
+					(trace.entityNum < MAX_CLIENTS || DotProduct(trace.plane.normal,idealNormal) > 0.7)) ) {
+				//there is a wall there.. or hit a client
 					int parts;
 					//move me to side
-					if ( anim == BOTH_WALL_FLIP_LEFT )
-					{
+					if ((anim == BOTH_WALL_FLIP_LEFT && !demo15detected)
+						|| (anim == BOTH_WALL_FLIP_LEFT_15 && demo15detected)) {
 						pm->ps->velocity[0] = pm->ps->velocity[1] = 0;
 						VectorMA( pm->ps->velocity, 150, right, pm->ps->velocity );
-					}
-					else if ( anim == BOTH_WALL_FLIP_RIGHT )
-					{
+					} else if ((anim == BOTH_WALL_FLIP_RIGHT && !demo15detected)
+						|| (anim == BOTH_WALL_FLIP_RIGHT_15 && demo15detected)) {
 						pm->ps->velocity[0] = pm->ps->velocity[1] = 0;
 						VectorMA( pm->ps->velocity, -150, right, pm->ps->velocity );
-					}
-					else if ( anim == BOTH_FLIP_BACK1 
-						|| anim == BOTH_FLIP_BACK2 
-						|| anim == BOTH_FLIP_BACK3 
-						|| anim == BOTH_WALL_FLIP_BACK1 )
-					{
+					} else if (((anim == BOTH_FLIP_BACK1 || anim == BOTH_FLIP_BACK2
+						|| anim == BOTH_FLIP_BACK3 || anim == BOTH_WALL_FLIP_BACK1) && !demo15detected)
+						||
+						((anim == BOTH_FLIP_BACK1_15 || anim == BOTH_FLIP_BACK2_15
+						|| anim == BOTH_FLIP_BACK3_15 || anim == BOTH_WALL_FLIP_BACK1_15) && demo15detected)) {
 						pm->ps->velocity[0] = pm->ps->velocity[1] = 0;
 						VectorMA( pm->ps->velocity, -150, fwd, pm->ps->velocity );
 					}
 
-					if ( doTrace && anim != BOTH_WALL_RUN_LEFT && anim != BOTH_WALL_RUN_RIGHT )
-					{
-						if (trace.entityNum < MAX_CLIENTS)
-						{
+					if ((doTrace && anim != BOTH_WALL_RUN_LEFT && anim != BOTH_WALL_RUN_RIGHT && !demo15detected)
+						|| (doTrace && anim != BOTH_WALL_RUN_LEFT_15 && anim != BOTH_WALL_RUN_RIGHT_15 && demo15detected)) {
+						if (trace.entityNum < MAX_CLIENTS) {
 							pm->ps->forceKickFlip = trace.entityNum+1; //let the server know that this person gets kicked by this client
 						}
 					}
 
 					//up
-					if ( vertPush )
-					{
+					if ( vertPush ) {
 						pm->ps->velocity[2] = vertPush;
 						pm->ps->fd.forcePowersActive |= (1 << FP_LEVITATION);
 					}
 					//animate me
 					parts = SETANIM_LEGS;
-					if ( anim == BOTH_BUTTERFLY_LEFT )
-					{
+					if ((anim == BOTH_BUTTERFLY_LEFT && !demo15detected)
+						|| (anim == BOTH_BUTTERFLY_LEFT_15 && demo15detected)) {
 						parts = SETANIM_BOTH;
 						pm->cmd.buttons&=~BUTTON_ATTACK;
 						pm->ps->saberMove = LS_NONE;
-					}
-					else if ( !pm->ps->weaponTime )
-					{
+					} else if ( !pm->ps->weaponTime ) {
 						parts = SETANIM_BOTH;
 					}
 					PM_SetAnim( parts, anim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0 );
-					if ( anim == BOTH_BUTTERFLY_LEFT )
-					{
+					if ((anim == BOTH_BUTTERFLY_LEFT && !demo15detected)
+						|| (anim == BOTH_BUTTERFLY_LEFT_15 && demo15detected)) {
 						pm->ps->weaponTime = pm->ps->torsoTimer;
 					}
 					PM_SetForceJumpZStart(pm->ps->origin[2]);//so we don't take damage if we land at same height
@@ -1052,12 +1103,10 @@ static qboolean PM_CheckJump( void )
 					pm->ps->fd.forceJumpSound = 1;
 				}
 			}
-		}
-		else 
-		{//in the air
+		} else {//in the air
 			int legsAnim = (pm->ps->legsAnim&~ANIM_TOGGLEBIT);
-			if ( legsAnim == BOTH_WALL_RUN_LEFT || legsAnim == BOTH_WALL_RUN_RIGHT )
-			{//running on a wall
+			if (((legsAnim == BOTH_WALL_RUN_LEFT || legsAnim == BOTH_WALL_RUN_RIGHT) && !demo15detected)
+				|| ((legsAnim == BOTH_WALL_RUN_LEFT_15 || legsAnim == BOTH_WALL_RUN_RIGHT_15) && demo15detected)) { //running on a wall
 				vec3_t right, traceto, mins, maxs, fwdAngles;
 				trace_t	trace;
 				int		anim = -1;
@@ -1068,69 +1117,59 @@ static qboolean PM_CheckJump( void )
 
 				AngleVectors( fwdAngles, NULL, right, NULL );
 
-				if ( legsAnim == BOTH_WALL_RUN_LEFT )
-				{
-					if ( pm->ps->legsTimer > 400 )
-					{//not at the end of the anim
-						float animLen = PM_AnimLength( 0, (animNumber_t)BOTH_WALL_RUN_LEFT );
-						if ( pm->ps->legsTimer < animLen - 400 )
-						{//not at start of anim
+				if ((legsAnim == BOTH_WALL_RUN_LEFT && !demo15detected)
+					|| (legsAnim == BOTH_WALL_RUN_LEFT_15 && demo15detected)) {
+					if ( pm->ps->legsTimer > 400 ) {
+					//not at the end of the anim
+						float animLen = demo15detected?PM_AnimLength15( 0, (animNumber15_t)BOTH_WALL_RUN_LEFT_15):PM_AnimLength( 0, (animNumber_t)BOTH_WALL_RUN_LEFT );
+						if ( pm->ps->legsTimer < animLen - 400 ) {//not at start of anim
 							VectorMA( pm->ps->origin, -16, right, traceto );
-							anim = BOTH_WALL_RUN_LEFT_FLIP;
+							anim = demo15detected?BOTH_WALL_RUN_LEFT_FLIP_15:BOTH_WALL_RUN_LEFT_FLIP;
 						}
 					}
-				}
-				else if ( legsAnim == BOTH_WALL_RUN_RIGHT )
-				{
-					if ( pm->ps->legsTimer > 400 )
-					{//not at the end of the anim
-						float animLen = PM_AnimLength( 0, (animNumber_t)BOTH_WALL_RUN_RIGHT );
-						if ( pm->ps->legsTimer < animLen - 400 )
-						{//not at start of anim
+				} else if ((legsAnim == BOTH_WALL_RUN_RIGHT && !demo15detected)
+					|| (legsAnim == BOTH_WALL_RUN_RIGHT_15 && demo15detected)) {
+					if ( pm->ps->legsTimer > 400 ) {
+					//not at the end of the anim
+						float animLen = demo15detected?PM_AnimLength15( 0, (animNumber15_t)BOTH_WALL_RUN_RIGHT_15):PM_AnimLength( 0, (animNumber_t)BOTH_WALL_RUN_RIGHT );
+						if ( pm->ps->legsTimer < animLen - 400 ) {//not at start of anim
 							VectorMA( pm->ps->origin, 16, right, traceto );
-							anim = BOTH_WALL_RUN_RIGHT_FLIP;
+							anim = demo15detected?BOTH_WALL_RUN_RIGHT_FLIP_15:BOTH_WALL_RUN_RIGHT_FLIP;
 						}
 					}
 				}
-				if ( anim != -1 )
-				{
+				if ( anim != -1 ) {
 					pm->trace( &trace, pm->ps->origin, mins, maxs, traceto, pm->ps->clientNum, CONTENTS_SOLID|CONTENTS_BODY );
-					if ( trace.fraction < 1.0f )
-					{//flip off wall
+					if ( trace.fraction < 1.0f ) { //flip off wall
 						int parts = 0;
 
-						if ( anim == BOTH_WALL_RUN_LEFT_FLIP )
-						{
+						if ((anim == BOTH_WALL_RUN_LEFT_FLIP && !demo15detected)
+							|| (anim == BOTH_WALL_RUN_LEFT_FLIP_15 && demo15detected)) {
 							pm->ps->velocity[0] *= 0.5f;
 							pm->ps->velocity[1] *= 0.5f;
 							VectorMA( pm->ps->velocity, 150, right, pm->ps->velocity );
-						}
-						else if ( anim == BOTH_WALL_RUN_RIGHT_FLIP )
-						{
+						} else if ((anim == BOTH_WALL_RUN_RIGHT_FLIP && !demo15detected)
+							|| (anim == BOTH_WALL_RUN_RIGHT_FLIP_15 && demo15detected)) {
 							pm->ps->velocity[0] *= 0.5f;
 							pm->ps->velocity[1] *= 0.5f;
 							VectorMA( pm->ps->velocity, -150, right, pm->ps->velocity );
 						}
 						parts = SETANIM_LEGS;
-						if ( !pm->ps->weaponTime )
-						{
+						if ( !pm->ps->weaponTime ) {
 							parts = SETANIM_BOTH;
 						}
 						PM_SetAnim( parts, anim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0 );
 						pm->cmd.upmove = 0;
 					}
 				}
-				if ( pm->cmd.upmove != 0 )
-				{//jump failed, so don't try to do normal jump code, just return
+				if ( pm->cmd.upmove != 0 ) { //jump failed, so don't try to do normal jump code, just return
 					return qfalse;
 				}
-			}
-			else if ( pm->cmd.forwardmove > 0 //pushing forward
+			} else if ( pm->cmd.forwardmove > 0 //pushing forward
 				&& pm->ps->fd.forcePowerLevel[FP_LEVITATION] > FORCE_LEVEL_1
 				&& pm->ps->velocity[2] > 200
 				&& PM_GroundDistance() <= 80 //unfortunately we do not have a happy ground timer like SP (this would use up more bandwidth if we wanted prediction workign right), so we'll just use the actual ground distance.
-				&& !BG_InSpecialJump(pm->ps->legsAnim))
-			{//run up wall, flip backwards
+				&& !BG_InSpecialJump(pm->ps->legsAnim)) {//run up wall, flip backwards
 				vec3_t fwd, traceto, mins, maxs, fwdAngles;
 				trace_t	trace;
 				vec3_t	idealNormal;
@@ -1146,19 +1185,21 @@ static qboolean PM_CheckJump( void )
 				VectorSubtract( pm->ps->origin, traceto, idealNormal );
 				VectorNormalize( idealNormal );
 				
-				if ( trace.fraction < 1.0f )
-				{//there is a wall there
+				if ( trace.fraction < 1.0f ) {
+				//there is a wall there
 					int parts = SETANIM_LEGS;
 
 					pm->ps->velocity[0] = pm->ps->velocity[1] = 0;
 					VectorMA( pm->ps->velocity, -150, fwd, pm->ps->velocity );
 					pm->ps->velocity[2] += 128;
 
-					if ( !pm->ps->weaponTime )
-					{
+					if ( !pm->ps->weaponTime ){
 						parts = SETANIM_BOTH;
 					}
-					PM_SetAnim( parts, BOTH_WALL_FLIP_BACK1, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0 );
+					if (demo15detected)
+						PM_SetAnim( parts, BOTH_WALL_FLIP_BACK1_15, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0 );
+					else
+						PM_SetAnim( parts, BOTH_WALL_FLIP_BACK1, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0 );
 
 					pm->ps->legsTimer -= 600; //I force this anim to play to the end to prevent landing on your head and suddenly flipping over.
 											  //It is a bit too long at the end though, so I'll just shorten it.
@@ -1168,8 +1209,7 @@ static qboolean PM_CheckJump( void )
 					pm->ps->fd.forceJumpSound = 1;
 					BG_ForcePowerDrain( pm->ps, FP_LEVITATION, 5 );
 
-					if (trace.entityNum < MAX_CLIENTS)
-					{
+					if (trace.entityNum < MAX_CLIENTS) {
 						pm->ps->forceKickFlip = trace.entityNum+1; //let the server know that this person gets kicked by this client
 					}
 				}
@@ -1190,7 +1230,7 @@ static qboolean PM_CheckJump( void )
 			&& ( BG_SaberInAttack( pm->ps->saberMove ) ) )
 		{//not in an anim we shouldn't interrupt
 			//see if it's not too late to start a special jump-attack
-			float animLength = PM_AnimLength( 0, (animNumber_t)pm->ps->torsoAnim );
+			float animLength = demo15detected?PM_AnimLength15( 0, (animNumber15_t)pm->ps->torsoAnim ):PM_AnimLength( 0, (animNumber_t)pm->ps->torsoAnim );
 			if ( animLength - pm->ps->torsoTimer < 500 )
 			{//just started the saberMove
 				//check for special-case jump attacks
@@ -1234,12 +1274,10 @@ static qboolean PM_CheckJump( void )
 			}
 		}
 	}
-	if ( pm->ps->groundEntityNum == ENTITYNUM_NONE )
-	{
+	if ( pm->ps->groundEntityNum == ENTITYNUM_NONE ) {
 		return qfalse;
 	}
-	if ( pm->cmd.upmove > 0 )
-	{//no special jumps
+	if ( pm->cmd.upmove > 0 ) { //no special jumps
 		pm->ps->velocity[2] = JUMP_VELOCITY;
 		PM_SetForceJumpZStart(pm->ps->origin[2]);//so we don't take damage if we land at same height
 		pm->ps->pm_flags |= PMF_JUMP_HELD;
@@ -1255,8 +1293,7 @@ static qboolean PM_CheckJump( void )
 	PM_AddEvent( EV_JUMP );
 
 	//Set the animations
-	if ( pm->ps->gravity > 0 && !BG_InSpecialJump( pm->ps->legsAnim ) )
-	{
+	if ( pm->ps->gravity > 0 && !BG_InSpecialJump( pm->ps->legsAnim ) ) {
 		PM_JumpForDir();
 	}
 
@@ -1827,23 +1864,23 @@ static int PM_TryRoll( void )
 	{ //check forward/backward rolls
 		if ( pm->ps->pm_flags & PMF_BACKWARDS_RUN ) 
 		{
-			anim = BOTH_ROLL_B;
+			anim = demo15detected?BOTH_ROLL_B_15:BOTH_ROLL_B;
 			VectorMA( pm->ps->origin, -64, fwd, traceto );
 		}
 		else
 		{
-			anim = BOTH_ROLL_F;
+			anim = demo15detected?BOTH_ROLL_F_15:BOTH_ROLL_F;
 			VectorMA( pm->ps->origin, 64, fwd, traceto );
 		}
 	}
 	else if ( pm->cmd.rightmove > 0 )
 	{ //right
-		anim = BOTH_ROLL_R;
+		anim = demo15detected?BOTH_ROLL_R_15:BOTH_ROLL_R;
 		VectorMA( pm->ps->origin, 64, right, traceto );
 	}
 	else if ( pm->cmd.rightmove < 0 )
 	{ //left
-		anim = BOTH_ROLL_L;
+		anim = demo15detected?BOTH_ROLL_L_15:BOTH_ROLL_L;
 		VectorMA( pm->ps->origin, -64, right, traceto );
 	}
 
@@ -1904,9 +1941,15 @@ static void PM_CrashLand( void ) {
 		if (!BG_SaberInSpecial(pm->ps->saberMove))
 		{
 			if ( pm->ps->pm_flags & PMF_BACKWARDS_JUMP ) {
-				PM_ForceLegsAnim( BOTH_LANDBACK1 );
+				if (demo15detected)
+					PM_ForceLegsAnim( BOTH_LANDBACK1_15 );
+				else
+					PM_ForceLegsAnim( BOTH_LANDBACK1 );
 			} else {
-				PM_ForceLegsAnim( BOTH_LAND1 );
+				if (demo15detected)
+					PM_ForceLegsAnim( BOTH_LAND1_15 );
+				else
+					PM_ForceLegsAnim( BOTH_LAND1 );
 			}
 		}
 	}
@@ -1916,25 +1959,37 @@ static void PM_CrashLand( void ) {
 		//This will push us back into our weaponready stance from the land anim.
 		if (pm->ps->weapon == WP_DISRUPTOR && pm->ps->zoomMode == 1)
 		{
-			PM_StartTorsoAnim( TORSO_WEAPONREADY4 );
+			if (demo15detected)
+				PM_StartTorsoAnim( TORSO_WEAPONREADY4_15 );
+			else
+				PM_StartTorsoAnim( TORSO_WEAPONREADY4 );
 		}
 		else
 		{
 			if (pm->ps->weapon == WP_EMPLACED_GUN)
 			{
-				PM_StartTorsoAnim( BOTH_GUNSIT1 );
+				if (demo15detected)
+					PM_StartTorsoAnim( BOTH_GUNSIT1_15 );
+				else
+					PM_StartTorsoAnim( BOTH_GUNSIT1 );
 			}
 			else
 			{
-				PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
+				if (demo15detected)
+					PM_StartTorsoAnim( WeaponReadyAnim15[pm->ps->weapon] );
+				else
+					PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
 			}
 		}
 	}
 
-	if (!BG_InSpecialJump(pm->ps->legsAnim) ||
-		pm->ps->legsTimer < 1 ||
-		(pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT ||
-		(pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT)
+	if ((!demo15detected && (!BG_InSpecialJump(pm->ps->legsAnim) || pm->ps->legsTimer < 1
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT))
+		||
+		(demo15detected && (!BG_InSpecialJump(pm->ps->legsAnim) || pm->ps->legsTimer < 1
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT_15
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT_15)))
 	{ //Only set the timer if we're in an anim that can be interrupted (this would not be, say, a flip)
 		if (!BG_InRoll(pm->ps, pm->ps->legsAnim) && pm->ps->inAirAnim)
 		{
@@ -1976,7 +2031,10 @@ static void PM_CrashLand( void ) {
 				anim = 0;
 				pm->ps->legsTimer = 0;
 				pm->ps->legsAnim = 0;
-				PM_SetAnim(SETANIM_BOTH,BOTH_LAND1,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150);
+				if (demo15detected)
+					PM_SetAnim(SETANIM_BOTH,BOTH_LAND1_15,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150);
+				else
+					PM_SetAnim(SETANIM_BOTH,BOTH_LAND1,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150);
 				pm->ps->legsTimer = TIMER_LAND;
 			}
 
@@ -2120,18 +2178,21 @@ static void PM_GroundTraceMissed( void ) {
 
 	//rww - don't want to do this when handextend_choke, because you can be standing on the ground
 	//while still holding your throat.
-	if ( pm->ps->pm_type == PM_FLOAT ) 
-	{
+	if ( pm->ps->pm_type == PM_FLOAT ) {
 		//we're assuming this is because you're being choked
 		int parts = SETANIM_LEGS;
 
 		//rww - also don't use SETANIM_FLAG_HOLD, it will cause the legs to float around a bit before going into
 		//a proper anim even when on the ground.
-		PM_SetAnim(parts, BOTH_CHOKE3, SETANIM_FLAG_OVERRIDE, 100);
+		if (demo15detected)
+			PM_SetAnim(parts, BOTH_CHOKE3_15, SETANIM_FLAG_OVERRIDE, 100);
+		else
+			PM_SetAnim(parts, BOTH_CHOKE3, SETANIM_FLAG_OVERRIDE, 100);
 	}
 	//If the anim is choke3, act like we just went into the air because we aren't in a float
-	else if ( pm->ps->groundEntityNum != ENTITYNUM_NONE || (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_CHOKE3 ) 
-	{
+	else if ( pm->ps->groundEntityNum != ENTITYNUM_NONE ||
+		((pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_CHOKE3 && !demo15detected)
+		|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_CHOKE3_15 && demo15detected)) {
 		// we just transitioned into freefall
 		if ( pm->debugLevel ) {
 			Com_Printf("%i:lift\n", c_pmove);
@@ -2146,17 +2207,20 @@ static void PM_GroundTraceMissed( void ) {
 		if ( trace.fraction == 1.0 || pm->ps->pm_type == PM_FLOAT ) {
 			if ( pm->ps->velocity[2] <= 0 && !(pm->ps->pm_flags&PMF_JUMP_HELD))
 			{
-				PM_SetAnim(SETANIM_LEGS,BOTH_INAIR1,SETANIM_FLAG_OVERRIDE, 100);
+				int anim = demo15detected?BOTH_INAIR1_15:BOTH_INAIR1;
+				PM_SetAnim(SETANIM_LEGS,anim,SETANIM_FLAG_OVERRIDE, 100);
 				pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
 			}
 			else if ( pm->cmd.forwardmove >= 0 ) 
 			{
-				PM_SetAnim(SETANIM_LEGS,BOTH_JUMP1,SETANIM_FLAG_OVERRIDE, 100);
+				int anim = demo15detected?BOTH_JUMP1_15:BOTH_JUMP1;
+				PM_SetAnim(SETANIM_LEGS,anim,SETANIM_FLAG_OVERRIDE, 100);
 				pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
 			} 
 			else 
 			{
-				PM_SetAnim(SETANIM_LEGS,BOTH_JUMPBACK1,SETANIM_FLAG_OVERRIDE, 100);
+				int anim = demo15detected?BOTH_JUMPBACK1_15:BOTH_JUMPBACK1;
+				PM_SetAnim(SETANIM_LEGS,anim,SETANIM_FLAG_OVERRIDE, 100);
 				pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
 			}
 
@@ -2180,7 +2244,8 @@ static void PM_GroundTraceMissed( void ) {
 	if (PM_InRollComplete(pm->ps, pm->ps->legsAnim))
 	{ //Client won't catch an animation restart because it only checks frame against incoming frame, so if you roll when you land after rolling
 	  //off of something it won't replay the roll anim unless we switch it off in the air. This fixes that.
-		PM_SetAnim(SETANIM_BOTH,BOTH_INAIR1,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150);
+		int anim = demo15detected?BOTH_INAIR1_15:BOTH_INAIR1;
+		PM_SetAnim(SETANIM_BOTH,anim,SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 150);
 		pm->ps->inAirAnim = qtrue;
 	}
 
@@ -2235,10 +2300,12 @@ static void PM_GroundTrace( void ) {
 		}
 		// go into jump animation
 		if ( pm->cmd.forwardmove >= 0 ) {
-			PM_ForceLegsAnim( BOTH_JUMP1 );
+			int anim = demo15detected?BOTH_JUMP1_15:BOTH_JUMP1;
+			PM_ForceLegsAnim( anim );
 			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
 		} else {
-			PM_ForceLegsAnim( BOTH_JUMPBACK1 );
+			int anim = demo15detected?BOTH_JUMPBACK1_15:BOTH_JUMPBACK1;
+			PM_ForceLegsAnim( anim );
 			pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
 		}
 
@@ -2464,19 +2531,30 @@ void PM_Use( void )
 	pm->ps->useTime = USE_DELAY;
 }
 
-qboolean PM_RunningAnim( int anim )
-{
-	switch ( (anim&~ANIM_TOGGLEBIT) )
-	{
-	case BOTH_RUN1:			
-	case BOTH_RUN2:			
-	case BOTH_RUNBACK1:			
-	case BOTH_RUNBACK2:			
-	case BOTH_RUNAWAY1:			
-		return qtrue;
-		break;
+qboolean PM_RunningAnim( int anim ) {
+	if (demo15detected) {
+		switch ( (anim&~ANIM_TOGGLEBIT) ) {
+		case BOTH_RUN1_15:			
+		case BOTH_RUN2_15:			
+		case BOTH_RUNBACK1_15:			
+		case BOTH_RUNBACK2_15:			
+		case BOTH_RUNAWAY1_15:			
+			return qtrue;
+			break;
+		}
+		return qfalse;
+	} else {
+		switch ( (anim&~ANIM_TOGGLEBIT) ) {
+		case BOTH_RUN1:			
+		case BOTH_RUN2:			
+		case BOTH_RUNBACK1:			
+		case BOTH_RUNBACK2:			
+		case BOTH_RUNAWAY1:			
+			return qtrue;
+			break;
+		}
+		return qfalse;
 	}
-	return qfalse;
 }
 
 /*
@@ -2490,17 +2568,29 @@ static void PM_Footsteps( void ) {
 	qboolean	footstep;
 	int			setAnimFlags = 0;
 
-	if ( (PM_InSaberAnim( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) ) && !BG_SpinningSaberAnim( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) )) 
+	if (((PM_InSaberAnim( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) ) && !BG_SpinningSaberAnim( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) )) 
 		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND1 
 		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND1TO2 
 		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND2TO1 
-		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND2 
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND2
 		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_SABERFAST_STANCE
 		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_SABERSLOW_STANCE
 		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_BUTTON_HOLD
 		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_BUTTON_RELEASE
-		|| PM_LandingAnim( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) ) 
-		|| PM_PainAnim( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) ))
+		|| PM_LandingAnim((pm->ps->legsAnim&~ANIM_TOGGLEBIT)) 
+		|| PM_PainAnim((pm->ps->legsAnim&~ANIM_TOGGLEBIT)) && !demo15detected)
+		||
+		((PM_InSaberAnim( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) ) && !BG_SpinningSaberAnim( (pm->ps->legsAnim&~ANIM_TOGGLEBIT) )) 
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND1_15 
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND1TO2_15 
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND2TO1_15 
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_STAND2_15
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_SABERFAST_STANCE_15
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_SABERSLOW_STANCE_15
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_BUTTON_HOLD_15
+		|| (pm->ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_BUTTON_RELEASE_15
+		|| PM_LandingAnim((pm->ps->legsAnim&~ANIM_TOGGLEBIT)) 
+		|| PM_PainAnim((pm->ps->legsAnim&~ANIM_TOGGLEBIT)) && demo15detected))
 	{//legs are in a saber anim, and not spinning, be sure to override it
 		setAnimFlags |= SETANIM_FLAG_OVERRIDE;
 	}
@@ -2519,11 +2609,13 @@ static void PM_Footsteps( void ) {
 		{
 			if (pm->xyspeed > 60)
 			{
-				PM_ContinueLegsAnim( BOTH_SWIMFORWARD );
+				int anim = demo15detected?BOTH_SWIMFORWARD_15:BOTH_SWIMFORWARD;
+				PM_ContinueLegsAnim( anim );
 			}
 			else
 			{
-				PM_ContinueLegsAnim( BOTH_SWIM_IDLE1 );
+				int anim = demo15detected?BOTH_SWIM_IDLE1_15:BOTH_SWIM_IDLE1;
+				PM_ContinueLegsAnim( anim );
 			}
 		}
 		return;
@@ -2534,28 +2626,36 @@ static void PM_Footsteps( void ) {
 		if (  pm->xyspeed < 5 ) {
 			pm->ps->bobCycle = 0;	// start at beginning of cycle again
 			if ( (pm->ps->pm_flags & PMF_DUCKED) || (pm->ps->pm_flags & PMF_ROLLING) ) {
-				if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1IDLE)
+				if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1IDLE && !demo15detected)
+					|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1IDLE_15 && demo15detected))
 				{
-					PM_SetAnim(SETANIM_LEGS, BOTH_CROUCH1IDLE, setAnimFlags, 100);
+					int anim = demo15detected?BOTH_CROUCH1IDLE_15:BOTH_CROUCH1IDLE;
+					PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 				}
 				else
 				{
-					PM_ContinueLegsAnim( BOTH_CROUCH1IDLE );
+					int anim = demo15detected?BOTH_CROUCH1IDLE_15:BOTH_CROUCH1IDLE;
+					PM_ContinueLegsAnim( anim );
 				}
 			} else {
 				if (pm->ps->weapon == WP_DISRUPTOR && pm->ps->zoomMode == 1)
 				{
-					PM_ContinueLegsAnim( TORSO_WEAPONREADY4 );
+					int anim = demo15detected?TORSO_WEAPONREADY4_15:TORSO_WEAPONREADY4;
+					PM_ContinueLegsAnim( anim );
 				}
 				else
 				{
 					if (pm->ps->weapon == WP_SABER && pm->ps->saberHolstered)
 					{
-						PM_ContinueLegsAnim( BOTH_STAND1 );
+						int anim = demo15detected?BOTH_STAND1_15:BOTH_STAND1;
+						PM_ContinueLegsAnim( anim );
 					}
 					else
 					{
-						PM_ContinueLegsAnim( WeaponReadyAnim[pm->ps->weapon] );
+						if (demo15detected)
+							PM_ContinueLegsAnim( WeaponReadyAnim15[pm->ps->weapon] );
+						else
+							PM_ContinueLegsAnim( WeaponReadyAnim[pm->ps->weapon] );
 					}
 				}
 			}
@@ -2579,23 +2679,29 @@ static void PM_Footsteps( void ) {
 		if ( !rolled )
 		{ //if the roll failed or didn't attempt, do standard crouching anim stuff.
 			if ( pm->ps->pm_flags & PMF_BACKWARDS_RUN ) {
-				if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALKBACK)
+				if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALKBACK && !demo15detected)
+					|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALKBACK_15 && demo15detected))
 				{
-					PM_SetAnim(SETANIM_LEGS, BOTH_CROUCH1WALKBACK, setAnimFlags, 100);
+					int anim = demo15detected?BOTH_CROUCH1WALKBACK_15:BOTH_CROUCH1WALKBACK;
+					PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 				}
 				else
 				{
-					PM_ContinueLegsAnim( BOTH_CROUCH1WALKBACK );
+					int anim = demo15detected?BOTH_CROUCH1WALKBACK_15:BOTH_CROUCH1WALKBACK;
+					PM_ContinueLegsAnim( anim );
 				}
 			}
 			else {
-				if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALK)
+				if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALK && !demo15detected)
+					|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALK_15 && demo15detected))
 				{
-					PM_SetAnim(SETANIM_LEGS, BOTH_CROUCH1WALK, setAnimFlags, 100);
+					int anim = demo15detected?BOTH_CROUCH1WALK_15:BOTH_CROUCH1WALK;
+					PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 				}
 				else
 				{
-					PM_ContinueLegsAnim( BOTH_CROUCH1WALK );
+					int anim = demo15detected?BOTH_CROUCH1WALK_15:BOTH_CROUCH1WALK;
+					PM_ContinueLegsAnim( anim );
 				}
 			}
 		}
@@ -2618,24 +2724,30 @@ static void PM_Footsteps( void ) {
 
 		if ( pm->ps->pm_flags & PMF_BACKWARDS_RUN )
 		{
-			if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALKBACK)
+			if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALKBACK && !demo15detected)
+				|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALKBACK_15 && demo15detected))
 			{
-				PM_SetAnim(SETANIM_LEGS, BOTH_CROUCH1WALKBACK, setAnimFlags, 100);
+				int anim = demo15detected?BOTH_CROUCH1WALKBACK_15:BOTH_CROUCH1WALKBACK;
+				PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 			}
 			else
 			{
-				PM_ContinueLegsAnim( BOTH_CROUCH1WALKBACK );
+				int anim = demo15detected?BOTH_CROUCH1WALKBACK_15:BOTH_CROUCH1WALKBACK;
+				PM_ContinueLegsAnim( anim );
 			}
 		}
 		else
 		{
-			if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALK)
+			if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALK && !demo15detected)
+				|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_CROUCH1WALK_15 && demo15detected))
 			{
-				PM_SetAnim(SETANIM_LEGS, BOTH_CROUCH1WALK, setAnimFlags, 100);
+				int anim = demo15detected?BOTH_CROUCH1WALK_15:BOTH_CROUCH1WALK;
+				PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 			}
 			else
 			{
-				PM_ContinueLegsAnim( BOTH_CROUCH1WALK );
+				int anim = demo15detected?BOTH_CROUCH1WALK_15:BOTH_CROUCH1WALK;
+				PM_ContinueLegsAnim( anim );
 			}
 		}
 	}
@@ -2644,46 +2756,58 @@ static void PM_Footsteps( void ) {
 		if ( !( pm->cmd.buttons & BUTTON_WALKING ) ) {
 			bobmove = 0.4f;	// faster speeds bob faster
 			if ( pm->ps->pm_flags & PMF_BACKWARDS_RUN ) {
-				if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_RUNBACK1)
+				if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_RUNBACK1 && !demo15detected)
+					|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_RUNBACK1_15 && demo15detected))
 				{
-					PM_SetAnim(SETANIM_LEGS, BOTH_RUNBACK1, setAnimFlags, 100);
+					int anim = demo15detected?BOTH_RUNBACK1_15:BOTH_RUNBACK1;
+					PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 				}
 				else
 				{
-					PM_ContinueLegsAnim( BOTH_RUNBACK1 );
+					int anim = demo15detected?BOTH_RUNBACK1_15:BOTH_RUNBACK1;
+					PM_ContinueLegsAnim( anim );
 				}
 			}
 			else {
-				if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_RUN1)
+				if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_RUN1 && !demo15detected)
+					|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_RUN1_15 && demo15detected))
 				{
-					PM_SetAnim(SETANIM_LEGS, BOTH_RUN1, setAnimFlags, 100);
+					int anim = demo15detected?BOTH_RUN1_15:BOTH_RUN1;
+					PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 				}
 				else
 				{
-					PM_ContinueLegsAnim( BOTH_RUN1 );
+					int anim = demo15detected?BOTH_RUN1_15:BOTH_RUN1;
+					PM_ContinueLegsAnim( anim );
 				}
 			}
 			footstep = qtrue;
 		} else {
 			bobmove = 0.2f;	// walking bobs slow
 			if ( pm->ps->pm_flags & PMF_BACKWARDS_RUN ) {
-				if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_WALKBACK1)
+				if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_WALKBACK1 && !demo15detected)
+					|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_WALKBACK1_15 && demo15detected))
 				{
-					PM_SetAnim(SETANIM_LEGS, BOTH_WALKBACK1, setAnimFlags, 100);
+					int anim = demo15detected?BOTH_WALKBACK1_15:BOTH_WALKBACK1;
+					PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 				}
 				else
 				{
-					PM_ContinueLegsAnim( BOTH_WALKBACK1 );
+					int anim = demo15detected?BOTH_WALKBACK1_15:BOTH_WALKBACK1;
+					PM_ContinueLegsAnim( anim );
 				}
 			}
 			else {
-				if ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_WALK1)
+				if (((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_WALK1 && !demo15detected)
+					|| ((pm->ps->legsAnim&~ANIM_TOGGLEBIT) != BOTH_WALK1_15 && demo15detected))
 				{
-					PM_SetAnim(SETANIM_LEGS, BOTH_WALK1, setAnimFlags, 100);
+					int anim = demo15detected?BOTH_WALK1_15:BOTH_WALK1;
+					PM_SetAnim(SETANIM_LEGS, anim, setAnimFlags, 100);
 				}
 				else
 				{
-					PM_ContinueLegsAnim( BOTH_WALK1 );
+					int anim = demo15detected?BOTH_WALK1_15:BOTH_WALK1;
+					PM_ContinueLegsAnim( anim );
 				}
 			}
 		}
@@ -2772,10 +2896,10 @@ void PM_BeginWeaponChange( int weapon ) {
 		pm->ps->zoomTime = pm->ps->commandTime;
 	}
 
-	PM_AddEvent( EV_CHANGE_WEAPON );
+	PM_AddEvent(EV_CHANGE_WEAPON);
 	pm->ps->weaponstate = WEAPON_DROPPING;
 	pm->ps->weaponTime += 200;
-	PM_StartTorsoAnim( TORSO_DROPWEAP1 );
+	PM_StartTorsoAnim(demo15detected?TORSO_DROPWEAP1_15:TORSO_DROPWEAP1);
 }
 
 
@@ -2802,7 +2926,7 @@ void PM_FinishWeaponChange( void ) {
 	}
 	else
 	{
-		PM_StartTorsoAnim( TORSO_RAISEWEAP1);
+		PM_StartTorsoAnim(demo15detected?TORSO_RAISEWEAP1_15:TORSO_RAISEWEAP1);
 	}
 	pm->ps->weapon = weapon;
 	pm->ps->weaponstate = WEAPON_RAISING;
@@ -3239,18 +3363,21 @@ static void PM_Weapon( void )
 			if (pm->ps->weapon == WP_DISRUPTOR && pm->ps->zoomMode == 1)
 			{
 				//PM_StartTorsoAnim( TORSO_WEAPONREADY4 );
-				PM_StartTorsoAnim( TORSO_RAISEWEAP1);
+				int anim = demo15detected?TORSO_RAISEWEAP1_15:TORSO_RAISEWEAP1;
+				PM_StartTorsoAnim( anim );
 			}
 			else
 			{
 				if (pm->ps->weapon == WP_EMPLACED_GUN)
 				{
-					PM_StartTorsoAnim( BOTH_GUNSIT1 );
+					int anim = demo15detected?BOTH_GUNSIT1_15:BOTH_GUNSIT1;
+					PM_StartTorsoAnim( anim );
 				}
 				else
 				{
 					//PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
-					PM_StartTorsoAnim( TORSO_RAISEWEAP1);
+					int anim = demo15detected?TORSO_RAISEWEAP1_15:TORSO_RAISEWEAP1;
+					PM_StartTorsoAnim( anim );
 				}
 			}
 		}
@@ -3271,19 +3398,19 @@ static void PM_Weapon( void )
 		switch(pm->ps->forceHandExtend)
 		{
 		case HANDEXTEND_FORCEPUSH:
-			desiredAnim = BOTH_FORCEPUSH;
+			desiredAnim = demo15detected?BOTH_FORCEPUSH_15:BOTH_FORCEPUSH;
 			break;
 		case HANDEXTEND_FORCEPULL:
-			desiredAnim = BOTH_FORCEPULL;
+			desiredAnim = demo15detected?BOTH_FORCEPULL_15:BOTH_FORCEPULL;
 			break;
 		case HANDEXTEND_FORCEGRIP:
-			desiredAnim = BOTH_FORCEGRIP_HOLD;
+			desiredAnim = demo15detected?BOTH_FORCEGRIP_HOLD_15:BOTH_FORCEGRIP_HOLD;
 			break;
 		case HANDEXTEND_SABERPULL:
-			desiredAnim = BOTH_SABERPULL;
+			desiredAnim = demo15detected?BOTH_SABERPULL_15:BOTH_SABERPULL;
 			break;
 		case HANDEXTEND_CHOKE:
-			desiredAnim = BOTH_CHOKE3; //left-handed choke
+			desiredAnim = demo15detected?BOTH_CHOKE3_15:BOTH_CHOKE3; //left-handed choke
 			break;
 		case HANDEXTEND_DODGE:
 			desiredAnim = pm->ps->forceDodgeAnim;
@@ -3296,41 +3423,41 @@ static void PM_Weapon( void )
 					int originalDAnim = pm->ps->forceDodgeAnim-8; //-8 is the original legs anim
 					if (originalDAnim == 2)
 					{
-						desiredAnim = BOTH_FORCE_GETUP_B1;
+						desiredAnim = demo15detected?BOTH_FORCE_GETUP_B1_15:BOTH_FORCE_GETUP_B1;
 					}
 					else if (originalDAnim == 3)
 					{
-						desiredAnim = BOTH_FORCE_GETUP_B3;
+						desiredAnim = demo15detected?BOTH_FORCE_GETUP_B3_15:BOTH_FORCE_GETUP_B3;
 					}
 					else
 					{
-						desiredAnim = BOTH_GETUP1;
+						desiredAnim = demo15detected?BOTH_GETUP1_15:BOTH_GETUP1;
 					}
 
 					//now specify the torso anim
 					seperateOnTorso = qtrue;
-					desiredOnTorso = BOTH_FORCEPUSH;
+					desiredOnTorso = demo15detected?BOTH_FORCEPUSH_15:BOTH_FORCEPUSH;
 				}
 				else if (pm->ps->forceDodgeAnim == 2)
 				{
-					desiredAnim = BOTH_FORCE_GETUP_B1;
+					desiredAnim = demo15detected?BOTH_FORCE_GETUP_B1_15:BOTH_FORCE_GETUP_B1;
 				}
 				else if (pm->ps->forceDodgeAnim == 3)
 				{
-					desiredAnim = BOTH_FORCE_GETUP_B3;
+					desiredAnim = demo15detected?BOTH_FORCE_GETUP_B3_15:BOTH_FORCE_GETUP_B3;
 				}
 				else
 				{
-					desiredAnim = BOTH_GETUP1;
+					desiredAnim = demo15detected?BOTH_GETUP1_15:BOTH_GETUP1;
 				}
 			}
 			else
 			{
-				desiredAnim = BOTH_KNOCKDOWN1;
+				desiredAnim = demo15detected?BOTH_KNOCKDOWN1_15:BOTH_KNOCKDOWN1;
 			}
 			break;
 		case HANDEXTEND_DUELCHALLENGE:
-			desiredAnim = BOTH_ENGAGETAUNT;
+			desiredAnim = demo15detected?BOTH_ENGAGETAUNT_15:BOTH_ENGAGETAUNT;
 			break;
 		case HANDEXTEND_TAUNT:
 			desiredAnim = pm->ps->forceDodgeAnim;
@@ -3347,7 +3474,7 @@ static void PM_Weapon( void )
 			//BOTH_FORCELIGHTNING_HOLD //hold lightning
 			//BOTH_FORCELIGHTNING_RELEASE //release lightning
 		default:
-			desiredAnim = BOTH_FORCEPUSH;
+			desiredAnim = demo15detected?BOTH_FORCEPUSH_15:BOTH_FORCEPUSH;
 			break;
 		}
 
@@ -3422,17 +3549,21 @@ static void PM_Weapon( void )
 		if (pm->ps->weapon == WP_THERMAL)
 		{
 			if ((pm->ps->torsoAnim&~ANIM_TOGGLEBIT) == WeaponAttackAnim[pm->ps->weapon] &&
-				(pm->ps->weaponTime-200) <= 0)
-			{
+				(pm->ps->weaponTime-200) <= 0 && !demo15detected) {
 				PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
+			} else if ((pm->ps->torsoAnim&~ANIM_TOGGLEBIT) == WeaponAttackAnim15[pm->ps->weapon] &&
+				(pm->ps->weaponTime-200) <= 0 && demo15detected) {
+				PM_StartTorsoAnim( WeaponReadyAnim15[pm->ps->weapon] );
 			}
 		}
 		else
 		{
 			if ((pm->ps->torsoAnim&~ANIM_TOGGLEBIT) == WeaponAttackAnim[pm->ps->weapon] &&
-				(pm->ps->weaponTime-700) <= 0)
-			{
+				(pm->ps->weaponTime-700) <= 0 && !demo15detected) {
 				PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
+			} else if ((pm->ps->torsoAnim&~ANIM_TOGGLEBIT) == WeaponAttackAnim15[pm->ps->weapon] &&
+				(pm->ps->weaponTime-700) <= 0 && demo15detected) {
+				PM_StartTorsoAnim( WeaponReadyAnim15[pm->ps->weapon] );
 			}
 		}
 	}
@@ -3526,8 +3657,9 @@ static void PM_Weapon( void )
 
 	if (pm->ps->weapon == WP_EMPLACED_GUN && pm->ps->emplacedIndex)
 	{
+		int anim = demo15detected?BOTH_GUNSIT1_15:BOTH_GUNSIT1;
 		pm->cmd.weapon = WP_EMPLACED_GUN; //No switch for you!
-		PM_StartTorsoAnim( BOTH_GUNSIT1 );
+		PM_StartTorsoAnim( anim );
 	}
 
 	if (pm->ps->isJediMaster || pm->ps->duelInProgress || pm->ps->trueJedi)
@@ -3603,41 +3735,53 @@ static void PM_Weapon( void )
 		} else {
 			if (pm->ps->weapon == WP_DISRUPTOR && pm->ps->zoomMode == 1)
 			{
-				PM_StartTorsoAnim( TORSO_WEAPONREADY4 );
+				int anim = demo15detected?TORSO_WEAPONREADY4_15:TORSO_WEAPONREADY4;
+				PM_StartTorsoAnim( anim );
 			}
 			else
 			{
 				if (pm->ps->weapon == WP_EMPLACED_GUN)
 				{
-					PM_StartTorsoAnim( BOTH_GUNSIT1 );
+					int anim = demo15detected?BOTH_GUNSIT1_15:BOTH_GUNSIT1;
+					PM_StartTorsoAnim( anim );
 				}
 				else
 				{
-					PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
+					if (demo15detected)
+						PM_StartTorsoAnim( WeaponReadyAnim15[pm->ps->weapon] );
+					else
+						PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
 				}
 			}
 		}
 		return;
 	}
 
-	if (((pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) == TORSO_WEAPONREADY4 ||
-		(pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) == BOTH_ATTACK4) &&
-		(pm->ps->weapon != WP_DISRUPTOR || pm->ps->zoomMode != 1))
-	{
-		if (pm->ps->weapon == WP_EMPLACED_GUN)
-		{
-			PM_StartTorsoAnim( BOTH_GUNSIT1 );
-		}
-		else
-		{
-			PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
+	if (((((pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) == TORSO_WEAPONREADY4 ||
+		(pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) == BOTH_ATTACK4) && !demo15detected)
+		||
+		(((pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) == TORSO_WEAPONREADY4_15 ||
+		(pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) == BOTH_ATTACK4_15) && demo15detected)) &&
+		(pm->ps->weapon != WP_DISRUPTOR || pm->ps->zoomMode != 1)) {
+		if (pm->ps->weapon == WP_EMPLACED_GUN) {
+			int anim = demo15detected?BOTH_GUNSIT1_15:BOTH_GUNSIT1;
+			PM_StartTorsoAnim( anim );
+		} else {
+			if (demo15detected)
+				PM_StartTorsoAnim( WeaponReadyAnim15[pm->ps->weapon] );
+			else
+				PM_StartTorsoAnim( WeaponReadyAnim[pm->ps->weapon] );
 		}
 	}
-	else if (((pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) != TORSO_WEAPONREADY4 &&
-		(pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) != BOTH_ATTACK4) &&
+	else if (((((pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) != TORSO_WEAPONREADY4 &&
+		(pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) != BOTH_ATTACK4) && !demo15detected)
+		||
+		(((pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) != TORSO_WEAPONREADY4_15 &&
+		(pm->ps->torsoAnim & ~ANIM_TOGGLEBIT) != BOTH_ATTACK4_15) && demo15detected)) &&
 		(pm->ps->weapon == WP_DISRUPTOR && pm->ps->zoomMode == 1))
 	{
-		PM_StartTorsoAnim( TORSO_WEAPONREADY4 );
+		int anim = demo15detected?TORSO_WEAPONREADY4_15:TORSO_WEAPONREADY4;
+		PM_StartTorsoAnim( anim );
 	}
 
 
@@ -3686,11 +3830,15 @@ static void PM_Weapon( void )
 
 	if (pm->ps->weapon == WP_DISRUPTOR && pm->ps->zoomMode == 1)
 	{
-		PM_StartTorsoAnim( BOTH_ATTACK4 );
+		int anim = demo15detected?BOTH_ATTACK4_15:BOTH_ATTACK4;
+		PM_StartTorsoAnim( anim );
 	}
 	else
 	{
-		PM_StartTorsoAnim( WeaponAttackAnim[pm->ps->weapon] );
+		if (demo15detected)
+			PM_StartTorsoAnim( WeaponAttackAnim15[pm->ps->weapon] );
+		else
+			PM_StartTorsoAnim( WeaponAttackAnim[pm->ps->weapon] );
 	}
 
 	if ( pm->cmd.buttons & BUTTON_ALT_ATTACK )
@@ -3774,7 +3922,7 @@ static void PM_Animate( void ) {
 			pm->ps->forceHandExtend = HANDEXTEND_TAUNT;
 
 			//FIXME: random taunt anims?
-			pm->ps->forceDodgeAnim = BOTH_ENGAGETAUNT;
+			pm->ps->forceDodgeAnim = demo15detected?BOTH_ENGAGETAUNT_15:BOTH_ENGAGETAUNT;
 
 			pm->ps->forceHandExtendTime = pm->cmd.serverTime + 1000;
 			
@@ -4045,34 +4193,52 @@ void PM_AdjustAttackStates( pmove_t *pm )
 	}
 }
 
-void BG_CmdForRoll( int anim, usercmd_t *pCmd )
-{
-	switch ( (anim&~ANIM_TOGGLEBIT) )
-	{
-	case BOTH_ROLL_F:
-		pCmd->forwardmove = 127;
-		pCmd->rightmove = 0;
-		break;
-	case BOTH_ROLL_B:
-		pCmd->forwardmove = -127;
-		pCmd->rightmove = 0;
-		break;
-	case BOTH_ROLL_R:
-		pCmd->forwardmove = 0;
-		pCmd->rightmove = 127;
-		break;
-	case BOTH_ROLL_L:
-		pCmd->forwardmove = 0;
-		pCmd->rightmove = -127;
-		break;
+void BG_CmdForRoll( int anim, usercmd_t *pCmd ) {
+	if (demo15detected) {
+		switch ( (anim&~ANIM_TOGGLEBIT) ) {
+		case BOTH_ROLL_F_15:
+			pCmd->forwardmove = 127;
+			pCmd->rightmove = 0;
+			break;
+		case BOTH_ROLL_B_15:
+			pCmd->forwardmove = -127;
+			pCmd->rightmove = 0;
+			break;
+		case BOTH_ROLL_R_15:
+			pCmd->forwardmove = 0;
+			pCmd->rightmove = 127;
+			break;
+		case BOTH_ROLL_L_15:
+			pCmd->forwardmove = 0;
+			pCmd->rightmove = -127;
+			break;
+		}
+	} else {
+		switch ( (anim&~ANIM_TOGGLEBIT) ) {
+		case BOTH_ROLL_F:
+			pCmd->forwardmove = 127;
+			pCmd->rightmove = 0;
+			break;
+		case BOTH_ROLL_B:
+			pCmd->forwardmove = -127;
+			pCmd->rightmove = 0;
+			break;
+		case BOTH_ROLL_R:
+			pCmd->forwardmove = 0;
+			pCmd->rightmove = 127;
+			break;
+		case BOTH_ROLL_L:
+			pCmd->forwardmove = 0;
+			pCmd->rightmove = -127;
+			break;
+		}
 	}
 	pCmd->upmove = 0;
 }
 
 qboolean PM_SaberInTransition( int move );
 
-void BG_AdjustClientSpeed(playerState_t *ps, usercmd_t *cmd, int svTime)
-{
+void BG_AdjustClientSpeed(playerState_t *ps, usercmd_t *cmd, int svTime) {
 	//For prediction, always reset speed back to the last known server base speed
 	//If we didn't do this, under lag we'd eventually dwindle speed down to 0 even though
 	//that would not be the correct predicted value.
@@ -4093,8 +4259,8 @@ void BG_AdjustClientSpeed(playerState_t *ps, usercmd_t *cmd, int svTime)
 	{
 		if (!ps->holdMoveTime)
 		{
-			ps->torsoAnim = ( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT )
-				| BOTH_RUN1START;
+			ps->torsoAnim = demo15detected?(( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT ) | BOTH_RUN1START_15):
+				(( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT )| BOTH_RUN1START);
 			ps->holdMoveTime = svTime;
 		}
 	}
@@ -4104,8 +4270,8 @@ void BG_AdjustClientSpeed(playerState_t *ps, usercmd_t *cmd, int svTime)
 
 		if (ps->usingATST)
 		{
-			ps->torsoAnim = ( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT )
-				| BOTH_STAND1;
+			ps->torsoAnim = demo15detected?(( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT ) | BOTH_STAND1_15):
+				(( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT ) | BOTH_STAND1);
 		}
 	}
 
@@ -4140,14 +4306,14 @@ void BG_AdjustClientSpeed(playerState_t *ps, usercmd_t *cmd, int svTime)
 
 		if (cmd->forwardmove < 0)
 		{
-			ps->torsoAnim = ( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT )
-				| BOTH_WALKBACK1;
+			ps->torsoAnim = demo15detected?(( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT ) | BOTH_WALKBACK1_15):
+				(( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT ) | BOTH_WALKBACK1);
 			ps->speed *= 0.6;
 		}
 		else
 		{
-			ps->torsoAnim = ( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT )
-				| BOTH_RUN1;
+			ps->torsoAnim = demo15detected?(( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT ) | BOTH_RUN1_15):
+				(( ( ps->torsoAnim & ANIM_TOGGLEBIT ) ^ ANIM_TOGGLEBIT ) | BOTH_RUN1);
 		}
 	}
 	else if ( cmd->forwardmove < 0 && !(cmd->buttons&BUTTON_WALKING) && pm->ps->groundEntityNum != ENTITYNUM_NONE )
@@ -4258,7 +4424,8 @@ void BG_AdjustClientSpeed(playerState_t *ps, usercmd_t *cmd, int svTime)
 	if ( BG_InRoll( ps, ps->legsAnim ) && ps->speed > 200 )
 	{ //can't roll unless you're able to move normally
 		BG_CmdForRoll( ps->legsAnim, cmd );
-		if ((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_ROLL_B)
+		if (((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_ROLL_B && !demo15detected)
+			|| ((ps->legsAnim&~ANIM_TOGGLEBIT) == BOTH_ROLL_B_15 && demo15detected))
 		{ //backwards roll is pretty fast, should also be slower
 			ps->speed = ps->legsTimer/2.5;
 		}

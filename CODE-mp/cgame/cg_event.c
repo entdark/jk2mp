@@ -625,40 +625,72 @@ void CG_ReattachLimb(centity_t *source)
 	char *limbName;
 	char *stubCapName;
 
-	switch (source->torsoBolt)
-	{
-	case G2_MODELPART_HEAD:
-		limbName = "head";
-		stubCapName = "torso_cap_head_off";
-		break;
-	case G2_MODELPART_WAIST:
-		limbName = "torso";
-		stubCapName = "hips_cap_torso_off";
-		break;
-	case G2_MODELPART_LARM:
-		limbName = "l_arm";
-		stubCapName = "torso_cap_l_arm_off";
-		break;
-	case G2_MODELPART_RARM:
-		limbName = "r_arm";
-		stubCapName = "torso_cap_r_arm_off";
-		break;
-	case G2_MODELPART_RHAND:
-		limbName = "r_hand";
-		stubCapName = "r_arm_cap_r_hand_off";
-		break;
-	case G2_MODELPART_LLEG:
-		limbName = "l_leg";
-		stubCapName = "hips_cap_l_leg_off";
-		break;
-	case G2_MODELPART_RLEG:
-		limbName = "r_leg";
-		stubCapName = "hips_cap_r_leg_off";
-		break;
-	default:
-		source->torsoBolt = 0;
-		source->ghoul2weapon = NULL;
-		return;
+	if (!demo15detected) {
+		switch (source->torsoBolt) {
+		case G2_MODELPART_HEAD:
+			limbName = "head";
+			stubCapName = "torso_cap_head_off";
+			break;
+		case G2_MODELPART_WAIST:
+			limbName = "torso";
+			stubCapName = "hips_cap_torso_off";
+			break;
+		case G2_MODELPART_LARM:
+			limbName = "l_arm";
+			stubCapName = "torso_cap_l_arm_off";
+			break;
+		case G2_MODELPART_RARM:
+			limbName = "r_arm";
+			stubCapName = "torso_cap_r_arm_off";
+			break;
+		case G2_MODELPART_RHAND:
+			limbName = "r_hand";
+			stubCapName = "r_arm_cap_r_hand_off";
+			break;
+		case G2_MODELPART_LLEG:
+			limbName = "l_leg";
+			stubCapName = "hips_cap_l_leg_off";
+			break;
+		case G2_MODELPART_RLEG:
+			limbName = "r_leg";
+			stubCapName = "hips_cap_r_leg_off";
+			break;
+		default:
+			source->torsoBolt = 0;
+			source->ghoul2weapon = NULL;
+			return;
+		}
+	} else {
+		switch (source->torsoBolt) {
+		case G2_MODELPART_HEAD_15:
+			limbName = "head";
+			stubCapName = "torso_cap_head_off";
+			break;
+		case G2_MODELPART_WAIST_15:
+			limbName = "torso";
+			stubCapName = "hips_cap_torso_off";
+			break;
+		case G2_MODELPART_LARM_15:
+			limbName = "l_arm";
+			stubCapName = "torso_cap_l_arm_off";
+			break;
+		case G2_MODELPART_RARM_15:
+			limbName = "r_arm";
+			stubCapName = "torso_cap_r_arm_off";
+			break;
+		case G2_MODELPART_LLEG_15:
+			limbName = "l_leg";
+			stubCapName = "hips_cap_l_leg_off";
+			break;
+		case G2_MODELPART_RLEG_15:
+			limbName = "r_leg";
+			stubCapName = "hips_cap_r_leg_off";
+			break;
+		default:
+			limbName = "r_leg";
+			stubCapName = "hips_cap_r_leg_off";
+			break;
+		}
 	}
 
 	trap_G2API_SetSurfaceOnOff(source->ghoul2, limbName, 0);
@@ -716,36 +748,36 @@ static void CG_BodyQueueCopy(centity_t *cent, int clientNum, int knownWeapon)
 		trap_G2API_CopySpecificGhoul2Model(g2WeaponInstances[knownWeapon], 0, cent->ghoul2, 1);
 	}
 
-	anim = &bgGlobalAnimations[ cent->currentState.torsoAnim ];
+	if (demo15detected)
+		anim = &bgGlobalAnimations15[ cent->currentState.torsoAnim ];
+	else
+		anim = &bgGlobalAnimations[ cent->currentState.torsoAnim ];
 	animSpeed = 50.0f / anim->frameLerp;
 
 	//this will just set us to the last frame of the animation, in theory
-	if (source->isATST)
-	{
+	if (source->isATST) {
 		int aNum = cgs.clientinfo[source->currentState.number].frame+1;
-		anim = &bgGlobalAnimations[ BOTH_DEAD1 ];
+		if (demo15detected)
+			anim = &bgGlobalAnimations15[BOTH_DEAD1_15];
+		else
+			anim = &bgGlobalAnimations[BOTH_DEAD1];
 		animSpeed = 1;
 
 		flags &= ~BONE_ANIM_OVERRIDE_LOOP;
 
-		while (aNum >= anim->firstFrame+anim->numFrames)
-		{
+		while (aNum >= anim->firstFrame+anim->numFrames) {
 			aNum--;
 		}
 
 		trap_G2API_SetBoneAnim(cent->ghoul2, 0, "pelvis", aNum, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 150);
-	}
-	else
-	{
+	} else {
 		int aNum = cgs.clientinfo[source->currentState.number].frame+1;
 
-		while (aNum >= anim->firstFrame+anim->numFrames)
-		{
+		while (aNum >= anim->firstFrame+anim->numFrames) {
 			aNum--;
 		}
 
-		if (aNum < anim->firstFrame-1)
-		{ //wrong animation...?
+		if (aNum < anim->firstFrame-1) { //wrong animation...?
 			aNum = (anim->firstFrame+anim->numFrames)-1;
 		}
 
@@ -760,8 +792,7 @@ static void CG_BodyQueueCopy(centity_t *cent, int clientNum, int knownWeapon)
 	}
 
 	//After we create the bodyqueue, regenerate any limbs on the real instance
-	if (source->torsoBolt)
-	{
+	if (source->torsoBolt) {
 		CG_ReattachLimb(source);
 	}
 }
@@ -1092,7 +1123,8 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			cl_ent->isATST = 0;
 			cl_ent->atstFootClang = 0;
 			cl_ent->atstSwinging = 0;
-//			cl_ent->torsoBolt = 0;
+			if (demo15detected)
+				cl_ent->torsoBolt = 0;
 			cl_ent->bolt1 = 0;
 			cl_ent->bolt2 = 0;
 			cl_ent->bolt3 = 0;
@@ -1422,7 +1454,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_FIRE_WEAPON:
 		DEBUGNAME("EV_FIRE_WEAPON");
-		if (cent->currentState.number >= MAX_CLIENTS && cent->currentState.eType != ET_GRAPPLE)
+		if (cent->currentState.number >= MAX_CLIENTS && (demo15detected || cent->currentState.eType != ET_GRAPPLE))
 		{ //special case for turret firing
 			vec3_t gunpoint, gunangle;
 			mdxaBone_t matrix;
@@ -1511,7 +1543,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	case EV_SABER_HIT:
 		DEBUGNAME("EV_SABER_HIT");
-		if (es->eventParm == 16)
+		if (!demo15detected && es->eventParm == 16)
 		{ //Make lots of sparks, something special happened
 			vec3_t fxDir;
 			VectorCopy(es->angles, fxDir);
@@ -1686,8 +1718,12 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			&& es->number == cg.playerCent->currentState.number))
 		{
 			if ((cg.playerPredicted && cg.snap->ps.zoomMode)
-				|| (!cg.playerPredicted && (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-				|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4)))
+				|| (!cg.playerPredicted &&
+				(((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+				|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+				||
+				((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+				|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))))
 			{
 				trap_S_StartLocalSound(trap_S_RegisterSound("sound/weapons/disruptor/zoomstart.wav"), CHAN_AUTO);
 			}
@@ -1713,10 +1749,8 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 				break;
 			case PDSOUND_ABSORBHIT:
 				sID = trap_S_RegisterSound("sound/weapons/force/absorbhit.mp3");
-				if (es->trickedentindex >= 0 && es->trickedentindex < MAX_CLIENTS)
-				{
+				if (!demo15detected && es->trickedentindex >= 0 && es->trickedentindex < MAX_CLIENTS) {
 					int clnum = es->trickedentindex;
-
 					cg_entities[clnum].teamPowerEffectTime = cg.time + 1000;
 					cg_entities[clnum].teamPowerType = 3;
 				}
@@ -2328,7 +2362,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		// so ignore events on the player
 		DEBUGNAME("EV_PAIN");
 
-		if ( !cg_oldPainSounds.integer || (cent->currentState.number != cg.snap->ps.clientNum) )
+		if ( (!demo15detected && !cg_oldPainSounds.integer) || (cent->currentState.number != cg.snap->ps.clientNum) )
 		{
 			CG_PainEvent( cent, es->eventParm );
 		}

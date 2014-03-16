@@ -261,6 +261,7 @@ R_AddWorldSurface
 ======================
 */
 static void R_AddWorldSurface( msurface_t *surf, int dlightBits ) {
+	shader_t *shader;
 	if ( surf->viewCount == tr.viewCount ) {
 		return;		// already in this view
 	}
@@ -278,8 +279,12 @@ static void R_AddWorldSurface( msurface_t *surf, int dlightBits ) {
 		dlightBits = R_DlightSurface( surf, dlightBits );
 		dlightBits = ( dlightBits != 0 );
 	}
+	if ( tr.mmeWorldShader ) 
+		shader = tr.mmeWorldShader;
+	else
+		shader = surf->shader;
 
-	R_AddDrawSurf( surf->data, surf->shader, surf->fogIndex, dlightBits );
+	R_AddDrawSurf( surf->data, shader, surf->fogIndex, dlightBits );
 }
 
 /*

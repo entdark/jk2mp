@@ -416,6 +416,15 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
         }
     }
 
+	if ( mme_worldShader->modified) {
+		if (R_FindShaderText( mme_worldShader->string )) {
+			tr.mmeWorldShader = R_FindShader( mme_worldShader->string, lightmapsNone, stylesDefault, qtrue );
+		} else {
+			tr.mmeWorldShader = 0;
+		}
+		mme_worldShader->modified = qfalse;
+	}
+
 	//
 	// draw buffer stuff
 	//

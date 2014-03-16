@@ -3164,10 +3164,8 @@ return NULL if not found
 If found, it will return a valid shader
 =====================
 */
-static const char *FindShaderInShaderText( const char *shadername ) {
-
-	char *token;
-	const char *p;
+static /*const*/ char *FindShaderInShaderText( const char *shadername ) {
+	char *token, *p;
 
 	int i, hash;
 
@@ -3175,7 +3173,7 @@ static const char *FindShaderInShaderText( const char *shadername ) {
 
 	for (i = 0; shaderTextHashTable[hash][i]; i++) {
 		p = shaderTextHashTable[hash][i];
-		token = COM_ParseExt(&p, qtrue);
+		token = COM_ParseExt((const char **)&p, qtrue);
 		if ( !Q_stricmp( token, shadername ) ) {
 			return p;
 		}
@@ -3189,7 +3187,7 @@ static const char *FindShaderInShaderText( const char *shadername ) {
 
 	// look for label
 	while ( 1 ) {
-		token = COM_ParseExt( &p, qtrue );
+		token = COM_ParseExt((const char **)&p, qtrue );
 		if ( token[0] == 0 ) {
 			break;
 		}
@@ -3199,13 +3197,17 @@ static const char *FindShaderInShaderText( const char *shadername ) {
 		}
 		else {
 			// skip the definition
-			SkipBracedSection( &p );
+			SkipBracedSection((const char **)&p );
 		}
 	}
 
 	return NULL;
 }
 
+
+char *R_FindShaderText( const char *shadername ) {
+	return FindShaderInShaderText( shadername );
+}
 
 /*
 ==================

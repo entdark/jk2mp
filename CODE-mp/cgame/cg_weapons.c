@@ -131,73 +131,95 @@ CG_MapTorsoToWeaponFrame
 =================
 */
 static int CG_MapTorsoToWeaponFrame( clientInfo_t *ci, int frame, int animNum ) {
-	animation_t *animations = bgGlobalAnimations;
+	animation_t *animations = demo15detected?bgGlobalAnimations15:bgGlobalAnimations;
 #ifdef WEAPON_FORCE_BUSY_HOLSTER
-	if (cg.snap->ps.forceHandExtend != HANDEXTEND_NONE || cgWeapFrameTime > cg.time)
-	{ //the reason for the after delay is so that it doesn't snap the weapon frame to the "idle" (0) frame
+	if (cg.snap->ps.forceHandExtend != HANDEXTEND_NONE || cgWeapFrameTime > cg.time) {
+	//the reason for the after delay is so that it doesn't snap the weapon frame to the "idle" (0) frame
 		//for a very quick moment
-		if (cgWeapFrame < 6)
-		{
+		if (cgWeapFrame < 6) {
 			cgWeapFrame = 6;
 			cgWeapFrameTime = cg.time + 10;
 		}
 
-		if (cgWeapFrameTime < cg.time && cgWeapFrame < 10)
-		{
+		if (cgWeapFrameTime < cg.time && cgWeapFrame < 10) {
 			cgWeapFrame++;
 			cgWeapFrameTime = cg.time + 10;
 		}
 
-		if (cg.snap->ps.forceHandExtend != HANDEXTEND_NONE &&
-			cgWeapFrame == 10)
-		{
+		if (cg.snap->ps.forceHandExtend != HANDEXTEND_NONE && cgWeapFrame == 10) {
 			cgWeapFrameTime = cg.time + 100;
 		}
 
 		return cgWeapFrame;
-	}
-	else
-	{
+	} else {
 		cgWeapFrame = 0;
 		cgWeapFrameTime = 0;
 	}
 #endif
 
-	switch( animNum )
-	{
-	case TORSO_DROPWEAP1:
-		if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 5 ) 
-		{
-			return frame - animations[animNum].firstFrame + 6;
-		}
-		break;
+	if (demo15detected) {
+		switch( animNum ) {
+		case TORSO_DROPWEAP1_15:
+			if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 5 ) {
+				return frame - animations[animNum].firstFrame + 6;
+			}
+			break;
 
-	case TORSO_RAISEWEAP1:
-		if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 4 ) 
-		{
-			return frame - animations[animNum].firstFrame + 6 + 4;
+		case TORSO_RAISEWEAP1_15:
+			if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 4 ) {
+				return frame - animations[animNum].firstFrame + 6 + 4;
+			}
+			break;
+		case BOTH_ATTACK1_15:
+		case BOTH_ATTACK2_15:
+		case BOTH_ATTACK3_15:
+		case BOTH_ATTACK4_15:
+		case BOTH_ATTACK5_15:
+		case BOTH_ATTACK6_15:
+		case BOTH_ATTACK7_15:
+		case BOTH_ATTACK8_15:
+		case BOTH_ATTACK9_15:
+		case BOTH_ATTACK10_15:
+		case BOTH_ATTACK11_15:
+		case BOTH_ATTACK12_15:
+		case BOTH_THERMAL_THROW_15:
+			if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 6 ) {
+				return 1 + ( frame - animations[animNum].firstFrame );
+			}
+			break;
 		}
-		break;
-	case BOTH_ATTACK1:
-	case BOTH_ATTACK2:
-	case BOTH_ATTACK3:
-	case BOTH_ATTACK4:
-	case BOTH_ATTACK5:
-	case BOTH_ATTACK6:
-	case BOTH_ATTACK7:
-	case BOTH_ATTACK8:
-	case BOTH_ATTACK9:
-	case BOTH_ATTACK10:
-	case BOTH_ATTACK11:
-	case BOTH_ATTACK12:
-	case BOTH_THERMAL_THROW:
-		if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 6 ) 
-		{
-			return 1 + ( frame - animations[animNum].firstFrame );
-		}
+	} else {
+		switch( animNum ) {
+		case TORSO_DROPWEAP1:
+			if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 5 ) {
+				return frame - animations[animNum].firstFrame + 6;
+			}
+			break;
 
-		break;
-	}	
+		case TORSO_RAISEWEAP1:
+			if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 4 ) {
+				return frame - animations[animNum].firstFrame + 6 + 4;
+			}
+			break;
+		case BOTH_ATTACK1:
+		case BOTH_ATTACK2:
+		case BOTH_ATTACK3:
+		case BOTH_ATTACK4:
+		case BOTH_ATTACK5:
+		case BOTH_ATTACK6:
+		case BOTH_ATTACK7:
+		case BOTH_ATTACK8:
+		case BOTH_ATTACK9:
+		case BOTH_ATTACK10:
+		case BOTH_ATTACK11:
+		case BOTH_ATTACK12:
+		case BOTH_THERMAL_THROW:
+			if ( frame >= animations[animNum].firstFrame && frame < animations[animNum].firstFrame + 6 ) {
+				return 1 + ( frame - animations[animNum].firstFrame );
+			}
+			break;
+		}
+	}
 	return -1;
 }
 
@@ -751,8 +773,11 @@ void CG_AddViewWeaponDirect( centity_t *cent ) {
 	// allow the gun to be completely removed
 	if ( !cg_drawGun.integer || (cg.playerPredicted && cg.predictedPlayerState.zoomMode
 		|| (!cg.playerPredicted
-		&& (cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4)))) {
+		&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+		||
+		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
+		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))))) {
 		vec3_t		origin;
 
 		if ( cent->currentState.eFlags & EF_FIRING ) {
@@ -2097,7 +2122,9 @@ qboolean CG_CalcMuzzlePoint( int entityNum, vec3_t muzzle ) {
 
 	AngleVectors( cent->currentState.apos.trBase, forward, NULL, NULL );
 	anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
-	if ( anim == BOTH_CROUCH1WALK || anim == BOTH_CROUCH1IDLE ) {
+	if (!demo15detected && (anim == BOTH_CROUCH1WALK || anim == BOTH_CROUCH1IDLE)) {
+		muzzle[2] += CROUCH_VIEWHEIGHT;
+	} else if (demo15detected && (anim == BOTH_CROUCH1WALK_15 || anim == BOTH_CROUCH1IDLE_15)) {
 		muzzle[2] += CROUCH_VIEWHEIGHT;
 	} else {
 		muzzle[2] += DEFAULT_VIEWHEIGHT;

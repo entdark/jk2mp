@@ -517,12 +517,9 @@ static void CG_General( centity_t *cent ) {
 		
 		doNotSetModel = qtrue;
 
-		if (cent->currentState.modelindex >= 0)
-		{
+		if (cent->currentState.modelindex >= 0 || demo15detected) {
 			clEnt = &cg_entities[cent->currentState.modelindex];
-		}
-		else
-		{
+		} else {
 			clEnt = &cg_entities[cent->currentState.otherEntityNum2];
 		}
 
@@ -547,6 +544,7 @@ static void CG_General( centity_t *cent ) {
 			char *stubTagName;
 			int limb_anim;
 			int newBolt;
+			int mG2 = cent->currentState.modelGhoul2;
 
 			if (clEnt && clEnt->torsoBolt)
 			{ //already have a limb missing!
@@ -562,8 +560,7 @@ static void CG_General( centity_t *cent ) {
 			cent->bolt4 = -1;
 			cent->trailTime = 0;
 
-			if (cent->currentState.modelGhoul2 == G2_MODELPART_HEAD)
-			{
+			if ((demo15detected && mG2 == G2_MODELPART_HEAD_15) || (!demo15detected && mG2 == G2_MODELPART_HEAD)) {
 				limbBone = "cervical";
 				rotateBone = "cranium";
 				limbName = "head";
@@ -571,10 +568,8 @@ static void CG_General( centity_t *cent ) {
 				stubCapName = "torso_cap_head_off";
 				limbTagName = "*head_cap_torso";
 				stubTagName = "*torso_cap_head";
-				limb_anim = BOTH_DISMEMBER_HEAD1;
-			}
-			else if (cent->currentState.modelGhoul2 == G2_MODELPART_WAIST)
-			{
+				limb_anim = demo15detected?BOTH_DISMEMBER_HEAD1_15:BOTH_DISMEMBER_HEAD1;
+			} else if ((demo15detected && mG2 == G2_MODELPART_WAIST_15) || (!demo15detected && mG2 == G2_MODELPART_WAIST)) {
 				limbBone = "pelvis";
 				rotateBone = "thoracic";
 				limbName = "torso";
@@ -582,10 +577,8 @@ static void CG_General( centity_t *cent ) {
 				stubCapName = "hips_cap_torso_off";
 				limbTagName = "*torso_cap_hips";
 				stubTagName = "*hips_cap_torso";
-				limb_anim = BOTH_DISMEMBER_TORSO1;
-			}
-			else if (cent->currentState.modelGhoul2 == G2_MODELPART_LARM)
-			{
+				limb_anim = demo15detected?BOTH_DISMEMBER_TORSO1_15:BOTH_DISMEMBER_TORSO1;
+			} else if ((demo15detected && mG2 == G2_MODELPART_LARM_15) || (!demo15detected && mG2 == G2_MODELPART_LARM)) {
 				limbBone = "lhumerus";
 				rotateBone = "lradius";
 				limbName = "l_arm";
@@ -593,10 +586,8 @@ static void CG_General( centity_t *cent ) {
 				stubCapName = "torso_cap_l_arm_off";
 				limbTagName = "*l_arm_cap_torso";
 				stubTagName = "*torso_cap_l_arm";
-				limb_anim = BOTH_DISMEMBER_LARM;
-			}
-			else if (cent->currentState.modelGhoul2 == G2_MODELPART_RARM)
-			{
+				limb_anim = demo15detected?BOTH_DISMEMBER_LARM_15:BOTH_DISMEMBER_LARM;
+			} else if ((demo15detected && mG2 == G2_MODELPART_RARM_15) || (!demo15detected && mG2 == G2_MODELPART_RARM)) {
 				limbBone = "rhumerus";
 				rotateBone = "rradius";
 				limbName = "r_arm";
@@ -604,10 +595,8 @@ static void CG_General( centity_t *cent ) {
 				stubCapName = "torso_cap_r_arm_off";
 				limbTagName = "*r_arm_cap_torso";
 				stubTagName = "*torso_cap_r_arm";
-				limb_anim = BOTH_DISMEMBER_RARM;
-			}
-			else if (cent->currentState.modelGhoul2 == G2_MODELPART_RHAND)
-			{
+				limb_anim = demo15detected?BOTH_DISMEMBER_RARM_15:BOTH_DISMEMBER_RARM;
+			} else if (!demo15detected && mG2 == G2_MODELPART_RHAND) {
 				limbBone = "rradiusX";
 				rotateBone = "rhand";
 				limbName = "r_hand";
@@ -616,9 +605,8 @@ static void CG_General( centity_t *cent ) {
 				limbTagName = "*r_hand_cap_r_arm";
 				stubTagName = "*r_arm_cap_r_hand";
 				limb_anim = BOTH_DISMEMBER_RARM;
-			}
-			else if (cent->currentState.modelGhoul2 == G2_MODELPART_LLEG)
-			{
+			//different
+			} else if ((demo15detected && mG2 == G2_MODELPART_LLEG_15) || (!demo15detected && mG2 == G2_MODELPART_LLEG)) {
 				limbBone = "lfemurYZ";
 				rotateBone = "ltibia";
 				limbName = "l_leg";
@@ -626,10 +614,9 @@ static void CG_General( centity_t *cent ) {
 				stubCapName = "hips_cap_l_leg_off";
 				limbTagName = "*l_leg_cap_hips";
 				stubTagName = "*hips_cap_l_leg";
-				limb_anim = BOTH_DISMEMBER_LLEG;
-			}
-			else if (cent->currentState.modelGhoul2 == G2_MODELPART_RLEG)
-			{
+				limb_anim = demo15detected?BOTH_DISMEMBER_LLEG_15:BOTH_DISMEMBER_LLEG;
+			//different
+			} else if ((demo15detected && mG2 == G2_MODELPART_RLEG_15) || (!demo15detected && mG2 == G2_MODELPART_RLEG)) {
 				limbBone = "rfemurYZ";
 				rotateBone = "rtibia";
 				limbName = "r_leg";
@@ -637,10 +624,8 @@ static void CG_General( centity_t *cent ) {
 				stubCapName = "hips_cap_r_leg_off";
 				limbTagName = "*r_leg_cap_hips";
 				stubTagName = "*hips_cap_r_leg";
-				limb_anim = BOTH_DISMEMBER_RLEG;
-			}
-			else
-			{
+				limb_anim = demo15detected?BOTH_DISMEMBER_RLEG_15:BOTH_DISMEMBER_RLEG;
+			} else {
 				limbBone = "rfemurYZ";
 				rotateBone = "rtibia";
 				limbName = "r_leg";
@@ -648,7 +633,7 @@ static void CG_General( centity_t *cent ) {
 				stubCapName = "hips_cap_r_leg_off";
 				limbTagName = "*r_leg_cap_hips";
 				stubTagName = "*hips_cap_r_leg";
-				limb_anim = BOTH_DISMEMBER_RLEG;
+				limb_anim = demo15detected?BOTH_DISMEMBER_RLEG_15:BOTH_DISMEMBER_RLEG;
 			}
 
 			if (clEnt && clEnt->ghoul2)
@@ -667,66 +652,59 @@ static void CG_General( centity_t *cent ) {
 					ci = NULL;
 				}
 
-				if (ci)
-				{
+				if (ci) {
 					//anim = &bgGlobalAnimations[ limb_anim ];
 					//I guess it looks better to continue the body anim on the severed limb. If not a bit strange. It's what
 					//SP seems to do anyway.
-					anim = &bgGlobalAnimations[ (clEnt->currentState.torsoAnim&~ANIM_TOGGLEBIT) ];
-				}
-				else
-				{ //a g2anim ent, maybe? For those, we can settle for generic limb anims.
-					anim = &bgGlobalAnimations[ limb_anim ];
+					if (demo15detected)
+						anim = &bgGlobalAnimations15[ limb_anim ];
+					else
+						anim = &bgGlobalAnimations[ (clEnt->currentState.torsoAnim&~ANIM_TOGGLEBIT) ];
+				} else { //a g2anim ent, maybe? For those, we can settle for generic limb anims.
+					if (demo15detected)
+						anim = &bgGlobalAnimations15[ limb_anim ];
+					else
+						anim = &bgGlobalAnimations[ limb_anim ];
 				}
 
 				trap_G2API_DuplicateGhoul2Instance(clEnt->ghoul2, &cent->ghoul2);
 
-				if (anim)
-				{
+				if (anim) {
 					int aNum;
 					animSpeed = 50.0f / anim->frameLerp;
 
-					/*
-					if (cent->currentState.modelGhoul2 == G2_MODELPART_WAIST)
-					{
-						trap_G2API_SetBoneAnim(cent->ghoul2, 0, "upper_lumbar", anim->firstFrame, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 0);
-						trap_G2API_SetBoneAnim(cent->ghoul2, 0, "model_root", anim->firstFrame, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 0);
-					}
-					else
-					{
-						trap_G2API_SetBoneAnim(cent->ghoul2, 0, "upper_lumbar", anim->firstFrame + anim->numFrames-1, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 0);
-						trap_G2API_SetBoneAnim(cent->ghoul2, 0, "model_root", anim->firstFrame + anim->numFrames-1, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 0);
-					}
-					*/
-					//I guess it looks better to continue the body anim on the severed limb. If not a bit strange. It's what
-					//SP seems to do anyway.
-					if (ci)
-					{
-						aNum = ci->frame+1;
+					if (demo15detected ) {
+						if (cent->currentState.modelGhoul2 == G2_MODELPART_WAIST) {
+							trap_G2API_SetBoneAnim(cent->ghoul2, 0, "upper_lumbar", anim->firstFrame, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 0);
+							trap_G2API_SetBoneAnim(cent->ghoul2, 0, "model_root", anim->firstFrame, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 0);
+						} else {
+							trap_G2API_SetBoneAnim(cent->ghoul2, 0, "upper_lumbar", anim->firstFrame + anim->numFrames-1, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 0);
+							trap_G2API_SetBoneAnim(cent->ghoul2, 0, "model_root", anim->firstFrame + anim->numFrames-1, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 0);
+						}
+					} else {
+						//I guess it looks better to continue the body anim on the severed limb. If not a bit strange. It's what
+						//SP seems to do anyway.
+						if (ci) {
+							aNum = ci->frame+1;
 
-						while (aNum >= anim->firstFrame+anim->numFrames)
-						{
-							aNum--;
+							while (aNum >= anim->firstFrame+anim->numFrames){
+								aNum--;
+							}
+							if (aNum < anim->firstFrame-1) { //wrong animation...?
+								aNum = (anim->firstFrame+anim->numFrames)-1;
+							}
+						} else {
+							aNum = anim->firstFrame;
 						}
 
-						if (aNum < anim->firstFrame-1)
-						{ //wrong animation...?
-							aNum = (anim->firstFrame+anim->numFrames)-1;
-						}
+						trap_G2API_SetBoneAnim(cent->ghoul2, 0, "upper_lumbar", aNum, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 150);
+						trap_G2API_SetBoneAnim(cent->ghoul2, 0, "model_root", aNum, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 150);
+						trap_G2API_SetBoneAnim(cent->ghoul2, 0, "Motion", aNum, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 150);
 					}
-					else
-					{
-						aNum = anim->firstFrame;
-					}
-
-					trap_G2API_SetBoneAnim(cent->ghoul2, 0, "upper_lumbar", aNum, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 150);
-					trap_G2API_SetBoneAnim(cent->ghoul2, 0, "model_root", aNum, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 150);
-					trap_G2API_SetBoneAnim(cent->ghoul2, 0, "Motion", aNum, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, -1, 150);
 				}
 			}
 
-			if (!cent->ghoul2)
-			{
+			if (!cent->ghoul2) {
 				return;
 			}
 
@@ -767,7 +745,9 @@ static void CG_General( centity_t *cent ) {
 				trap_FX_PlayEffectID(trap_FX_RegisterEffect("blaster/smoke_bolton"), boltOrg, boltAng);
 			}
 
-			if (cent->currentState.modelGhoul2 == G2_MODELPART_RARM || cent->currentState.modelGhoul2 == G2_MODELPART_RHAND || cent->currentState.modelGhoul2 == G2_MODELPART_WAIST)
+			if (cent->currentState.modelGhoul2 == G2_MODELPART_RARM
+				|| (cent->currentState.modelGhoul2 == G2_MODELPART_RHAND && !demo15detected)
+				|| cent->currentState.modelGhoul2 == G2_MODELPART_WAIST)
 			{ //Cut his weapon holding arm off, so remove the weapon
 				if (trap_G2API_HasGhoul2ModelOnIndex(&(clEnt->ghoul2), 1))
 				{
@@ -792,8 +772,7 @@ static void CG_General( centity_t *cent ) {
 				trap_G2API_GiveMeVectorFromMatrix(&matrix, ORIGIN, boltOrg);
 				trap_G2API_GiveMeVectorFromMatrix(&matrix, NEGATIVE_Y, boltAng);
 
-				if (!boltAng[0] && !boltAng[1] && !boltAng[2])
-				{
+				if (!demo15detected && !boltAng[0] && !boltAng[1] && !boltAng[2]) {
 					boltAng[1] = 1;
 				}
 				trap_FX_PlayEffectID(trap_FX_RegisterEffect("blaster/smoke_bolton"), boltOrg, boltAng);
@@ -1051,7 +1030,7 @@ Ghoul2 Insert End
 		VectorCopy( cg.autoAngles, cent->lerpAngles );
 		AxisCopy( cg.autoAxis, ent.axis );
 	}
-	else if (!doNotSetModel)
+	else if (!doNotSetModel && !demo15detected)
 	{
 		ent.hModel = cgs.gameModels[s1->modelindex];
 	}
@@ -1116,16 +1095,11 @@ Ghoul2 Insert End
 		trap_R_AddRefEntityToScene( &ent );
 
 		return;
-	}
-	else if (cent->currentState.eType == ET_BODY)
-	{
+	} else if (cent->currentState.eType == ET_BODY) {
 		cent->dustTrailTime = 0;
 	}
 
-	if (cent->currentState.modelGhoul2 &&
-		!ent.ghoul2 &&
-		!ent.hModel)
-	{
+	if (!demo15detected && cent->currentState.modelGhoul2 && !ent.ghoul2 && !ent.hModel) {
 		return;
 	}
 
@@ -1379,6 +1353,9 @@ static void CG_Item( centity_t *cent ) {
 	float			msec;
 	float			scale;
 	weaponInfo_t	*wi;
+
+	if ( mov_filterMask.integer & movMaskItems)
+		return;
 
 	es = &cent->currentState;
 	if ( es->modelindex >= bg_numItems ) {
@@ -1829,6 +1806,9 @@ static void CG_Missile( centity_t *cent ) {
 	entityState_t		*s1;
 	const weaponInfo_t		*weapon;
 //	int	col;
+
+	if (mov_filterMask.integer & movMaskMissiles)
+		return;
 
 	s1 = &cent->currentState;
 	if ( s1->weapon > WP_NUM_WEAPONS && s1->weapon != G2_MODEL_PART ) {
@@ -2317,7 +2297,7 @@ static void CG_TeamBase( centity_t *cent ) {
 			model.hModel = cgs.media.neutralFlagBaseModel;
 		}
 
-		if (cent->currentState.eType != ET_GRAPPLE)
+		if (demo15detected || cent->currentState.eType != ET_GRAPPLE)
 		{ //do not do this for g2animents
 			trap_R_AddRefEntityToScene( &model );
 		}
@@ -2395,7 +2375,9 @@ Ghoul2 Insert End
 		CG_Speaker( cent );
 		break;
 	case ET_GRAPPLE: //An entity that wants to be able to use ghoul2 humanoid anims. Like a player, but not.
-		CG_G2Animated( cent );
+		if (!demo15detected)
+			CG_G2Animated( cent );
+		break;
 	case ET_TEAM:
 		CG_TeamBase( cent );
 		break;

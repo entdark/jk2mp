@@ -289,8 +289,8 @@ jpeg_set_defaults (j_compress_ptr cinfo)
   /* Use Huffman coding, not arithmetic coding, by default */
   cinfo->arith_code = FALSE;
 
-  /* By default, do extra passes to optimize entropy coding */
-  cinfo->optimize_coding = TRUE;
+  /* By default, don't do extra passes to optimize entropy coding */
+  cinfo->optimize_coding = FALSE;
   /* The standard Huffman tables are only valid for 8-bit data precision.
    * If the precision is higher, force optimization on so that usable
    * tables will be computed.  This test can be removed if default tables

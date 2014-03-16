@@ -526,14 +526,20 @@ void RB_BeginDrawingView (void) {
 	{
 		clearBits |= GL_STENCIL_BUFFER_BIT;
 	}
-	if ( r_fastsky->integer && !( backEnd.refdef.rdflags & RDF_NOWORLDMODEL ) )
-	{
-		clearBits |= GL_COLOR_BUFFER_BIT;	// FIXME: only if sky shaders have been used
+	if (!(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
+		if (mme_skykey->string[0] != '0') {
+			vec3_t skyColor;
+			clearBits |= GL_COLOR_BUFFER_BIT;
+			Q_parseColor( mme_skykey->string, defaultColors, skyColor );
+			qglClearColor( skyColor[0], skyColor[1], skyColor[2], 1.0f );
+		} else if (r_fastsky->integer) {
+			clearBits |= GL_COLOR_BUFFER_BIT;	// FIXME: only if sky shaders have been used
 #ifdef _DEBUG
-		qglClearColor( 0.8f, 0.7f, 0.4f, 1.0f );	// FIXME: get color of sky
+			qglClearColor( 0.8f, 0.7f, 0.4f, 1.0f );	// FIXME: get color of sky
 #else
-		qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );	// FIXME: get color of sky
+			qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );	// FIXME: get color of sky
 #endif
+		}
 	}
 	qglClear( clearBits );
 

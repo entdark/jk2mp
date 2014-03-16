@@ -1081,6 +1081,7 @@ typedef struct {
 	int						numShaders;
 	shader_t				*shaders[MAX_SHADERS];
 	shader_t				*sortedShaders[MAX_SHADERS];
+	shader_t				*mmeWorldShader;
 
 	int						numSkins;
 	skin_t					*skins[MAX_SKINS];
@@ -1175,6 +1176,7 @@ extern cvar_t	*r_windPointY;
 
 extern cvar_t	*r_mode;				// video mode
 extern cvar_t	*r_fullscreen;
+extern cvar_t	*r_noborder;			// disable border in windowed mode
 extern cvar_t	*r_gamma;
 extern cvar_t	*r_displayRefresh;		// optional display refresh option
 extern cvar_t	*r_ignorehwgamma;		// overrides hardware gamma capabilities
@@ -1433,6 +1435,9 @@ shader_t	*R_FindShader( const char *name, const int *lightmapIndex, const byte *
 shader_t	*R_GetShaderByHandle( qhandle_t hShader );
 shader_t	*R_GetShaderByState( int index, long *cycleTime );
 shader_t *R_FindShaderByName( const char *name );
+//mme
+char	*R_FindShaderText( const char *shadername );
+
 void		R_InitShaders( void );
 void		R_ShaderList_f( void );
 void    R_RemapShader(const char *oldShader, const char *newShader, const char *timeOffset);

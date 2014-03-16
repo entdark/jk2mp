@@ -757,7 +757,7 @@ void * QDECL Sys_LoadDll( const char *name, int (QDECL **entryPoint)(int, ...),
 	char	*cdpath;
 	char	*gamedir;
 	char	*fn;
-#ifdef NDEBUG
+#if 0//def NDEBUG
 	int		timestamp;
   int   ret;
 #endif
@@ -765,7 +765,7 @@ void * QDECL Sys_LoadDll( const char *name, int (QDECL **entryPoint)(int, ...),
 
 	Com_sprintf( filename, sizeof( filename ), "%sx86.dll", name );
 
-#ifdef NDEBUG
+#if 0//def 0//NDEBUG
 	timestamp = Sys_Milliseconds();
 	if( ((timestamp - lastWarning) > (5 * 60000)) && !Cvar_VariableIntegerValue( "dedicated" )
 		&& !Cvar_VariableIntegerValue( "com_blindlyLoadDLLs" ) ) {

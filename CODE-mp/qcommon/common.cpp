@@ -8,6 +8,10 @@
 #include <windows.h>
 #endif
 
+qboolean demo15detected = qfalse;
+int demo_protocols[] =
+{ 15, 16 };
+
 #define	MAXPRINTMSG	4096
 
 #define MAX_NUM_ARGVS	50

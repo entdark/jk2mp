@@ -582,7 +582,14 @@ static qboolean GLW_CreateWindow( int width, int height, int colorbits, qboolean
 		else
 		{
 			exstyle = 0;
-			stylebits = WS_SYSMENU|WINDOW_STYLE|WS_MINIMIZEBOX;
+			if ( r_noborder->integer == 0 )
+			{
+				stylebits = WS_SYSMENU|WINDOW_STYLE|WS_MINIMIZEBOX;
+			}
+			else
+			{
+				stylebits = WS_POPUP|WS_VISIBLE;
+			}
 			AdjustWindowRect (&r, stylebits, FALSE);
 		}
 
