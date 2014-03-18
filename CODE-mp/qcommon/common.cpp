@@ -9,6 +9,7 @@
 #endif
 
 qboolean demo15detected = qfalse;
+qboolean ntModDetected = qfalse;
 int demo_protocols[] =
 { 15, 16 };
 
@@ -2658,7 +2659,7 @@ void Com_Init( char *commandLine ) {
 			// if the user didn't give any commands, run default action
 			if ( !com_dedicated->integer ) 
 			{
-				Cbuf_AddText ("cinematic openinglogos.roq\n");
+//				Cbuf_AddText ("cinematic openinglogos.roq\n");
 				// intro.roq is iD's.
 //				if( !com_introPlayed->integer ) {
 //					Cvar_Set( com_introPlayed->name, "1" );

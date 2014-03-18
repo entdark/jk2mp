@@ -7,6 +7,10 @@
 static float s_cloudTexCoords[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1][2];
 static float s_cloudTexP[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1];
 
+#ifdef JEDIACADEMY_GLOW
+extern bool g_bRenderGlowingObjects;
+#endif
+
 /*
 ===================================================================================
 
@@ -774,6 +778,10 @@ Other things could be stuck in here, like birds in the sky, etc
 ================
 */
 void RB_StageIteratorSky( void ) {
+#ifdef JEDIACADEMY_GLOW
+	if ( g_bRenderGlowingObjects )
+		return;
+#endif
 	//mme
 	if (( r_fastsky->integer ) || ( mme_skykey->string[0] != '0' )) {
 		return;

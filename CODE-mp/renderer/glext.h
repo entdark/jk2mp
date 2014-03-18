@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef __glext_h_
 #define __glext_h_
 
@@ -1492,6 +1494,12 @@ extern "C" {
 
 #ifndef GL_SGIS_texture_color_mask
 #define GL_TEXTURE_COLOR_WRITEMASK_SGIS   0x81EF
+#endif
+
+
+#ifndef GL_NV_register_combiners
+#define GL_REGISTER_COMBINERS_NV          0x8522
+#define GL_CONSTANT_COLOR0_NV             0x852A
 #endif
 
 

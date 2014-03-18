@@ -132,7 +132,7 @@ public:
 	int				surfaceNum;
 	surfaceInfo_v	&rootSList;
 	shader_t		*cust_shader;
-	int				fogNum;
+	int64_t			fogNum;
 	qboolean		personalModel;
 	mdxaBone_v		&bonePtr;
 	int				renderfx;
@@ -1817,7 +1817,10 @@ void R_AddGhoulSurfaces( trRefEntity_t *ent ) {
 					{
 						int	boltMod = (ghoul2[i].mModelBoltLink >> MODEL_SHIFT) & MODEL_AND;
 						int	boltNum = (ghoul2[i].mModelBoltLink >> BOLT_SHIFT) & BOLT_AND;
-						rootMatrix = ghoul2[boltMod].mBltlist[boltNum].position;
+//						if (demo15detected && ghoul2[boltMod].mBltlist.empty())
+//							rootMatrix = identityMatrix;
+//						else
+							rootMatrix = ghoul2[boltMod].mBltlist[boltNum].position;
 					}
 				}
 
@@ -2060,7 +2063,10 @@ void G2_ConstructGhoulSkeleton( CGhoul2Info_v &ghoul2, const int frameNum, qhand
 				{
 					int	boltMod = (ghoul2[i].mModelBoltLink >> MODEL_SHIFT) & MODEL_AND;
 					int	boltNum = (ghoul2[i].mModelBoltLink >> BOLT_SHIFT) & BOLT_AND;
-					rootMatrix = ghoul2[boltMod].mBltlist[boltNum].position;
+//					if (demo15detected && ghoul2[boltMod].mBltlist.empty())
+//						rootMatrix = identityMatrix;
+//					else
+						rootMatrix = ghoul2[boltMod].mBltlist[boltNum].position;
 				}
 			}
 

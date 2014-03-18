@@ -350,7 +350,11 @@ void CL_ConsolePrint( char *txt ) {
 	color = ColorIndex(COLOR_WHITE);
 
 	while ( (c = (unsigned char) *txt) != 0 ) {
-		if ( Q_IsColorString( (unsigned char*) txt ) ) {
+		if ( demo15detected && ntModDetected && Q_IsColorStringNT( (unsigned char*) txt ) ) {
+			color = ColorIndexNT( *(txt+1) );
+			txt += 2;
+			continue;
+		} else if ( Q_IsColorString( (unsigned char*) txt ) ) {
 			color = ColorIndex( *(txt+1) );
 			txt += 2;
 			continue;
@@ -513,7 +517,10 @@ void Con_DrawNotify (void)
 				if ( ( text[x] & 0xff ) == ' ' ) {
 					continue;
 				}
-				if ( ( (text[x]>>8)&7 ) != currentColor ) {
+				if ( demo15detected && ntModDetected && ( (text[x]>>8)&127 ) != currentColor ) {
+					currentColor = (text[x]>>8)&127;
+					re.SetColor( g_color_table_nt[currentColor] );
+				} else if ( ( (text[x]>>8)&7 ) != currentColor ) {
 					currentColor = (text[x]>>8)&7;
 					re.SetColor( g_color_table[currentColor] );
 				}
@@ -704,7 +711,10 @@ void Con_DrawSolidConsole( float frac ) {
 					continue;
 				}
 
-				if ( ( (text[x]>>8)&7 ) != currentColor ) {
+				if ( demo15detected && ntModDetected && ( (text[x]>>8)&127 ) != currentColor ) {
+					currentColor = (text[x]>>8)&127;
+					re.SetColor( g_color_table_nt[currentColor] );
+				} else if ( !ntModDetected && ( (text[x]>>8)&7 ) != currentColor ) {
 					currentColor = (text[x]>>8)&7;
 					re.SetColor( g_color_table[currentColor] );
 				}

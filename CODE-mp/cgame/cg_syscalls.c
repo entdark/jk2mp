@@ -579,10 +579,10 @@ void trap_FX_PlayEffectID( int id, vec3_t org, vec3_t fwd )
 			}
 	}
 
-	if (id == cgs.effects.itemCone && !(cg.frametime > 0
-		&& ((cg.frametime < 17 && fmod((float)cg.time, 17.0f) <= cg.frametime)
-		|| cg.frametime >= 17)))
-		return;
+//	if (id == cgs.effects.itemCone && !(cg.frametime > 0
+//		&& ((cg.frametime < 17 && fmod((float)cg.time, 17.0f) <= cg.frametime)
+//		|| cg.frametime >= 17)))
+//		return;
 
 	syscall( CG_FX_PLAY_EFFECT_ID, id, org, fwd);
 }
@@ -893,8 +893,11 @@ int trap_MME_SeekTime( int seekTime ) {
 void trap_MME_Music( const char *musicName, float time, float length ) {
 	syscall( CG_MME_MUSIC, musicName, PASSFLOAT(time), PASSFLOAT(length) );
 }
-qboolean trap_S_Demo15Detection( void ) {
+qboolean trap_MME_Demo15Detection( void ) {
 	return syscall( CG_MME_DEMO15DETECTION );
+}
+void trap_MME_NTXIIDetection( qboolean ntDetected ) {
+	syscall( CG_MME_NTXIIDETECTION, ntDetected );
 }
 void trap_R_RandomSeed( int time, float timeFraction ) {
 	syscall( CG_R_RANDOMSEED, time, PASSFLOAT(timeFraction) );

@@ -266,30 +266,52 @@ retryModel:
 
 	if (cgs.gametype >= GT_TEAM && (!cgs.jediVmerc || demo15detected)) {
 		if (ci->team == TEAM_RED) {
-			Q_strncpyz(ci->skinName, "red", sizeof(ci->skinName));
+			if (demo15detected) //does it matter?
+				Com_sprintf(ci->skinName, sizeof(ci->skinName), "red");
+			else
+				Q_strncpyz(ci->skinName, "red", sizeof(ci->skinName));
 			skinName = "red";
 		} else if (ci->team == TEAM_BLUE) {
-			Q_strncpyz(ci->skinName, "blue", sizeof(ci->skinName));
+			if (demo15detected) //does it matter?
+				Com_sprintf(ci->skinName, sizeof(ci->skinName), "blue");
+			else
+				Q_strncpyz(ci->skinName, "blue", sizeof(ci->skinName));
 			skinName = "blue";
 		}
 	}
 
-	if (clientNum != -1 && cg_entities[clientNum].currentState.teamowner && !cg_entities[clientNum].isATST)
-	{
-		ci->torsoSkin = 0;
-		ci->ATST = qtrue;
-		handle = trap_G2API_InitGhoul2Model(&ci->ghoul2Model, "models/players/atst/model.glm", 0, 0, 0, 0, 0);
-	}
-	else
-	{
-		ci->torsoSkin = trap_R_RegisterSkin(va("models/players/%s/model_%s.skin", modelName, skinName));
-		ci->ATST = qfalse;
-		Com_sprintf( afilename, sizeof( afilename ), "models/players/%s/model.glm", modelName );
-		handle = trap_G2API_InitGhoul2Model(&ci->ghoul2Model, afilename, 0, ci->torsoSkin, 0, 0, 0);
-	}
-	if (handle<0)
-	{
-		return qfalse;
+	if (!demo15detected) {
+		if (clientNum != -1 && cg_entities[clientNum].currentState.teamowner && !cg_entities[clientNum].isATST) {
+			ci->torsoSkin = 0;
+			ci->ATST = qtrue;
+			handle = trap_G2API_InitGhoul2Model(&ci->ghoul2Model, "models/players/atst/model.glm", 0, 0, 0, 0, 0);
+		} else {
+			ci->torsoSkin = trap_R_RegisterSkin(va("models/players/%s/model_%s.skin", modelName, skinName));
+			ci->ATST = qfalse;
+			Com_sprintf( afilename, sizeof( afilename ), "models/players/%s/model.glm", modelName );
+			handle = trap_G2API_InitGhoul2Model(&ci->ghoul2Model, afilename, 0, ci->torsoSkin, 0, 0, 0);
+		}
+		if (handle<0) {
+			return qfalse;
+		}
+	} else { //1.02 has another order, does it matter?
+		if (clientNum != -1 && cg_entities[clientNum].currentState.teamowner && !cg_entities[clientNum].isATST) {
+			handle = trap_G2API_InitGhoul2Model(&ci->ghoul2Model, "models/players/atst/model.glm", 0, 0, 0, 0, 0);
+		} else {
+			Com_sprintf( afilename, sizeof( afilename ), "models/players/%s/model.glm", modelName );
+			handle = trap_G2API_InitGhoul2Model(&ci->ghoul2Model, afilename, 0, trap_R_RegisterSkin(va("models/players/%s/model_%s.skin", modelName, skinName)), 0, 0, 0);
+		}
+		if (handle<0) {
+			return qfalse;
+		}
+
+		if (clientNum != -1 && cg_entities[clientNum].currentState.teamowner && !cg_entities[clientNum].isATST) {
+			ci->torsoSkin = 0;
+			ci->ATST = qtrue;
+		} else {
+			ci->torsoSkin = trap_R_RegisterSkin(va("models/players/%s/model_%s.skin", modelName, skinName));
+			ci->ATST = qfalse;
+		}
 	}
 
 	// The model is now loaded.
@@ -309,9 +331,9 @@ retryModel:
 	}
 
 	if (!BGPAFtextLoaded) {
+		if (demo15detected)
+			trap_G2API_GetGLAName( ci->ghoul2Model, 0, GLAName);
 		if (GLAName[0] == 0/*GLAName == NULL*/) {
-			if (demo15detected)
-				trap_G2API_GetGLAName( ci->ghoul2Model, 0, GLAName);
 			if (!BG_ParseAnimationFile("models/players/_humanoid/animation.cfg")) {
 				Com_Printf( "Failed to load animation file %s\n", afilename );
 				return qfalse;
@@ -498,7 +520,10 @@ retryModel:
 		cg_entities[clientNum].ghoul2weapon = NULL;
 	}
 
-	Q_strncpyz (ci->teamName, teamName, sizeof(ci->teamName));
+	if (demo15detected)
+		Com_sprintf(ci->teamName, sizeof(ci->teamName), teamName);
+	else
+		Q_strncpyz (ci->teamName, teamName, sizeof(ci->teamName));
 
 	// Model icon for drawing the portrait on screen
 	ci->modelIcon = trap_R_RegisterShaderNoMip ( va ( "models/players/%s/icon_%s", modelName, skinName ) );
@@ -1264,7 +1289,7 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 			if (demo15detected) //change "anim->firstFrame + anim->numFrames-1" to "firstFrame"?
 				trap_G2API_SetBoneAnim(ci->ghoul2Model, 0, "upper_lumbar", anim->firstFrame + anim->numFrames-1, anim->firstFrame + anim->numFrames, flags, 1.0f, cg.time, -1, 150);
 			else
-				trap_G2API_SetBoneAnim(ci->ghoul2Model, 0, "lower_lumbar", firstFrame, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, setFrame, 150);
+				trap_G2API_SetBoneAnim(ci->ghoul2Model, 0, "lower_lumbar", /*firstFrame*/anim->firstFrame, anim->firstFrame + anim->numFrames, flags, animSpeed, cg.time, setFrame, 150);
 
 			cg_entities[clientNum].currentState.torsoAnim = 0;
 		}
@@ -3014,7 +3039,7 @@ static void CG_G2PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t legsAngle
 	viewAngles[YAW] = viewAngles[ROLL] = 0;
 	viewAngles[PITCH] *= 0.5;
 
-	if (demo15detected) {
+/*	if (demo15detected) {
 		VectorCopy( cent->lerpAngles, angles );
 		angles[PITCH] = 0;
 
@@ -3031,14 +3056,17 @@ static void CG_G2PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t legsAngle
 		ulAngles[ROLL] += torsoAngles[ROLL]*0.3;
 		llAngles[ROLL] += torsoAngles[ROLL]*0.3;
 		thoracicAngles[ROLL] += torsoAngles[ROLL]*0.4;
-	} else {
+	} else */{
 		VectorSet( angles, 0, legsAngles[1], 0 );
 		angles[0] = legsAngles[0];
 		if ( angles[0] > 30 )
 			angles[0] = 30;
 		else if ( angles[0] < -30 )
 			angles[0] = -30;
-		CG_G2ClientSpineAngles(cent, viewAngles, angles, thoracicAngles, ulAngles, llAngles);
+		if (demo15detected)
+			CG_G2ClientSpineAngles15(cent, viewAngles, angles, thoracicAngles, ulAngles, llAngles);
+		else
+			CG_G2ClientSpineAngles(cent, viewAngles, angles, thoracicAngles, ulAngles, llAngles);
 	}
 
 	if ( cent->currentState.otherEntityNum2 && !(cent->currentState.eFlags & EF_DEAD) )
@@ -5056,7 +5084,7 @@ static void CG_FootStepGeneric(centity_t *cent, int anim) {
 	if ((!demo15detected && ((anim & ~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT
 		|| (anim & ~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT))
 		||
-		(demo15detected && ((anim & ~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT
+		(demo15detected && ((anim & ~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_RIGHT_15
 		|| (anim & ~ANIM_TOGGLEBIT) == BOTH_WALL_RUN_LEFT_15)))
 	{
 		groundType = FOOTSTEP_GENERIC;
@@ -6501,59 +6529,64 @@ doEssentialOne:
 	trap_G2API_GetBoltMatrix(cent->ghoul2, 0, cgs.clientinfo[cent->currentState.number].bolt_lhand, &lHandMatrix, cent->turAngles, cent->lerpOrigin, cg.time, cgs.gameModels, cent->modelScale);
 	gotLHandMatrix = qtrue;
 
-	if (cg.renderingThirdPerson)
-	{
-		if (cgFPLSState != 0)
-		{
-			CG_ForceFPLSPlayerModel(cent, ci);
-			cgFPLSState = 0;
-			return;
-		}
-	}
-/*	else if (ci->team == TEAM_SPECTATOR || (cg.snap && (cg.snap->ps.pm_flags & PMF_FOLLOW)))
-	{ //don't allow this when spectating
-		if (cgFPLSState != 0)
-		{
-			trap_Cvar_Set("cg_fpls", "0");
-			cg_fpls.integer = 0;
-
-			CG_ForceFPLSPlayerModel(cent, ci);
-			cgFPLSState = 0;
-			return;
-		}
-
-		if (cg_fpls.integer)
-		{
-			trap_Cvar_Set("cg_fpls", "0");
-		}
-	}*/
-	else
-	{
-		if (cg_fpls.integer && cent->currentState.weapon == WP_SABER && cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number)
-		{
-
-			if (cgFPLSState != cg_fpls.integer)
-			{
-				CG_ForceFPLSPlayerModel(cent, ci);
-				cgFPLSState = cg_fpls.integer;
-				return;
-			}
-
-			/*
-			mdxaBone_t 		headMatrix;
-			trap_G2API_GetBoltMatrix(cent->ghoul2, 0, cgs.clientinfo[cent->currentState.number].bolt_head, &headMatrix, cent->turAngles, cent->lerpOrigin, cg.time, cgs.gameModels, cent->modelScale);
-			trap_G2API_GiveMeVectorFromMatrix(&headMatrix, ORIGIN, cg.refdef.vieworg);
-			*/
-		}
-		else if (!cg_fpls.integer && cgFPLSState)
-		{
-			if (cgFPLSState != cg_fpls.integer)
-			{
-				CG_ForceFPLSPlayerModel(cent, ci);
-				cgFPLSState = cg_fpls.integer;
-				return;
-			}
-		}
+//	if (cg.renderingThirdPerson)
+//	{
+//		if (cgFPLSState != 0)
+//		{
+//			CG_ForceFPLSPlayerModel(cent, ci);
+//			cgFPLSState = 0;
+//			return;
+//		}
+//	}
+///*	else if (ci->team == TEAM_SPECTATOR || (cg.snap && (cg.snap->ps.pm_flags & PMF_FOLLOW)))
+//	{ //don't allow this when spectating
+//		if (cgFPLSState != 0)
+//		{
+//			trap_Cvar_Set("cg_fpls", "0");
+//			cg_fpls.integer = 0;
+//
+//			CG_ForceFPLSPlayerModel(cent, ci);
+//			cgFPLSState = 0;
+//			return;
+//		}
+//
+//		if (cg_fpls.integer)
+//		{
+//			trap_Cvar_Set("cg_fpls", "0");
+//		}
+//	}*/
+//	else
+//	{
+//		if (cg_fpls.integer && cent->currentState.weapon == WP_SABER && cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number)
+//		{
+//
+//			if (cgFPLSState != cg_fpls.integer)
+//			{
+//				CG_ForceFPLSPlayerModel(cent, ci);
+//				cgFPLSState = cg_fpls.integer;
+//				return;
+//			}
+//
+//			/*
+//			mdxaBone_t 		headMatrix;
+//			trap_G2API_GetBoltMatrix(cent->ghoul2, 0, cgs.clientinfo[cent->currentState.number].bolt_head, &headMatrix, cent->turAngles, cent->lerpOrigin, cg.time, cgs.gameModels, cent->modelScale);
+//			trap_G2API_GiveMeVectorFromMatrix(&headMatrix, ORIGIN, cg.refdef.vieworg);
+//			*/
+//		}
+//		else if (!cg_fpls.integer && cgFPLSState)
+//		{
+//			if (cgFPLSState != cg_fpls.integer)
+//			{
+//				CG_ForceFPLSPlayerModel(cent, ci);
+//				cgFPLSState = cg_fpls.integer;
+//				return;
+//			}
+//		}
+//	}
+	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number &&
+		cg_fpls.integer && cent->currentState.weapon == WP_SABER) {
+		CG_ForceFPLSPlayerModel(cent, ci);
+		return;
 	}
 
 	if (cent->currentState.eFlags & EF_DEAD)
@@ -6901,9 +6934,8 @@ doEssentialTwo:
 		}
 	}
 
-	if (cent->currentState.weapon == WP_STUN_BATON && cent->currentState.number == cg.snap->ps.clientNum)
-	{
-		trap_S_AddLoopingSound( cent->currentState.number, cg.refdef.vieworg, vec3_origin, 
+	if (cent->currentState.weapon == WP_STUN_BATON/* && cent->currentState.number == cg.snap->ps.clientNum*/) {
+		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, 
 			trap_S_RegisterSound( "sound/weapons/baton/idle.wav" ) );
 	}
 

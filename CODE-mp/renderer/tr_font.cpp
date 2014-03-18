@@ -700,12 +700,11 @@ int RE_Font_StrLenPixels(const char *psText, const int iFontHandle, const float 
 		unsigned int uiLetter = AnyLanguage_ReadCharFromString( psText, &iAdvanceCount, NULL );
 		psText += iAdvanceCount;
 
-		if (uiLetter == '^' && *psText >= '0' && *psText <= '9')
-		{
+		if (demo15detected && ntModDetected && uiLetter == '^' && *psText >= 0x00 && *psText <= 0x7F) {
 			// then this is colour, so skip it from width considerations
-		}
-		else
-		{
+		} else if (!ntModDetected && uiLetter == '^' && *psText >= '0' && *psText <= '9') {
+			// then this is colour, so skip it from width considerations
+		} else {
 			int a = curfont->GetLetterHorizAdvance( uiLetter );
 
 			x += Round ( a * ((uiLetter > 255) ? fScaleA : fScale) );
@@ -799,8 +798,7 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 
 	
 	// Draw a dropshadow if required
-	if(iFontHandle & STYLE_DROPSHADOW)
-	{
+	if(!demo15detected && iFontHandle & STYLE_DROPSHADOW) {
 		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, 1};
 
 		offset = Round(curfont->GetPointSize() * fScale * 0.075f);
@@ -808,6 +806,30 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 		gbInShadow = qtrue;
 		RE_Font_DrawString(ox + offset, oy + offset, psText, v4DKGREY2, iFontHandle & SET_MASK, iCharLimit, fScale);
 		gbInShadow = qfalse;
+	} else if (demo15detected && iFontHandle & STYLE_DROPSHADOW) {
+		int i = 0, r = 0;
+		char dropShadowText[1024];
+		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, 1};
+
+		offset = Round(curfont->GetPointSize() * fScale * 0.075f);
+
+		//^blah stuff confuses shadows, so parse it out first
+		while (psText[i] && r < 1024) {
+			if (psText[i] == '^') {
+				if ( (i < 1 || psText[i-1] != '^') &&
+					(!psText[i+1] || psText[i+1] != '^') ) {
+					//If char before or after ^ is ^ then it prints ^ instead of accepting a colorcode
+					i += 2;
+				}
+			}
+
+			dropShadowText[r] = psText[i];
+			r++;
+			i++;
+		}
+		dropShadowText[r] = 0;
+
+		RE_Font_DrawString(ox + offset, oy + offset, dropShadowText, v4DKGREY2, iFontHandle & SET_MASK, iCharLimit, fScale);
 	}
 	
 	RE_SetColor( rgba );
@@ -827,10 +849,14 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 		{
 		case '^':
 		{
-			colour = ColorIndex(*psText++);
-			if (!gbInShadow)
-			{
-				RE_SetColor( g_color_table[colour] );
+			if (demo15detected && ntModDetected) {
+				colour = ColorIndexNT(*psText++);
+				RE_SetColor( g_color_table_nt[colour] );
+			} else {
+				colour = ColorIndex(*psText++);
+				if (!gbInShadow || demo15detected) {
+					RE_SetColor( g_color_table[colour] );
+				}
 			}
 		}
 		break;

@@ -129,9 +129,10 @@ This is called explicitly when the gamestate is first received,
 and whenever the server updates any serverinfo flagged cvars
 ================
 */
+extern void trap_MME_NTXIIDetection( qboolean ntDetected );
 void CG_ParseServerinfo( void ) {
 	const char	*info;
-	char	*mapname;
+	char	*mapname, *gamename;
 
 	info = CG_ConfigString( CS_SERVERINFO );
 	cgs.gametype = atoi( Info_ValueForKey( info, "g_gametype" ) );
@@ -148,7 +149,14 @@ void CG_ParseServerinfo( void ) {
 	cgs.timelimit = atoi( Info_ValueForKey( info, "timelimit" ) );
 	cgs.maxclients = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
 	mapname = Info_ValueForKey( info, "mapname" );
-
+	
+	cg.ntModDetected = qfalse;
+	gamename = Info_ValueForKey(info, "gamename");
+	if (!Q_stricmp(gamename, "< NT XII >") || !Q_stricmp(gamename, "JDFix.")) {
+		Com_Printf("\n< NT XII > mod detected\n\n");
+		trap_MME_NTXIIDetection(qtrue);
+		cg.ntModDetected = qtrue;
+	}
 
 	//rww - You must do this one here, Info_ValueForKey always uses the same memory pointer.
 	trap_Cvar_Set ( "ui_about_mapname", mapname );
@@ -459,7 +467,12 @@ static void CG_AddToTeamChat( const char *str ) {
 			ls = NULL;
 		}
 
-		if ( Q_IsColorString( str ) ) {
+		if ( demo15detected && cg.ntModDetected && Q_IsColorStringNT( str ) ) {
+			*p++ = *str++;
+			lastcolor = *str;
+			*p++ = *str++;
+			continue;
+		} else if ( Q_IsColorString( str ) ) {
 			*p++ = *str++;
 			lastcolor = *str;
 			*p++ = *str++;

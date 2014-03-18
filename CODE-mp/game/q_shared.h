@@ -773,6 +773,9 @@ int Q_parseColor( const char *p, const vec3_t numberColors[10], float *color );
 // Correct version of the above for Q_StripColor
 #define Q_IsColorStringExt(p)	((p) && *(p) == Q_COLOR_ESCAPE && *((p)+1) && isdigit(*((p)+1))) // ^[0-9]
 
+#define Q_IsColorStringNT(p)	( p && *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) != Q_COLOR_ESCAPE && *((p)+1) <= 0x7F && *((p)+1) >= 0x00 )
+#define ColorIndexNT(c)			( (c) & 127 )
+
 
 #define COLOR_BLACK		'0'
 #define COLOR_RED		'1'
@@ -794,6 +797,7 @@ int Q_parseColor( const char *p, const vec3_t numberColors[10], float *color );
 #define S_COLOR_WHITE	"^7"
 
 extern vec4_t	g_color_table[8];
+extern vec4_t	g_color_table_nt[128];
 
 #define	MAKERGB( v, r, g, b ) v[0]=r;v[1]=g;v[2]=b
 #define	MAKERGBA( v, r, g, b, a ) v[0]=r;v[1]=g;v[2]=b;v[3]=a
@@ -1128,12 +1132,18 @@ static inline int	Q_strcmpi (const char *s1, const char *s2) { return strcasecmp
 void	Q_strncpyz( char *dest, const char *src, int destsize );
 void	Q_strcat( char *dest, int size, const char *src );
 
+const char *Q_stristr( const char *s, const char *find);
+
+int Q_PrintStrlenNT( const char *string );
 // strlen that discounts Quake color sequences
 int Q_PrintStrlen( const char *string );
+
+char *Q_CleanStrNT( char *string );
 // removes color sequences from string
 char *Q_CleanStr( char *string );
 void Q_StripColor(char *text);
 void Q_StripColorNew(char *text);
+void Q_StripColorNewNT(char *text);
 
 //=============================================
 

@@ -3939,6 +3939,7 @@ int SND_FreeOldestSound()
 extern qboolean gbInsideLoadSound;
 qboolean SND_RegisterAudio_LevelLoadEnd(qboolean bDeleteEverythingNotUsedThisLevel /* 99% qfalse */)
 {
+#ifndef SND_MME
 	qboolean bAtLeastOneSoundDropped = qfalse;
 
 	Com_DPrintf( "SND_RegisterAudio_LevelLoadEnd():\n");
@@ -3987,6 +3988,9 @@ qboolean SND_RegisterAudio_LevelLoadEnd(qboolean bDeleteEverythingNotUsedThisLev
 	Com_DPrintf( "SND_RegisterAudio_LevelLoadEnd(): Ok\n");	
 
 	return bAtLeastOneSoundDropped;
+#else
+	return qtrue;
+#endif
 }
 
 #ifdef HAVE_EAX

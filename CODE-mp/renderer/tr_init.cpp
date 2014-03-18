@@ -104,6 +104,16 @@ cvar_t	*r_ext_compiled_vertex_array;
 cvar_t	*r_ext_texture_env_add;
 cvar_t	*r_ext_texture_filter_anisotropic;
 
+#ifdef JEDIACADEMY_GLOW
+cvar_t	*r_DynamicGlow;
+cvar_t	*r_DynamicGlowPasses;
+cvar_t	*r_DynamicGlowDelta;
+cvar_t	*r_DynamicGlowIntensity;
+cvar_t	*r_DynamicGlowSoft;
+cvar_t	*r_DynamicGlowWidth;
+cvar_t	*r_DynamicGlowHeight;
+#endif
+
 cvar_t	*r_ignoreGLErrors;
 cvar_t	*r_logFile;
 
@@ -114,6 +124,9 @@ cvar_t	*r_stereo;
 cvar_t	*r_primitives;
 cvar_t	*r_texturebits;
 cvar_t	*r_texturebitslm;
+
+cvar_t	*r_multiSample;
+cvar_t	*r_multiSampleNvidia;
 
 cvar_t	*r_drawBuffer;
 cvar_t	*r_lightmap;
@@ -211,6 +224,51 @@ void RE_SetLightStyle(int style, int color);
 void RE_GetBModelVerts( int bmodelIndex, vec3_t *verts, vec3_t normal );
 
 #endif // !DEDICATED
+
+
+#ifdef _WIN32
+// Declare Register Combiners function pointers.
+PFNGLCOMBINERPARAMETERFVNV				qglCombinerParameterfvNV = NULL;
+PFNGLCOMBINERPARAMETERIVNV				qglCombinerParameterivNV = NULL;
+PFNGLCOMBINERPARAMETERFNV				qglCombinerParameterfNV = NULL;
+PFNGLCOMBINERPARAMETERINV				qglCombinerParameteriNV = NULL;
+PFNGLCOMBINERINPUTNV					qglCombinerInputNV = NULL;
+PFNGLCOMBINEROUTPUTNV					qglCombinerOutputNV = NULL;
+PFNGLFINALCOMBINERINPUTNV				qglFinalCombinerInputNV = NULL;
+PFNGLGETCOMBINERINPUTPARAMETERFVNV		qglGetCombinerInputParameterfvNV = NULL;
+PFNGLGETCOMBINERINPUTPARAMETERIVNV		qglGetCombinerInputParameterivNV = NULL;
+PFNGLGETCOMBINEROUTPUTPARAMETERFVNV		qglGetCombinerOutputParameterfvNV = NULL;
+PFNGLGETCOMBINEROUTPUTPARAMETERIVNV		qglGetCombinerOutputParameterivNV = NULL;
+PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV	qglGetFinalCombinerInputParameterfvNV = NULL;
+PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV	qglGetFinalCombinerInputParameterivNV = NULL;
+
+// Declare Render-Texture function pointers.
+PFNWGLBINDTEXIMAGEARBPROC				qwglBindTexImageARB = NULL;
+PFNWGLRELEASETEXIMAGEARBPROC			qwglReleaseTexImageARB = NULL;
+PFNWGLSETPBUFFERATTRIBARBPROC			qwglSetPbufferAttribARB = NULL;
+
+// Declare Vertex and Fragment Program function pointers.
+PFNGLPROGRAMSTRINGARBPROC qglProgramStringARB = NULL;
+PFNGLBINDPROGRAMARBPROC qglBindProgramARB = NULL;
+PFNGLDELETEPROGRAMSARBPROC qglDeleteProgramsARB = NULL;
+PFNGLGENPROGRAMSARBPROC qglGenProgramsARB = NULL;
+PFNGLPROGRAMENVPARAMETER4DARBPROC qglProgramEnvParameter4dARB = NULL;
+PFNGLPROGRAMENVPARAMETER4DVARBPROC qglProgramEnvParameter4dvARB = NULL;
+PFNGLPROGRAMENVPARAMETER4FARBPROC qglProgramEnvParameter4fARB = NULL;
+PFNGLPROGRAMENVPARAMETER4FVARBPROC qglProgramEnvParameter4fvARB = NULL;
+PFNGLPROGRAMLOCALPARAMETER4DARBPROC qglProgramLocalParameter4dARB = NULL;
+PFNGLPROGRAMLOCALPARAMETER4DVARBPROC qglProgramLocalParameter4dvARB = NULL;
+PFNGLPROGRAMLOCALPARAMETER4FARBPROC qglProgramLocalParameter4fARB = NULL;
+PFNGLPROGRAMLOCALPARAMETER4FVARBPROC qglProgramLocalParameter4fvARB = NULL;
+PFNGLGETPROGRAMENVPARAMETERDVARBPROC qglGetProgramEnvParameterdvARB = NULL;
+PFNGLGETPROGRAMENVPARAMETERFVARBPROC qglGetProgramEnvParameterfvARB = NULL;
+PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC qglGetProgramLocalParameterdvARB = NULL;
+PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC qglGetProgramLocalParameterfvARB = NULL;
+PFNGLGETPROGRAMIVARBPROC qglGetProgramivARB = NULL;
+PFNGLGETPROGRAMSTRINGARBPROC qglGetProgramStringARB = NULL;
+PFNGLISPROGRAMARBPROC qglIsProgramARB = NULL;
+#endif
+
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral )
 {
@@ -770,6 +828,8 @@ void GL_SetDefaultState( void )
 	qglDisable( GL_BLEND );
 }
 
+extern bool g_bTextureRectangleHack;
+
 /*
 ================
 R_PrintLongString
@@ -889,6 +949,11 @@ void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "texture compression method: %s\n", tc_table[glConfig.textureCompression] );
 	ri.Printf( PRINT_ALL, "anisotropic filtering: %s\n", enablestrings[(r_ext_texture_filter_anisotropic->integer != 0) && glConfig.textureFilterAnisotropicAvailable] );
 
+#ifdef JEDIACADEMY_GLOW
+	Com_Printf ("Dynamic Glow: %s\n", enablestrings[r_DynamicGlow->integer] );
+	if (g_bTextureRectangleHack) Com_Printf ("Dynamic Glow ATI BAD DRIVER HACK %s\n", enablestrings[g_bTextureRectangleHack] );
+#endif
+
 	if ( glConfig.smpActive ) {
 		ri.Printf( PRINT_ALL, "Using dual processor acceleration\n" );
 	}
@@ -902,6 +967,11 @@ void GfxInfo_f( void )
 	{
 		ri.Printf( PRINT_ALL, "Light Grid size set to (%.2f %.2f %.2f)\n", tr.world->lightGridSize[0], tr.world->lightGridSize[1], tr.world->lightGridSize[2] );
 	}
+}
+
+void R_AtiHackToggle_f(void)
+{
+	g_bTextureRectangleHack = !g_bTextureRectangleHack;
 }
 
 #endif // !DEDICATED
@@ -925,6 +995,15 @@ void R_Register( void )
 	r_ext_texture_env_add = ri.Cvar_Get( "r_ext_texture_env_add", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "1", CVAR_ARCHIVE );
 
+#ifdef JEDIACADEMY_GLOW
+	r_DynamicGlow = ri.Cvar_Get( "r_DynamicGlow", "0", CVAR_ARCHIVE );
+	r_DynamicGlowPasses = ri.Cvar_Get( "r_DynamicGlowPasses", "5", CVAR_ARCHIVE );
+	r_DynamicGlowDelta = ri.Cvar_Get( "r_DynamicGlowDelta", "0.8f", CVAR_ARCHIVE );
+	r_DynamicGlowIntensity = ri.Cvar_Get( "r_DynamicGlowIntensity", "1.13f", CVAR_ARCHIVE );
+	r_DynamicGlowSoft = ri.Cvar_Get( "r_DynamicGlowSoft", "1", CVAR_ARCHIVE );
+	r_DynamicGlowWidth = ri.Cvar_Get( "r_DynamicGlowWidth", "320", CVAR_ARCHIVE|CVAR_LATCH );
+	r_DynamicGlowHeight = ri.Cvar_Get( "r_DynamicGlowHeight", "240", CVAR_ARCHIVE|CVAR_LATCH );
+#endif
 
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
@@ -948,6 +1027,10 @@ void R_Register( void )
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
+
+	r_multiSample = ri.Cvar_Get( "r_multiSample", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_multiSampleNvidia = ri.Cvar_Get( "r_multiSampleNvidia", "0", CVAR_ARCHIVE | CVAR_LATCH );
+
 #ifdef MACOS_X
         // Default to using SMP on Mac OS X if we have multiple processors
 //	r_smp = ri.Cvar_Get( "r_smp", Sys_ProcessorCount() > 1 ? "1" : "0", CVAR_ARCHIVE | CVAR_LATCH);
@@ -1084,6 +1167,7 @@ extern qboolean Sys_LowPhysicalMemory();
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshot_tga", R_ScreenShotTGA_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
+	ri.Cmd_AddCommand( "r_atihack", R_AtiHackToggle_f );
 	ri.Cmd_AddCommand("r_we", R_WorldEffect_f);
 	ri.Cmd_AddCommand( "imagecacheinfo", RE_RegisterImages_Info_f);
 #endif
@@ -1233,6 +1317,42 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand ("r_we");
 	ri.Cmd_RemoveCommand ("modelcacheinfo");
 	ri.Cmd_RemoveCommand ("imagecacheinfo");
+
+#ifdef JEDIACADEMY_GLOW
+	if ( r_DynamicGlow && r_DynamicGlow->integer )
+	{
+		// Release the Glow Vertex Shader.
+		if ( tr.glowVShader )
+		{
+			qglDeleteProgramsARB( 1, &tr.glowVShader );
+		}
+
+		// Release Pixel Shader.
+		if ( tr.glowPShader )
+		{
+			if ( qglCombinerParameteriNV  )
+			{
+				// Release the Glow Regcom call list.
+				qglDeleteLists( tr.glowPShader, 1 );
+			}
+			else if ( qglGenProgramsARB )
+			{
+				// Release the Glow Fragment Shader.
+				qglDeleteProgramsARB( 1, &tr.glowPShader );
+			}
+		}
+
+		// Release the scene glow texture.
+		qglDeleteTextures( 1, &tr.screenGlow );
+
+		// Release the scene texture.
+		qglDeleteTextures( 1, &tr.sceneImage );
+
+		// Release the blur texture.
+		qglDeleteTextures( 1, &tr.blurImage );
+	}
+#endif
+
 #ifndef DEDICATED
 	R_ShutdownFonts();
 	if ( tr.registered ) {

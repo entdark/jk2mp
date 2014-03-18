@@ -68,8 +68,11 @@ int CG_Text_Width(const char *text, float scale, int iMenuFont)
 {
 	char s[1024];	
 	int iFontIndex = MenuFontToHandle(iMenuFont);
-	Q_strncpyz(s, text, sizeof(s) - 2);
-	Q_StripColorNew(s);
+	Q_strncpyz(s, text, sizeof(s));
+	if (demo15detected && cg.ntModDetected)
+		Q_StripColorNewNT(s);
+	else
+		Q_StripColorNew(s);
 
 	return trap_R_Font_StrLenPixels(s, iFontIndex, scale);
 }
@@ -869,7 +872,7 @@ void CG_DrawArmor(int x,int y)
 	}
 
 	trap_R_SetColor( colorTable[CT_HUD_GREEN] );	
-	CG_DrawNumField ((x + 18 + 14)*cgs.widthRatioCoef, y + 40 + 14, 3, ps->stats[STAT_ARMOR], 6, 12, 
+	CG_DrawNumField ((x + 18 + 12)*cgs.widthRatioCoef, y + 40 + 14, 3, ps->stats[STAT_ARMOR], 6, 12, 
 		NUM_FONT_SMALL,qfalse);
 
 }
@@ -1328,7 +1331,7 @@ void CG_DrawForceSelect( void )
 
 	trap_R_SetColor(NULL);
 	// Work backwards from current icon
-	holdX = x - ((bigIconSize/2) + pad + smallIconSize);
+	holdX = x - ((bigIconSize/2) + pad + smallIconSize)*cgs.widthRatioCoef;
 	for (iconCnt=1;iconCnt<(sideLeftIconCnt+1);i--)
 	{
 		if (i < 0)
@@ -1345,8 +1348,8 @@ void CG_DrawForceSelect( void )
 
 		if (cgs.media.forcePowerIcons[forcePowerSorted[i]])
 		{
-			CG_DrawPic( holdX, y, smallIconSize, smallIconSize, cgs.media.forcePowerIcons[forcePowerSorted[i]] ); 
-			holdX -= (smallIconSize+pad);
+			CG_DrawPic( holdX, y, smallIconSize*cgs.widthRatioCoef, smallIconSize, cgs.media.forcePowerIcons[forcePowerSorted[i]] ); 
+			holdX -= (smallIconSize+pad)*cgs.widthRatioCoef;
 		}
 	}
 
@@ -1355,7 +1358,7 @@ void CG_DrawForceSelect( void )
 		// Current Center Icon
 		if (cgs.media.forcePowerIcons[cg.forceSelect])
 		{
-			CG_DrawPic( x-(bigIconSize/2), (y-((bigIconSize-smallIconSize)/2)), bigIconSize, bigIconSize, cgs.media.forcePowerIcons[cg.forceSelect] ); //only cache the icon for display
+			CG_DrawPic( x-(bigIconSize/2)*cgs.widthRatioCoef, (y-((bigIconSize-smallIconSize)/2)), bigIconSize*cgs.widthRatioCoef, bigIconSize, cgs.media.forcePowerIcons[cg.forceSelect] ); //only cache the icon for display
 		}
 	}
 
@@ -1366,7 +1369,7 @@ void CG_DrawForceSelect( void )
 	}
 
 	// Work forwards from current icon
-	holdX = x + (bigIconSize/2) + pad;
+	holdX = x + ((bigIconSize/2) + pad)*cgs.widthRatioCoef;
 	for (iconCnt=1;iconCnt<(sideRightIconCnt+1);i++)
 	{
 		if (i>MAX_SHOWPOWERS)
@@ -1383,8 +1386,8 @@ void CG_DrawForceSelect( void )
 
 		if (cgs.media.forcePowerIcons[forcePowerSorted[i]])
 		{
-			CG_DrawPic( holdX, y, smallIconSize, smallIconSize, cgs.media.forcePowerIcons[forcePowerSorted[i]] ); //only cache the icon for display
-			holdX += (smallIconSize+pad);
+			CG_DrawPic( holdX, y, smallIconSize*cgs.widthRatioCoef, smallIconSize, cgs.media.forcePowerIcons[forcePowerSorted[i]] ); //only cache the icon for display
+			holdX += (smallIconSize+pad)*cgs.widthRatioCoef;
 		}
 	}
 
@@ -1486,7 +1489,7 @@ void CG_DrawInvenSelect( void )
 
 	// Left side ICONS
 	// Work backwards from current icon
-	holdX = x - ((bigIconSize/2) + pad + smallIconSize);
+	holdX = x - ((bigIconSize/2) + pad + smallIconSize)*cgs.widthRatioCoef;
 	height = smallIconSize * cg.iconHUDPercent;
 	addX = (float) smallIconSize * .75;
 
@@ -1507,7 +1510,7 @@ void CG_DrawInvenSelect( void )
 		if (cgs.media.invenIcons[i])
 		{
 			trap_R_SetColor(NULL);
-			CG_DrawPic( holdX, y+10, smallIconSize, smallIconSize, cgs.media.invenIcons[i] );
+			CG_DrawPic( holdX, y+10, smallIconSize*cgs.widthRatioCoef, smallIconSize, cgs.media.invenIcons[i] );
 
 			trap_R_SetColor(colorTable[CT_ICON_BLUE]);
 			/*CG_DrawNumField (holdX + addX, y + smallIconSize, 2, cg.snap->ps.inventory[i], 6, 12, 
@@ -1524,7 +1527,7 @@ void CG_DrawInvenSelect( void )
 	{
 		int itemNdex;
 		trap_R_SetColor(NULL);
-		CG_DrawPic( x-(bigIconSize/2), (y-((bigIconSize-smallIconSize)/2))+10, bigIconSize, bigIconSize, cgs.media.invenIcons[cg.itemSelect] );
+		CG_DrawPic( x-(bigIconSize/2)*cgs.widthRatioCoef, (y-((bigIconSize-smallIconSize)/2))+10, bigIconSize*cgs.widthRatioCoef, bigIconSize, cgs.media.invenIcons[cg.itemSelect] );
 		addX = (float) bigIconSize * .75;
 		trap_R_SetColor(colorTable[CT_ICON_BLUE]);
 		/*CG_DrawNumField ((x-(bigIconSize/2)) + addX, y, 2, cg.snap->ps.inventory[cg.inventorySelect], 6, 12, 
@@ -1555,7 +1558,7 @@ void CG_DrawInvenSelect( void )
 
 	// Right side ICONS
 	// Work forwards from current icon
-	holdX = x + (bigIconSize/2) + pad;
+	holdX = x + ((bigIconSize/2) + pad)*cgs.widthRatioCoef;
 	height = smallIconSize * cg.iconHUDPercent;
 	addX = (float) smallIconSize * .75;
 	for (iconCnt=0;iconCnt<sideRightIconCnt;i++)
@@ -1575,13 +1578,13 @@ void CG_DrawInvenSelect( void )
 		if (cgs.media.invenIcons[i])
 		{
 			trap_R_SetColor(NULL);
-			CG_DrawPic( holdX, y+10, smallIconSize, smallIconSize, cgs.media.invenIcons[i] );
+			CG_DrawPic( holdX, y+10, smallIconSize*cgs.widthRatioCoef, smallIconSize, cgs.media.invenIcons[i] );
 
 			trap_R_SetColor(colorTable[CT_ICON_BLUE]);
 			/*CG_DrawNumField (holdX + addX, y + smallIconSize, 2, cg.snap->ps.inventory[i], 6, 12, 
 				NUM_FONT_SMALL,qfalse);*/
 
-			holdX += (smallIconSize+pad);
+			holdX += (smallIconSize+pad)*cgs.widthRatioCoef;
 		}
 	}
 }
@@ -1783,17 +1786,17 @@ static float CG_DrawEnemyInfo ( float y )
 
 	y += size;
 
-	CG_Text_Paint( 630 - CG_Text_Width ( ci->name, 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, ci->name, 0, 0, 0, FONT_MEDIUM );
+	CG_Text_Paint( 630 - CG_Text_Width ( ci->name, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM )*cgs.widthRatioCoef, y, 0.7f, colorWhite, ci->name, 0, 0, 0, FONT_MEDIUM );
 
 	y += 15;
-	CG_Text_Paint( 630 - CG_Text_Width ( title, 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, title, 0, 0, 0, FONT_MEDIUM );
+	CG_Text_Paint( 630 - CG_Text_Width ( title, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM )*cgs.widthRatioCoef, y, 0.7f, colorWhite, title, 0, 0, 0, FONT_MEDIUM );
 
 	if ( cgs.gametype == GT_TOURNAMENT && cgs.clientinfo[cg.playerCent->currentState.number].team != TEAM_SPECTATOR) {
 		//also print their score
 		char text[1024];
 		y += 15;
 		Com_sprintf(text, sizeof(text), "%i/%i", cgs.clientinfo[clientNum].score, cgs.fraglimit );
-		CG_Text_Paint( 630 - CG_Text_Width ( text, 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, text, 0, 0, 0, FONT_MEDIUM );
+		CG_Text_Paint( 630 - CG_Text_Width ( text, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM )*cgs.widthRatioCoef, y, 0.7f, colorWhite, text, 0, 0, 0, FONT_MEDIUM );
 	}
 
 	return y + BIGCHAR_HEIGHT + 2;
@@ -1822,41 +1825,43 @@ static float CG_DrawSnapshot( float y ) {
 CG_DrawFPS
 ==================
 */
-#define	FPS_FRAMES	4
+#define	FPS_FRAMES	16
 float CG_DrawFPS( float y ) {
 	char		*s;
 	int			w;
-	static int	previousTimes[FPS_FRAMES];
-	static int	index;
-	int		i, total;
-	int		fps;
-	static	int	previous;
-	int		t, frameTime;
+	static unsigned short previousTimes[FPS_FRAMES];
+	static unsigned short index;
+	static int	previous, lastupdate;
+	int		t, i, fps, total;
+	unsigned short frameTime;
+	const int		xOffset = 0;
+
 
 	// don't use serverTime, because that will be drifting to
 	// correct for internet lag changes, timescales, timedemos, etc
 	t = trap_Milliseconds();
 	frameTime = t - previous;
 	previous = t;
-
-	previousTimes[index % FPS_FRAMES] = frameTime;
-	index++;
-	if ( index > FPS_FRAMES ) {
-		// average multiple frames together to smooth changes out a bit
-		total = 0;
-		for ( i = 0 ; i < FPS_FRAMES ; i++ ) {
-			total += previousTimes[i];
-		}
-		if ( !total ) {
-			total = 1;
-		}
-		fps = 1000 * FPS_FRAMES / total;
-
-		s = va( "%ifps", fps );
-		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH*cgs.widthRatioCoef;
-
-		CG_DrawBigString( 635 - w, y + 2, s, 1.0F);
+	if (t - lastupdate > 50)	//don't sample faster than this
+	{
+		lastupdate = t;
+		previousTimes[index % FPS_FRAMES] = frameTime;
+		index++;
 	}
+	// average multiple frames together to smooth changes out a bit
+	total = 0;
+	for ( i = 0 ; i < FPS_FRAMES ; i++ ) {
+		total += previousTimes[i];
+	}
+	if ( !total ) {
+		total = 1;
+	}
+	fps = 1000 * FPS_FRAMES / total;
+
+	s = va( "%ifps", fps );
+	w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH*cgs.widthRatioCoef;
+
+	CG_DrawBigString( 635 - w + xOffset, y + 2, s, 1.0F);
 
 	return y + BIGCHAR_HEIGHT + 4;
 }
@@ -2502,7 +2507,7 @@ CG_DrawCenterString
 ===================
 */
 static void CG_DrawCenterString( void ) {
-	char	*start, s[1024];
+	char	*start;//, s[1024];
 	int		l;
 	int		x, y, w;
 	int h;
@@ -2520,8 +2525,11 @@ static void CG_DrawCenterString( void ) {
 
 	trap_R_SetColor( color );
 
-	Q_strncpyz(s, cg.centerPrint, sizeof(s) - 2);
-	Q_StripColorNew(s);
+/*	Q_strncpyz(s, cg.centerPrint, sizeof(s) - 2);
+	if (demo15detected && cg.ntModDetected)
+		Q_StripColorNewNT(s);
+	else
+		Q_StripColorNew(s);*/
 
 	start = cg.centerPrint;
 
@@ -2534,7 +2542,7 @@ static void CG_DrawCenterString( void ) {
 	y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
 
 	while ( 1 ) {
-		char linebuffer[1024], linebufferFix[1024];
+		char linebuffer[1024];//, linebufferFix[1024];
 
 		for ( l = 0; l < 50; l++ ) {
 			if ( !start[l] || start[l] == '\n' ) {
@@ -2544,18 +2552,18 @@ static void CG_DrawCenterString( void ) {
 		}
 		linebuffer[l] = 0;
 
-		for ( l = 0; l < 50; l++ ) {
+/*		for ( l = 0; l < 50; l++ ) {
 			if ( !s[l] || s[l] == '\n' ) {
 				break;
 			}
 			linebufferFix[l] = s[l];
 		}
-		linebufferFix[l] = 0;
+		linebufferFix[l] = 0;*/
 
-//		w = CG_Text_Width(linebuffer, scale, FONT_MEDIUM);
-//		h = CG_Text_Height(linebuffer, scale, FONT_MEDIUM);
-		w = CG_Text_Width(linebufferFix, scale, FONT_MEDIUM);
-		h = CG_Text_Height(linebufferFix, scale, FONT_MEDIUM);
+		w = CG_Text_Width(linebuffer, scale, FONT_MEDIUM);
+		h = CG_Text_Height(linebuffer, scale, FONT_MEDIUM);
+//		w = CG_Text_Width(linebufferFix, scale, FONT_MEDIUM);
+//		h = CG_Text_Height(linebufferFix, scale, FONT_MEDIUM);
 		x = (SCREEN_WIDTH - w) / 2;
 		CG_Text_Paint(x, y + h, scale, color, linebuffer, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE, FONT_MEDIUM);
 		y += h + 6;

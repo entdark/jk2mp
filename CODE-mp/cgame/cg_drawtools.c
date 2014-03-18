@@ -241,7 +241,7 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 			s = string;
 			xx = x;
 			while ( *s ) {
-				if ( Q_IsColorString( s ) ) {
+				if ( ( demo15detected && cg.ntModDetected && Q_IsColorStringNT( s ) ) || Q_IsColorString( s ) ) {
 					s += 2;
 					continue;
 				}
@@ -256,7 +256,15 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 		xx = x;
 		trap_R_SetColor( setColor );
 		while ( *s ) {
-			if ( Q_IsColorString( s ) ) {
+			if ( demo15detected && cg.ntModDetected && Q_IsColorStringNT( s ) ) {
+				if ( !forceColor ) {
+					memcpy( color, g_color_table_nt[ColorIndexNT(*(s+1))], sizeof( color ) );
+					color[3] = setColor[3];
+					trap_R_SetColor( color );
+				}
+				s += 2;
+				continue;
+			} else if ( Q_IsColorString( s ) ) {
 				if ( !forceColor ) {
 					memcpy( color, g_color_table[ColorIndex(*(s+1))], sizeof( color ) );
 					color[3] = setColor[3];
@@ -309,7 +317,8 @@ int CG_DrawStrlen( const char *str ) {
 	int count = 0;
 
 	while ( *s ) {
-		if ( Q_IsColorString( s ) ) {
+		if ( ( demo15detected && cg.ntModDetected && Q_IsColorStringNT( s ) )
+			|| Q_IsColorString( s ) ) {
 			s += 2;
 		} else {
 			count++;
@@ -551,14 +560,14 @@ void CG_DrawNumField (int x, int y, int width, int value,int charWidth,int charH
 			switch(style)
 			{
 			case NUM_FONT_SMALL:
-				CG_DrawPic( x,y, charWidth, charHeight, cgs.media.smallnumberShaders[0] );
+				CG_DrawPic( x,y, charWidth*cgs.widthRatioCoef, charHeight, cgs.media.smallnumberShaders[0] );
 				break;
 			case NUM_FONT_CHUNKY:
-				CG_DrawPic( x,y, charWidth, charHeight, cgs.media.chunkyNumberShaders[0] );
+				CG_DrawPic( x,y, charWidth*cgs.widthRatioCoef, charHeight, cgs.media.chunkyNumberShaders[0] );
 				break;
 			default:
 			case NUM_FONT_BIG:
-				CG_DrawPic( x,y, charWidth, charHeight, cgs.media.numberShaders[0] );
+				CG_DrawPic( x,y, charWidth*cgs.widthRatioCoef, charHeight, cgs.media.numberShaders[0] );
 				break;
 			}
 			x += 2 + (xWidth);
@@ -611,7 +620,10 @@ void UI_DrawProportionalString( int x, int y, const char* str, int style, vec4_t
 
 	// the best fix in the world
 	Q_strncpyz(s, str, sizeof(s) - 2);
-	Q_StripColorNew(s);
+	if (demo15detected && cg.ntModDetected)
+		Q_StripColorNewNT(s);
+	else
+		Q_StripColorNew(s);
 
 	switch (style & (UI_LEFT|UI_CENTER|UI_RIGHT))
 	{

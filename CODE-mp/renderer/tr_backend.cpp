@@ -1,4 +1,5 @@
 #include "tr_local.h"
+#include "glext.h"
 
 #ifndef DEDICATED
 #if !defined __TR_WORLDEFFECTS_H
@@ -9,6 +10,16 @@
 backEndData_t	*backEndData[SMP_FRAMES];
 backEndState_t	backEnd;
 
+#ifdef JEDIACADEMY_GLOW
+static void RB_DrawGlowOverlay();
+static void RB_BlurGlowTexture();
+
+// Whether we are currently rendering only glowing objects or not.
+bool g_bRenderGlowingObjects = false;
+
+// Whether the current hardware supports dynamic glows/flares.
+bool g_bDynamicGlowSupported = false;
+#endif
 
 static float	s_flipMatrix[16] = {
 	// convert from our coordinate system (looking down X)
@@ -526,7 +537,7 @@ void RB_BeginDrawingView (void) {
 	{
 		clearBits |= GL_STENCIL_BUFFER_BIT;
 	}
-	if (!(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
+	if (!(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) && !g_bRenderGlowingObjects) {
 		if (mme_skykey->string[0] != '0') {
 			vec3_t skyColor;
 			clearBits |= GL_COLOR_BUFFER_BIT;
@@ -541,6 +552,27 @@ void RB_BeginDrawingView (void) {
 #endif
 		}
 	}
+
+#ifdef JEDIACADEMY_GLOW
+	if ( !( backEnd.refdef.rdflags & RDF_NOWORLDMODEL ) && r_DynamicGlow->integer && !g_bRenderGlowingObjects )
+	{
+		if (tr.world && tr.world->globalFog != -1)
+		{ //this is because of a bug in multiple scenes I think, it needs to clear for the second scene but it doesn't normally.
+			const fog_t		*fog = &tr.world->fogs[tr.world->globalFog];
+
+			clearBits |= GL_COLOR_BUFFER_BIT;
+			qglClearColor(fog->parms.color[0],  fog->parms.color[1], fog->parms.color[2], 1.0f );
+		}
+	}
+
+	// If this pass is to just render the glowing objects, don't clear the depth buffer since
+	// we're sharing it with the main scene (since the main scene has already been rendered). -AReis
+	if ( g_bRenderGlowingObjects )
+	{
+		clearBits &= ~GL_DEPTH_BUFFER_BIT;
+	}
+#endif
+
 	qglClear( clearBits );
 
 	if ( ( backEnd.refdef.rdflags & RDF_HYPERSPACE ) )
@@ -591,14 +623,17 @@ RB_RenderDrawSurfList
 */
 void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	shader_t		*shader, *oldShader;
-	int				fogNum, oldFogNum;
-	int				entityNum, oldEntityNum;
-	int				dlighted, oldDlighted;
+	int64_t			fogNum, oldFogNum;
+	int64_t			entityNum, oldEntityNum;
+	int64_t			dlighted, oldDlighted;
 	int				depthRange, oldDepthRange;
 	int				i;
 	drawSurf_t		*drawSurf;
-	int				oldSort;
+	uint64_t		oldSort;
 	float			originalTime;
+#ifdef JEDIACADEMY_GLOW
+	bool			didShadowPass = false;
+#endif
 #ifdef __MACOS__
 	int				macEventTime;
 
@@ -607,6 +642,13 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	// we don't want to pump the event loop too often and waste time, so
 	// we are going to check every shader change
 	macEventTime = ri.Milliseconds() + MAC_EVENT_PUMP_MSEC;
+#endif
+
+#ifdef JEDIACADEMY_GLOW
+	if (g_bRenderGlowingObjects)
+	{ //only shadow on initial passes
+		didShadowPass = true;
+	}
 #endif
 
 	// save original time for entity shader offsets
@@ -622,7 +664,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	oldFogNum = -1;
 	oldDepthRange = qfalse;
 	oldDlighted = qfalse;
-	oldSort = -1;
+	oldSort = (uint64_t) -1;
 	depthRange = qfalse;
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
@@ -636,8 +678,23 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
 			continue;
 		}
+
+#ifdef JEDIACADEMY_GLOW
+		R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
+		// If we're rendering glowing objects, but this shader has no stages with glow, skip it!
+		if ( g_bRenderGlowingObjects && !shader->hasGlow )
+		{
+			shader = oldShader;
+			entityNum = oldEntityNum;
+			fogNum = oldFogNum;
+			dlighted = oldDlighted;
+			continue;
+		}
+		oldSort = drawSurf->sort;
+#else
 		oldSort = drawSurf->sort;
 		R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
+#endif
 
 		//
 		// change the tess parameters if needed
@@ -670,7 +727,8 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		if ( entityNum != oldEntityNum ) {
 			depthRange = 0;
 
-			if ( entityNum != ENTITYNUM_WORLD ) {
+//			if ( entityNum != ENTITYNUM_WORLD ) {
+			if ( entityNum != REFENTITYNUM_WORLD ) {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
 				backEnd.refdef.floatTime = originalTime - backEnd.currentEntity->e.shaderTime;
 				// we have to reset the shaderTime as well otherwise image animations start
@@ -750,8 +808,13 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 #if 0
 	RB_DrawSun();
 #endif
-	// darken down any stencil shadows
-	RB_ShadowFinish();		
+#ifdef JEDIACADEMY_GLOW
+	if (!didShadowPass) {
+		// darken down any stencil shadows
+		RB_ShadowFinish();
+		didShadowPass = true;
+	}
+#endif
 
 	// add light flares on lights that aren't obscured
 
@@ -1151,6 +1214,75 @@ const void	*RB_DrawSurfs( const void *data ) {
 	}
 	RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
 
+#ifdef JEDIACADEMY_GLOW
+	// Dynamic Glow/Flares:
+	/*
+		The basic idea is to render the glowing parts of the scene to an offscreen buffer, then take
+		that buffer and blur it. After it is sufficiently blurred, re-apply that image back to
+		the normal screen using a additive blending. To blur the scene I use a vertex program to supply
+		four texture coordinate offsets that allow 'peeking' into adjacent pixels. In the register
+		combiner (pixel shader), I combine the adjacent pixels using a weighting factor. - Aurelio
+	*/
+
+	// Render dynamic glowing/flaring objects.
+	if ( !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) && g_bDynamicGlowSupported && r_DynamicGlow->integer )
+	{
+		// Copy the normal scene to texture.
+		qglDisable( GL_TEXTURE_2D );
+		qglEnable( GL_TEXTURE_RECTANGLE_EXT ); 
+		qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, tr.sceneImage ); 
+		qglCopyTexSubImage2D( GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight ); 
+		qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+		qglEnable( GL_TEXTURE_2D );    
+
+		// Just clear colors, but leave the depth buffer intact so we can 'share' it.
+		qglClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+		qglClear( GL_COLOR_BUFFER_BIT ); 
+
+		// Render the glowing objects.
+		g_bRenderGlowingObjects = true;
+		RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );  
+		g_bRenderGlowingObjects = false;
+
+		qglFinish();
+
+		// Copy the glow scene to texture.
+		qglDisable( GL_TEXTURE_2D );
+		qglEnable( GL_TEXTURE_RECTANGLE_EXT ); 
+		qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, tr.screenGlow ); 
+		qglCopyTexSubImage2D( GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight ); 
+		qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+		qglEnable( GL_TEXTURE_2D );
+		
+		// Resize the viewport to the blur texture size.
+		const int oldViewWidth = backEnd.viewParms.viewportWidth;
+		const int oldViewHeight = backEnd.viewParms.viewportHeight;
+		backEnd.viewParms.viewportWidth = r_DynamicGlowWidth->integer;
+		backEnd.viewParms.viewportHeight = r_DynamicGlowHeight->integer;
+		SetViewportAndScissor();
+
+		// Blur the scene.
+		RB_BlurGlowTexture();
+
+		// Copy the finished glow scene back to texture.
+		qglDisable( GL_TEXTURE_2D );
+		qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+		qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, tr.blurImage );
+		qglCopyTexSubImage2D( GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight ); 
+		qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+		qglEnable( GL_TEXTURE_2D );
+		
+		// Set the viewport back to normal.
+		backEnd.viewParms.viewportWidth = oldViewWidth;
+		backEnd.viewParms.viewportHeight = oldViewHeight;
+		SetViewportAndScissor();
+		qglClear( GL_COLOR_BUFFER_BIT ); 
+
+		// Draw the glow additively over the screen.
+		RB_DrawGlowOverlay(); 
+	}
+#endif
+
 	return (const void *)(cmd + 1);
 }
 
@@ -1409,3 +1541,370 @@ void RB_RenderThread( void ) {
 }
 
 #endif //!DEDICATED
+
+
+// What Pixel Shader type is currently active (regcoms or fragment programs).
+GLuint g_uiCurrentPixelShaderType = 0x0;
+
+// Begin using a Pixel Shader.
+void BeginPixelShader( GLuint uiType, GLuint uiID )
+{
+	switch ( uiType )
+	{
+		// Using Register Combiners, so call the Display List that stores it.
+		case GL_REGISTER_COMBINERS_NV:
+		{
+			// Just in case...
+			if ( !qglCombinerParameterfvNV )
+				return;
+
+			// Call the list with the regcom in it.
+			qglEnable( GL_REGISTER_COMBINERS_NV );
+			qglCallList( uiID );
+
+			g_uiCurrentPixelShaderType = GL_REGISTER_COMBINERS_NV;
+		}
+		return;
+
+		// Using Fragment Programs, so call the program.
+		case GL_FRAGMENT_PROGRAM_ARB:
+		{
+			// Just in case...
+			if ( !qglGenProgramsARB )
+				return;
+
+			qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, uiID );
+
+			g_uiCurrentPixelShaderType = GL_FRAGMENT_PROGRAM_ARB;
+		}
+		return;
+	}
+}
+
+// Stop using a Pixel Shader and return states to normal.
+void EndPixelShader()
+{
+	if ( g_uiCurrentPixelShaderType == 0x0 )
+		return;
+
+	qglDisable( g_uiCurrentPixelShaderType );
+}
+
+#ifdef JEDIACADEMY_GLOW
+// Hack variable for deciding which kind of texture rectangle thing to do (for some
+// reason it acts different on radeon! It's against the spec!).
+extern bool g_bTextureRectangleHack;
+
+static inline void RB_BlurGlowTexture()
+{
+	qglDisable (GL_CLIP_PLANE0);
+	GL_Cull( CT_TWO_SIDED );
+	qglDisable( GL_DEPTH_TEST );
+
+	// Go into orthographic 2d mode.
+	qglMatrixMode(GL_PROJECTION);
+	qglPushMatrix();
+	qglLoadIdentity();
+	qglOrtho(0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0, -1, 1);
+	qglMatrixMode(GL_MODELVIEW);
+	qglPushMatrix();
+	qglLoadIdentity();
+
+	GL_State(0);
+
+	/////////////////////////////////////////////////////////
+	// Setup vertex and pixel programs.
+	/////////////////////////////////////////////////////////
+
+	// NOTE: The 0.25 is because we're blending 4 textures (so = 1.0) and we want a relatively normalized pixel
+	// intensity distribution, but this won't happen anyways if intensity is higher than 1.0.
+	float fBlurDistribution = r_DynamicGlowIntensity->value * 0.25f;
+	float fBlurWeight[4] = { fBlurDistribution, fBlurDistribution, fBlurDistribution, 1.0f };
+
+	// Enable and set the Vertex Program.
+	qglEnable( GL_VERTEX_PROGRAM_ARB );
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, tr.glowVShader );
+
+	// Apply Pixel Shaders.
+	if ( qglCombinerParameterfvNV )
+	{
+		BeginPixelShader( GL_REGISTER_COMBINERS_NV, tr.glowPShader );
+
+		// Pass the blur weight to the regcom.
+		qglCombinerParameterfvNV( GL_CONSTANT_COLOR0_NV, (float*)&fBlurWeight );
+	}
+	else if ( qglProgramEnvParameter4fARB )
+	{
+		BeginPixelShader( GL_FRAGMENT_PROGRAM_ARB, tr.glowPShader );
+
+		// Pass the blur weight to the Fragment Program.
+		qglProgramEnvParameter4fARB( GL_FRAGMENT_PROGRAM_ARB, 0, fBlurWeight[0], fBlurWeight[1], fBlurWeight[2], fBlurWeight[3] );
+	}
+
+	/////////////////////////////////////////////////////////
+	// Set the blur texture to the 4 texture stages.
+	/////////////////////////////////////////////////////////
+
+	// How much to offset each texel by.
+	float fTexelWidthOffset = 0.1f, fTexelHeightOffset = 0.1f;
+
+	GLuint uiTex = tr.screenGlow;  
+
+	qglActiveTextureARB( GL_TEXTURE3_ARB );  
+	qglEnable( GL_TEXTURE_RECTANGLE_EXT ); 
+	qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex );
+	
+	qglActiveTextureARB( GL_TEXTURE2_ARB ); 
+	qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+	qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex );
+
+	qglActiveTextureARB( GL_TEXTURE1_ARB );
+	qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+	qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex );
+
+	qglActiveTextureARB(GL_TEXTURE0_ARB );
+	qglDisable( GL_TEXTURE_2D );  
+	qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+	qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex ); 
+	
+	/////////////////////////////////////////////////////////
+	// Draw the blur passes (each pass blurs it more, increasing the blur radius ).
+	/////////////////////////////////////////////////////////
+	
+	//int iTexWidth = backEnd.viewParms.viewportWidth, iTexHeight = backEnd.viewParms.viewportHeight;
+	int iTexWidth = glConfig.vidWidth, iTexHeight = glConfig.vidHeight; 
+	
+	for ( int iNumBlurPasses = 0; iNumBlurPasses < r_DynamicGlowPasses->integer; iNumBlurPasses++ )       
+	{
+		// Load the Texel Offsets into the Vertex Program.
+		qglProgramEnvParameter4fARB( GL_VERTEX_PROGRAM_ARB, 0, -fTexelWidthOffset, -fTexelWidthOffset, 0.0f, 0.0f );
+		qglProgramEnvParameter4fARB( GL_VERTEX_PROGRAM_ARB, 1, -fTexelWidthOffset, fTexelWidthOffset, 0.0f, 0.0f );
+		qglProgramEnvParameter4fARB( GL_VERTEX_PROGRAM_ARB, 2, fTexelWidthOffset, -fTexelWidthOffset, 0.0f, 0.0f );
+		qglProgramEnvParameter4fARB( GL_VERTEX_PROGRAM_ARB, 3, fTexelWidthOffset, fTexelWidthOffset, 0.0f, 0.0f );
+
+		// After first pass put the tex coords to the viewport size.
+		if ( iNumBlurPasses == 1 )
+		{
+			// OK, very weird, but dependent on which texture rectangle extension we're using, the
+			// texture either needs to be always texure correct or view correct...
+			if ( !g_bTextureRectangleHack ) 
+			{
+				iTexWidth = backEnd.viewParms.viewportWidth;
+				iTexHeight = backEnd.viewParms.viewportHeight;
+			}
+
+			uiTex = tr.blurImage;
+			qglActiveTextureARB( GL_TEXTURE3_ARB );  
+			qglDisable( GL_TEXTURE_2D );
+			qglEnable( GL_TEXTURE_RECTANGLE_EXT ); 
+			qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex );
+			qglActiveTextureARB( GL_TEXTURE2_ARB ); 
+			qglDisable( GL_TEXTURE_2D );
+			qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+			qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex );			
+			qglActiveTextureARB( GL_TEXTURE1_ARB );
+			qglDisable( GL_TEXTURE_2D );
+			qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+			qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex );
+			qglActiveTextureARB(GL_TEXTURE0_ARB );
+			qglDisable( GL_TEXTURE_2D );
+			qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+			qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex ); 
+
+			// Copy the current image over.
+			qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, uiTex );     
+			qglCopyTexSubImage2D( GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
+		}
+
+		// Draw the fullscreen quad.
+		qglBegin( GL_QUADS ); 
+			qglMultiTexCoord2fARB( GL_TEXTURE0_ARB, 0, iTexHeight );  
+			qglVertex2f( 0, 0 );
+
+			qglMultiTexCoord2fARB( GL_TEXTURE0_ARB, 0, 0 );
+			qglVertex2f( 0, backEnd.viewParms.viewportHeight );
+
+			qglMultiTexCoord2fARB( GL_TEXTURE0_ARB, iTexWidth, 0 ); 
+			qglVertex2f( backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
+
+			qglMultiTexCoord2fARB( GL_TEXTURE0_ARB, iTexWidth, iTexHeight );
+			qglVertex2f( backEnd.viewParms.viewportWidth, 0 ); 
+		qglEnd();
+
+		qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, tr.blurImage );       
+		qglCopyTexSubImage2D( GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );    
+
+		// Increase the texel offsets.
+		// NOTE: This is possibly the most important input to the effect. Even by using an exponential function I've been able to
+		// make it look better (at a much higher cost of course). This is cheap though and still looks pretty great. In the future 
+		// I might want to use an actual gaussian equation to correctly calculate the pixel coefficients and attenuates, texel
+		// offsets, gaussian amplitude and radius...
+		fTexelWidthOffset += r_DynamicGlowDelta->value;
+		fTexelHeightOffset += r_DynamicGlowDelta->value;
+	}
+
+	// Disable multi-texturing.
+	qglActiveTextureARB( GL_TEXTURE3_ARB );   
+	qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+
+	qglActiveTextureARB( GL_TEXTURE2_ARB );
+	qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+
+	qglActiveTextureARB( GL_TEXTURE1_ARB );
+	qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+
+	qglActiveTextureARB(GL_TEXTURE0_ARB );
+	qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+	qglEnable( GL_TEXTURE_2D );
+
+	qglDisable( GL_VERTEX_PROGRAM_ARB );
+	EndPixelShader();
+	
+	qglMatrixMode(GL_PROJECTION);
+	qglPopMatrix();
+	qglMatrixMode(GL_MODELVIEW);
+	qglPopMatrix();
+
+	qglDisable( GL_BLEND );
+	qglEnable( GL_DEPTH_TEST );
+
+	glState.currenttmu = 0;	//this matches the last one we activated
+}
+
+// Draw the glow blur over the screen additively.
+static inline void RB_DrawGlowOverlay()
+{
+	qglDisable (GL_CLIP_PLANE0);
+	GL_Cull( CT_TWO_SIDED );
+	qglDisable( GL_DEPTH_TEST ); 
+
+	// Go into orthographic 2d mode.
+	qglMatrixMode(GL_PROJECTION);
+	qglPushMatrix();
+	qglLoadIdentity();
+	qglOrtho(0, glConfig.vidWidth, glConfig.vidHeight, 0, -1, 1);
+	qglMatrixMode(GL_MODELVIEW);
+	qglPushMatrix();
+	qglLoadIdentity();
+
+	GL_State(0);
+
+	qglDisable( GL_TEXTURE_2D );
+	qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+
+	// For debug purposes.
+	if ( r_DynamicGlow->integer != 2 )
+	{
+		// Render the normal scene texture.
+		qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, tr.sceneImage ); 
+		qglBegin(GL_QUADS);    
+			qglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+			qglTexCoord2f( 0, glConfig.vidHeight ); 
+			qglVertex2f( 0, 0 );
+
+			qglTexCoord2f( 0, 0 );
+			qglVertex2f( 0, glConfig.vidHeight );
+
+			qglTexCoord2f( glConfig.vidWidth, 0 );
+			qglVertex2f( glConfig.vidWidth, glConfig.vidHeight );
+
+			qglTexCoord2f( glConfig.vidWidth, glConfig.vidHeight );
+			qglVertex2f( glConfig.vidWidth, 0 );
+		qglEnd();
+	}
+
+	// One and Inverse Src Color give a very soft addition, while one one is a bit stronger. With one one we can
+	// use additive blending through multitexture though.
+	if ( r_DynamicGlowSoft->integer )
+	{
+		qglBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_COLOR );
+	}
+	else
+	{
+		qglBlendFunc( GL_ONE, GL_ONE );
+	}
+	qglEnable( GL_BLEND );  
+
+	// Now additively render the glow texture.
+	qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, tr.blurImage );     
+	qglBegin(GL_QUADS);    
+		qglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );  
+		qglTexCoord2f( 0, r_DynamicGlowHeight->integer ); 
+		qglVertex2f( 0, 0 );
+
+		qglTexCoord2f( 0, 0 );
+		qglVertex2f( 0, glConfig.vidHeight );
+
+		qglTexCoord2f( r_DynamicGlowWidth->integer, 0 );
+		qglVertex2f( glConfig.vidWidth, glConfig.vidHeight );
+
+		qglTexCoord2f( r_DynamicGlowWidth->integer, r_DynamicGlowHeight->integer );
+		qglVertex2f( glConfig.vidWidth, 0 );
+	qglEnd();
+
+	qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+	qglEnable( GL_TEXTURE_2D );
+	qglBlendFunc( GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR );
+	qglDisable( GL_BLEND );
+
+	// NOTE: Multi-texture wasn't that much faster (we're obviously not bottlenecked by transform pipeline),
+	// and besides, soft glow looks better anyways.
+/*	else
+	{
+		int iTexWidth = glConfig.vidWidth, iTexHeight = glConfig.vidHeight;
+		if ( GL_TEXTURE_RECTANGLE_EXT == GL_TEXTURE_RECTANGLE_NV ) 
+		{
+			iTexWidth = r_DynamicGlowWidth->integer;
+			iTexHeight = r_DynamicGlowHeight->integer;
+		}
+
+		qglActiveTextureARB( GL_TEXTURE1_ARB ); 
+		qglDisable( GL_TEXTURE_2D ); 
+		qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+		qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, tr.screenGlow ); 
+		qglTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD );  
+
+		qglActiveTextureARB(GL_TEXTURE0_ARB );
+		qglDisable( GL_TEXTURE_2D );
+		qglEnable( GL_TEXTURE_RECTANGLE_EXT );
+		qglBindTexture( GL_TEXTURE_RECTANGLE_EXT, tr.sceneImage );
+		qglTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL );
+
+		qglBegin(GL_QUADS);    
+			qglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+			qglMultiTexCoord2fARB( GL_TEXTURE1_ARB, 0, iTexHeight );  
+			qglMultiTexCoord2fARB( GL_TEXTURE0_ARB, 0, glConfig.vidHeight );  
+			qglVertex2f( 0, 0 );
+
+			qglMultiTexCoord2fARB( GL_TEXTURE1_ARB, 0, 0 );
+			qglMultiTexCoord2fARB( GL_TEXTURE0_ARB, 0, 0 );
+			qglVertex2f( 0, glConfig.vidHeight );
+
+			qglMultiTexCoord2fARB( GL_TEXTURE1_ARB, iTexWidth, 0 ); 
+			qglMultiTexCoord2fARB( GL_TEXTURE0_ARB, glConfig.vidWidth, 0 ); 
+			qglVertex2f( glConfig.vidWidth, glConfig.vidHeight );
+
+			qglMultiTexCoord2fARB( GL_TEXTURE1_ARB, iTexWidth, iTexHeight );
+			qglMultiTexCoord2fARB( GL_TEXTURE0_ARB, glConfig.vidWidth, glConfig.vidHeight );
+			qglVertex2f( glConfig.vidWidth, 0 ); 
+		qglEnd();
+
+		qglActiveTextureARB( GL_TEXTURE1_ARB );
+		qglTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE ); 
+		qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+
+		qglActiveTextureARB(GL_TEXTURE0_ARB );
+		qglTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE ); 
+		qglDisable( GL_TEXTURE_RECTANGLE_EXT );
+		qglEnable( GL_TEXTURE_2D );
+	}*/
+
+	qglMatrixMode(GL_PROJECTION);
+	qglPopMatrix();
+	qglMatrixMode(GL_MODELVIEW);
+	qglPopMatrix();
+
+	qglEnable( GL_DEPTH_TEST );
+}
+#endif

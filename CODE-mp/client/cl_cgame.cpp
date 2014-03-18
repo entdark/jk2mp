@@ -1014,6 +1014,7 @@ Ghoul2 Insert Start
 		return 0;
 
 	case CG_G2_GETBOLT:
+		gG2_GBMNoReconstruct = qfalse;
 		return G2API_GetBoltMatrix(*((CGhoul2Info_v *)args[1]), args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
 
 	case CG_G2_GETBOLT_NOREC:
@@ -1181,6 +1182,9 @@ Ghoul2 Insert End
         return 0;
 	case CG_MME_DEMO15DETECTION:
         return demo15detected;
+	case CG_MME_NTXIIDETECTION:
+        ntModDetected = (qboolean)args[1];
+		return 0;
 	case CG_R_RANDOMSEED:
 		re.DemoRandomSeed( args[1], VMF(2) );
         return 0;

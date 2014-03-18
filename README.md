@@ -21,15 +21,17 @@ joMME is an engine modification of Jedi Knight 2: Jedi Outcast for moviemaking. 
 * capturing in any resolution
 * off-screen capturing
 * capturing a list of demos
-* supporting versions: 1.02 (TODO), 1.04
+* supporting versions: 1.02, 1.04
 
 # Installation #
-Either extract the archive to "GameData" folder or extract anywhere, then create folder "base" next to folder "mme", put in there ("base") assets0.pk3, assets1.pk3, assets2.pk3, assets3.pk3 from "base" from your original game path. Then run start_joMME.cmd file and enjoy the mod.
+Patch the game to 1.04 version. Either extract the archive to "GameData" folder or extract anywhere, then create folder "base" next to folder "mme", put in there ("base") assets0.pk3, assets1.pk3, assets2.pk3, assets5.pk3 from "base" from your original game path. Then run start_joMME.cmd file and enjoy the mod.
 
 # Credits #
 * q3mme crew and their q3mme mod
-* Raz0r and his features from JA++ mod, also he helped a lot
+* Scooper and his big contributing in jaMME
+* Raz0r and all his help
 * teh and his pugmod that was a good starting point, also some joMME features are taken from pugmod
 * Sil and his features from SMod
 * CaNaBiS and his help in explaining of how q3mme works
-* Razorace and his trueview feature (taken from JA++)
+* NTxC and his extended colour table
+* people from #jacoders irc channel

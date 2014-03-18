@@ -1680,7 +1680,7 @@ Ghoul2 Insert End
 		float alpha;
 		int a;
 		
-		alpha = (float)msec / ITEM_SCALEUP_TIME;
+		alpha = msec / ITEM_SCALEUP_TIME;
 		a = alpha * 255.0;
 		if (a <= 0)
 			a=1;
@@ -2443,10 +2443,10 @@ void CG_AddPacketEntities( void ) {
 	// add each entity sent over by the server
 	for ( num = 0 ; num < cg.snap->numEntities ; num++ ) {
 		// Don't re-add ents that have been predicted.
-//		if (cg.snap->entities[ num ].number != cg.snap->ps.clientNum) {
+		if (cg.snap->entities[ num ].number != cg.snap->ps.clientNum) {
 			cent = &cg_entities[ cg.snap->entities[ num ].number ];
 			CG_AddCEntity( cent );
-//		}
+		}
 	}
 }
 

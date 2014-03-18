@@ -1048,6 +1048,59 @@ int Q_parseColor( const char *p, const vec3_t numberColors[10], float *color ) {
 	return 0;
 }
 
+/*
+* Find the first occurrence of find in s.
+*/
+const char *Q_stristr( const char *s, const char *find)
+{
+  char c, sc;
+  size_t len;
+
+  if ((c = *find++) != 0)
+  {
+    if (c >= 'a' && c <= 'z')
+    {
+      c -= ('a' - 'A');
+    }
+    len = strlen(find);
+    do
+    {
+      do
+      {
+        if ((sc = *s++) == 0)
+          return NULL;
+        if (sc >= 'a' && sc <= 'z')
+        {
+          sc -= ('a' - 'A');
+        }
+      } while (sc != c);
+    } while (Q_stricmpn(s, find, len) != 0);
+    s--;
+  }
+  return s;
+}
+
+int Q_PrintStrlenNT( const char *string ) {
+	int			len;
+	const char	*p;
+
+	if( !string ) {
+		return 0;
+	}
+
+	len = 0;
+	p = string;
+	while( *p ) {
+		if( Q_IsColorStringNT( p ) ) {
+			p += 2;
+			continue;
+		}
+		p++;
+		len++;
+	}
+
+	return len;
+}
 
 int Q_PrintStrlen( const char *string ) {
 	int			len;
@@ -1071,6 +1124,26 @@ int Q_PrintStrlen( const char *string ) {
 	return len;
 }
 
+char *Q_CleanStrNT( char *string ) {
+	char*	d;
+	char*	s;
+	int		c;
+
+	s = string;
+	d = string;
+	while ((c = *s) != 0 ) {
+		if ( Q_IsColorStringNT( s ) ) {
+			s++;
+		}		
+		else if ( c >= 0x20 && c <= 0x7E ) {
+			*d++ = c;
+		}
+		s++;
+	}
+	*d = '\0';
+
+	return string;
+}
 
 char *Q_CleanStr( char *string ) {
 	char*	d;
@@ -1146,6 +1219,36 @@ Q_StripColorNew
 Strips coloured strings in-place: "fgs^^^223fds" -> "fgs^^23fds"
 ==================
 */
+void Q_StripColorNewNT(char *text)
+{
+	qboolean doPass = qtrue;
+	char *read;
+	char *write;
+
+	read = write = text;
+	while ( *read )
+	{
+		if ( Q_IsColorStringNT(read) )
+		{
+			read += 2;
+		}
+		else
+		{
+			// Avoid writing the same data over itself
+			if (write != read)
+			{
+				*write = *read;
+			}
+			write++;
+			read++;
+		}
+	}
+	if ( write < read )
+	{
+		// Add trailing NUL byte if string has shortened
+		*write = '\0';
+	}
+}
 void Q_StripColorNew(char *text)
 {
 	qboolean doPass = qtrue;

@@ -16,6 +16,19 @@ void QGL_EnableLogging( qboolean enable );
 
 int ( WINAPI * qwglSwapIntervalEXT)( int interval );
 
+const char *( WINAPI * qwglGetExtensionsStringARB) (HDC);
+
+
+HPBUFFERARB (WINAPI * qwglCreatePbufferARB) (HDC hDC, int iPixelFormat, int iWidth, int iHeight, const int *piAttribList);
+BOOL (WINAPI * qwglGetPixelFormatAttribivARB) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues);
+BOOL (WINAPI * qwglGetPixelFormatAttribfvARB) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
+HDC (WINAPI * qwglGetPbufferDCARB) (HPBUFFERARB hPbuffer);
+BOOL (WINAPI * qwglQueryPbufferARB) (HPBUFFERARB hPbuffer, int iAttribute, int *piValue);
+BOOL (WINAPI * qwglChoosePixelFormatARB) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+int (WINAPI * qwglReleasePbufferDCARB) (HPBUFFERARB hPbuffer, HDC hDC);
+BOOL (WINAPI * qwglDestroyPbufferARB) (HPBUFFERARB hPbuffer);
+
+
 BOOL  ( WINAPI * qwglCopyContext)(HGLRC, HGLRC, UINT);
 HGLRC ( WINAPI * qwglCreateContext)(HDC);
 HGLRC ( WINAPI * qwglCreateLayerContext)(HDC, int);

@@ -23,7 +23,7 @@ extern void trap_MME_Capture( const char *baseName, float fps, float focus );
 extern void trap_MME_CaptureStereo( const char *baseName, float fps, float focus );
 extern int trap_MME_SeekTime( int seekTime );
 extern void trap_MME_Music( const char *musicName, float time, float length );
-extern qboolean trap_S_Demo15Detection( void );
+extern qboolean trap_MME_Demo15Detection( void );
 extern void trap_R_RandomSeed( int time, float timeFraction );
 extern void trap_FX_RandomSeed( int time, float timeFraction );
 extern void trap_S_UpdatePitch( float pitch );
@@ -203,7 +203,8 @@ static int demoSetupView( void) {
 						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
 						||
 						((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected)));
+						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))
+						&& !cg_fpls.integer);
 				inwater = CG_DemosCalcViewValues();
 				// first person blend blobs, done after AnglesToAxis
 				if (!cg.renderingThirdPerson) {
@@ -1005,7 +1006,7 @@ void demoPlaybackInit(void) {
 	trap_AddCommand("musicPlay");
 	trap_AddCommand("stopLoop");
 
-	demo15detected = trap_S_Demo15Detection();
+	demo15detected = trap_MME_Demo15Detection();
 
 	demo.media.additiveWhiteShader = trap_R_RegisterShader( "mme_additiveWhite" );
 	demo.media.mouseCursor = trap_R_RegisterShaderNoMip( "menu/art/3_cursor2" );

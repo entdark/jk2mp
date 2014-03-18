@@ -1078,6 +1078,7 @@ CL_Disconnect_f
 */
 void CL_Disconnect_f( void ) {
 	demo15detected = qfalse;
+	ntModDetected = qfalse;
 	SCR_StopCinematic();
 	Cvar_Set("ui_singlePlayerActive", "0");
 	if ( cls.state != CA_DISCONNECTED && cls.state != CA_CINEMATIC ) {
@@ -2704,7 +2705,7 @@ void CL_Init( void ) {
 	// MME cvars
 	mme_saveWav = Cvar_Get ("mme_saveWav", "1", CVAR_ARCHIVE );
 	mme_demoConvert = Cvar_Get ("mme_demoConvert", "1", CVAR_ARCHIVE );
-	mme_demoListQuit = Cvar_Get ("mme_demoListQuit", "", CVAR_ARCHIVE );
+	mme_demoListQuit = Cvar_Get ("mme_demoListQuit", "1", CVAR_ARCHIVE );
 	mme_demoSmoothen = Cvar_Get ("mme_demoSmoothen", "1", CVAR_ARCHIVE );
 	mme_demoFileName = Cvar_Get ("mme_demoFileName", "", CVAR_TEMP | CVAR_NORESTART );
 	mme_demoStartProject = Cvar_Get ("mme_demoStartProject", "", CVAR_TEMP );
@@ -2738,6 +2739,11 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("fs_referencedList", CL_ReferencedPK3List_f );
 	Cmd_AddCommand ("model", CL_SetModel_f );
 	Cmd_AddCommand ("forcepowers", CL_SetForcePowers_f );
+
+	// MME commands
+	Cmd_AddCommand ("mmeDemo", CL_MMEDemo_f);
+	Cmd_AddCommand ("demoList", CL_DemoList_f);
+	Cmd_AddCommand ("demoListNext", CL_DemoListNext_f );
 
 	CL_InitRef();
 

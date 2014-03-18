@@ -19,13 +19,16 @@ long myftol( float f );
 #define	myftol(x) ((int)(x))
 #endif
 
+#define JEDIACADEMY_GLOW
 
 // everything that is needed by the backend needs
 // to be double buffered to allow it to run in
 // parallel on a dual cpu machine
 #define	SMP_FRAMES		2
 
-#define	MAX_SHADERS				2048
+//#define	MAX_SHADERS				2048
+#define SHADERNUM_BITS	14
+#define MAX_SHADERS		(1<<SHADERNUM_BITS)
 
 #define MAX_SHADER_STATES 2048
 #define MAX_STATES_PER_SHADER 32
@@ -366,6 +369,10 @@ typedef struct {
 	qboolean		isDetail;
 	surfaceSprite_t	ss;
 
+#ifdef JEDIACADEMY_GLOW
+	// Whether this object emits a glow or not.
+	bool			glow;
+#endif
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -405,7 +412,7 @@ typedef struct shader_s {
 	byte		styles[MAXLIGHTMAPS];
 
 	int			index;					// this shader == tr.shaders[index]
-	int			sortedIndex;			// this shader == tr.sortedShaders[sortedIndex]
+	int64_t		sortedIndex;			// this shader == tr.sortedShaders[sortedIndex]
 
 	float		sort;					// lower numbered shaders draw before higher numbered
 
@@ -471,6 +478,11 @@ Ghoul2 Insert End
   int currentState;                                 // current state index for cycle purposes
   long expireTime;                                  // time in milliseconds this expires
 
+#ifdef JEDIACADEMY_GLOW
+	// True if this shader has a stage with glow in it (just an optimization).
+	bool hasGlow;
+#endif
+
   struct shader_s *remappedShader;                  // current shader this one is remapped too
 
   int shaderStates[MAX_STATES_PER_SHADER];          // index to valid shader states
@@ -529,7 +541,7 @@ typedef struct {
 	// text messages for deform text shaders
 	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
 
-	int			num_entities;
+	int64_t		num_entities;
 	trRefEntity_t	*entities;
 	trMiniRefEntity_t	*miniEntities;
 
@@ -627,7 +639,7 @@ Ghoul2 Insert End
 } surfaceType_t;
 
 typedef struct drawSurf_s {
-	unsigned			sort;			// bit combination for fast compares
+	uint64_t			sort;			// bit combination for fast compares
 	surfaceType_t		*surface;		// any of surface*_t
 } drawSurf_t;
 
@@ -641,7 +653,7 @@ typedef struct drawSurf_s {
 typedef struct srfPoly_s {
 	surfaceType_t	surfaceType;
 	qhandle_t		hShader;
-	int				fogIndex;
+	int64_t			fogIndex;
 	int				numVerts;
 	polyVert_t		*verts;
 } srfPoly_t;
@@ -750,7 +762,7 @@ BRUSH MODELS
 typedef struct msurface_s {
 	int					viewCount;		// if == tr.viewCount, already added
 	struct shader_s		*shader;
-	int					fogIndex;
+	int64_t				fogIndex;
 
 	surfaceType_t		*data;			// any of srf*_t
 } msurface_t;
@@ -924,9 +936,15 @@ the bits are allocated as follows:
 //2		: used to be clipped flag REMOVED - 03.21.00 rad
 0 - 1	: dlightmap index
 */
-#define	QSORT_SHADERNUM_SHIFT	21
-#define	QSORT_ENTITYNUM_SHIFT	11
+//#define	QSORT_SHADERNUM_SHIFT	21
+//#define	QSORT_ENTITYNUM_SHIFT	11
+//#define	QSORT_FOGNUM_SHIFT		2
 #define	QSORT_FOGNUM_SHIFT		2
+#define	QSORT_REFENTITYNUM_SHIFT	11
+#define	QSORT_SHADERNUM_SHIFT	(QSORT_REFENTITYNUM_SHIFT+REFENTITYNUM_BITS)
+#if (QSORT_SHADERNUM_SHIFT+SHADERNUM_BITS) > 64
+	#error "Need to update sorting, too many bits."
+#endif
 
 extern	int			gl_filter_min, gl_filter_max;
 
@@ -1032,6 +1050,23 @@ typedef struct {
 	image_t					*whiteImage;			// full of 0xff
 	image_t					*identityLightImage;	// full of tr.identityLightByte
 
+#ifdef JEDIACADEMY_GLOW
+	// Handle to the Glow Effect Vertex Shader. - AReis
+	GLuint					glowVShader;
+
+	// Handle to the Glow Effect Pixel Shader. - AReis
+	GLuint					glowPShader;
+
+	// Image the glowing objects are rendered to. - AReis
+	GLuint					screenGlow;
+
+	// A rectangular texture representing the normally rendered scene.
+	GLuint					sceneImage;
+
+	// Image used to downsample and blur scene to.	- AReis
+	GLuint					blurImage;
+#endif
+
 	shader_t				*defaultShader;
 	shader_t				*shadowShader;
 	shader_t				*projectionShadowShader;
@@ -1044,8 +1079,8 @@ typedef struct {
 
 	trRefEntity_t			*currentEntity;
 	trRefEntity_t			worldEntity;		// point currentEntity at this when rendering world
-	int						currentEntityNum;
-	int						shiftedEntityNum;	// currentEntityNum << QSORT_ENTITYNUM_SHIFT
+	int64_t					currentEntityNum;
+	int64_t					shiftedEntityNum;	// currentEntityNum << QSORT_ENTITYNUM_SHIFT
 	model_t					*currentModel;
 
 	viewParms_t				viewParms;
@@ -1133,6 +1168,9 @@ extern cvar_t	*r_texturebits;			// number of desired texture bits
 										// all else = error
 extern cvar_t	*r_texturebitslm;		// number of desired lightmap texture bits
 
+extern cvar_t	*r_multiSample;			// Number of multisample pixels
+extern cvar_t	*r_multiSampleNvidia;	// Enable special nvidia multisample modes
+
 extern cvar_t	*r_measureOverdraw;		// enables stencil buffer overdraw measurement
 
 extern cvar_t	*r_lodbias;				// push/pull LOD transitions
@@ -1191,6 +1229,16 @@ extern cvar_t	*r_ext_multitexture;
 extern cvar_t	*r_ext_compiled_vertex_array;
 extern cvar_t	*r_ext_texture_env_add;
 extern cvar_t	*r_ext_texture_filter_anisotropic;
+
+#ifdef JEDIACADEMY_GLOW
+extern cvar_t	*r_DynamicGlow;
+extern cvar_t	*r_DynamicGlowPasses;
+extern cvar_t	*r_DynamicGlowDelta;
+extern cvar_t	*r_DynamicGlowIntensity;
+extern cvar_t	*r_DynamicGlowSoft;
+extern cvar_t	*r_DynamicGlowWidth;
+extern cvar_t	*r_DynamicGlowHeight;
+#endif
 
 extern	cvar_t	*r_nobind;						// turns off binding to appropriate textures
 extern	cvar_t	*r_singleShader;				// make most world faces use default shader
@@ -1294,10 +1342,9 @@ void R_AddLightningBoltSurfaces( trRefEntity_t *e );
 
 void R_AddPolygonSurfaces( void );
 
-void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader, 
-					 int *fogNum, int *dlightMap );
+void R_DecomposeSort( uint64_t sort, int64_t *entityNum, shader_t **shader, int64_t *fogNum, int64_t *dlightMap );
 
-void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
+void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int64_t fogIndex, int64_t dlightMap );
 
 
 #define	CULL_IN		0		// completely unclipped
@@ -1838,7 +1885,8 @@ typedef enum {
 typedef struct {
 	drawSurf_t	drawSurfs[MAX_DRAWSURFS];
 	dlight_t	dlights[MAX_DLIGHTS];
-	trRefEntity_t	entities[MAX_ENTITIES];
+	//trRefEntity_t	entities[MAX_ENTITIES];
+	trRefEntity_t	entities[MAX_REFENTITIES];
 	trMiniRefEntity_t	miniEntities[MAX_MINI_ENTITIES];
 	srfPoly_t	*polys;//[MAX_POLYS];
 	polyVert_t	*polyVerts;//[MAX_POLYVERTS];

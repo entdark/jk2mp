@@ -78,7 +78,10 @@ void CG_LoadingClient( int clientNum ) {
 	}
 */
 	Q_strncpyz( personality, Info_ValueForKey( info, "n" ), sizeof(personality) );
-	Q_CleanStr( personality );
+	if (demo15detected && cg.ntModDetected)
+		Q_CleanStrNT( personality );
+	else
+		Q_CleanStr( personality );
 
 	/*
 	if( cgs.gametype == GT_SINGLE_PLAYER ) {
@@ -145,7 +148,10 @@ void CG_DrawInformation( void ) {
 	if ( !atoi( buf ) ) {
 		// server hostname
 		Q_strncpyz(buf, Info_ValueForKey( info, "sv_hostname" ), 1024);
-		Q_CleanStr(buf);
+		if (demo15detected && cg.ntModDetected)
+			Q_CleanStrNT(buf);
+		else
+			Q_CleanStr(buf);
 		UI_DrawProportionalString( 320, y, buf,
 			UI_CENTER|UI_INFOFONT|UI_DROPSHADOW, colorWhite );
 		y += iPropHeight;

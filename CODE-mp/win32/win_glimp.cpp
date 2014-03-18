@@ -24,6 +24,8 @@
 extern void WG_CheckHardwareGamma( void );
 extern void WG_RestoreGamma( void );
 
+static qboolean GLW_CreateWindow( int width, int height, int colorbits, qboolean cdsFullscreen );
+
 typedef enum {
 	RSERR_OK,
 
@@ -38,6 +40,10 @@ typedef enum {
 #define TRY_PFD_FAIL_HARD	2
 
 #define	WINDOW_CLASS_NAME	"Jedi Knight 2: Jedi Outcast MP"
+
+#ifndef MULTISAMPLE_FILTER_HINT_NV		
+#define	MULTISAMPLE_FILTER_HINT_NV                0x8534
+#endif
 
 static void		GLW_InitExtensions( void );
 static rserr_t	GLW_SetMode( int mode, 
@@ -60,6 +66,115 @@ glwstate_t glw_state;
 
 cvar_t	*r_allowSoftwareGL;		// don't abort out if the pixelformat claims software
 
+#ifdef JEDIACADEMY_GLOW
+// Whether the current hardware supports dynamic glows/flares.
+extern bool g_bDynamicGlowSupported;
+#endif
+
+static void GLW_ARB_InitExtensions( void ) {
+	const char *wglExtensions_;
+
+	if (!glw_state.hDC || !glw_state.hGLRC)
+		return; 
+
+	if ( qwglGetExtensionsStringARB )
+		return;
+
+	qwglGetExtensionsStringARB = (const char *( WINAPI *) (HDC))qwglGetProcAddress( "wglGetExtensionsStringARB" );
+	
+	if (qwglGetExtensionsStringARB) {
+		wglExtensions_ = qwglGetExtensionsStringARB( glw_state.hDC );
+	} else {
+		wglExtensions_ = "";
+	}
+
+	if (strstr( wglExtensions_, "WGL_ARB_pixel_format")) {
+		ri.Printf( PRINT_ALL, "...Found WGL_ARB_pixel_format extension\n");
+		qwglGetPixelFormatAttribivARB	= (BOOL (WINAPI *) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues))qwglGetProcAddress( "wglGetPixelFormatAttribivARB" );
+		qwglGetPixelFormatAttribfvARB	= (BOOL (WINAPI *) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues))qwglGetProcAddress( "wglGetPixelFormatAttribfvARB" );
+		qwglChoosePixelFormatARB		= (BOOL (WINAPI *) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats))qwglGetProcAddress( "wglChoosePixelFormatARB" );
+	}
+	if (strstr( wglExtensions_, "WGL_ARB_pbuffer")) {
+		ri.Printf( PRINT_ALL, "...Found WGL_ARB_pbuffer extension\n");
+		qwglCreatePbufferARB			= (HPBUFFERARB (WINAPI *) (HDC hDC, int iPixelFormat, int iWidth, int iHeight, const int *piAttribList))qwglGetProcAddress( "wglCreatePbufferARB" );
+		qwglGetPbufferDCARB				= (HDC (WINAPI *) (HPBUFFERARB hPbuffer))qwglGetProcAddress( "wglGetPbufferDCARB" );
+		qwglReleasePbufferDCARB			= (int (WINAPI *) (HPBUFFERARB hPbuffer, HDC hDC))qwglGetProcAddress( "wglReleasePbufferDCARB" );
+		qwglDestroyPbufferARB			= (BOOL (WINAPI *) (HPBUFFERARB hPbuffer))qwglGetProcAddress( "wglDestroyPbufferARB" );
+		qwglQueryPbufferARB				= (BOOL (WINAPI *) (HPBUFFERARB hPbuffer, int iAttribute, int *piValue))qwglGetProcAddress( "wglQueryPbufferARB" );
+	}
+}
+
+static int GLW_ChoosePixelFormatARB( int colorBits, int depthBits, int stencilBits, int samples, int pbuffer, int stereo ) {
+	int *iAttr;
+	int iAttribs[64];
+	int pixelformat;
+	unsigned int matching;
+
+	if (!qwglChoosePixelFormatARB)
+		return 0;
+	if (pbuffer && !qwglCreatePbufferARB)
+		return 0;
+
+	iAttr = iAttribs;
+	if (pbuffer) {
+			*iAttr++ = WGL_PIXEL_TYPE_ARB;
+			*iAttr++ = WGL_TYPE_RGBA_ARB;
+			*iAttr++ = WGL_DRAW_TO_PBUFFER_ARB;
+			*iAttr++ = TRUE;
+#if 0
+			*iAttr++ = WGL_BIND_TO_TEXTURE_RGB_ARB
+			*iAttr++ = TRUE;
+#endif
+			*iAttr++ = WGL_DOUBLE_BUFFER_ARB;
+			*iAttr++ = 0;
+	} else {
+		*iAttr++ = WGL_DRAW_TO_WINDOW_ARB;
+		*iAttr++ = GL_TRUE;
+		*iAttr++ = WGL_DOUBLE_BUFFER_ARB;
+		/* Don't bother with double buffering or multisampling with an active pbuffer */
+		if (glw_state.pbuf.hDC) {
+			samples = 0;
+			*iAttr++ = 0;
+		} else {
+			*iAttr++ = 1;
+		}
+	}
+	*iAttr++ = WGL_ACCELERATION_ARB;
+	*iAttr++ = WGL_FULL_ACCELERATION_ARB;
+	*iAttr++ = WGL_SUPPORT_OPENGL_ARB;
+	*iAttr++ = GL_TRUE;
+
+	*iAttr++ = WGL_COLOR_BITS_ARB;
+	*iAttr++ = colorBits;
+	*iAttr++ = WGL_DEPTH_BITS_ARB;
+	*iAttr++ = depthBits;
+	*iAttr++ = WGL_STENCIL_BITS_ARB;
+	*iAttr++ = stencilBits;
+	*iAttr++ = WGL_AUX_BUFFERS_ARB;
+	*iAttr++ = 0;
+
+	if ( stereo ) {
+		*iAttr++ = WGL_STEREO_ARB;
+		*iAttr++ = GL_TRUE;
+	}
+	if ( samples ) {
+		*iAttr++ = WGL_SAMPLE_BUFFERS_ARB;
+		*iAttr++ = 1;
+		*iAttr++ = WGL_SAMPLES_ARB;
+		*iAttr++ = samples;
+	}
+	*iAttr = 0;
+	qwglChoosePixelFormatARB( glw_state.hDC, iAttribs, 0, 1, &pixelformat, &matching);
+	if (!matching)
+		return 0;
+	else 
+		return pixelformat;
+}
+
+
+// Hack variable for deciding which kind of texture rectangle thing to do (for some
+// reason it acts different on radeon! It's against the spec!).
+bool g_bTextureRectangleHack = false;
 
 /*
 ** GLW_StartDriverAndSetMode
@@ -68,6 +183,74 @@ static qboolean GLW_StartDriverAndSetMode( int mode,
 										   int colorbits,
 										   qboolean cdsFullscreen )
 {
+	if (!qwglGetExtensionsStringARB && ( r_multiSample->integer || ( mme_renderWidth->integer && mme_renderHeight->integer )) ) {
+		if (GLW_CreateWindow( 320, 200, 0, qfalse )) {
+			GLW_ARB_InitExtensions( ) ;
+		}
+	}
+	
+	/* If offscreen rendering has been enabled, skip the normal opengl window setup */
+	if (mme_renderWidth->integer > 0 && mme_renderHeight->integer > 0) {
+		int pbufferList[] = {	
+			WGL_TEXTURE_FORMAT_ARB, WGL_TEXTURE_RGB_ARB,
+			WGL_TEXTURE_TARGET_ARB, WGL_TEXTURE_2D_ARB,
+			WGL_MIPMAP_TEXTURE_ARB,	0,
+			0 };
+
+
+		GLint	pixelFormat;
+		int		width, height, samples;
+		int attrib = WGL_SAMPLES_ARB;
+
+chooseAgain:
+		pixelFormat = GLW_ChoosePixelFormatARB( 32, 24, 8, r_multiSample->integer, 1, 0);
+
+		if (!pixelFormat) {
+			if ( r_multiSample->integer ) {
+				ri.Printf( PRINT_ALL, "Can't create pbuffer pixelformat, trying without multisampling\n" );
+				ri.Cvar_Set( "r_multiSample", "0" );
+				goto chooseAgain;
+			} else {
+				ri.Printf( PRINT_ALL, "Can't create pbuffer pixelformat, skipping pbuffer\n" );
+				goto skip_pbuffer;
+			}
+		}
+
+		width = mme_renderWidth->integer;
+		height = mme_renderHeight->integer;
+
+		glw_state.pbuf.buffer = qwglCreatePbufferARB( glw_state.hDC, pixelFormat, width, height, NULL /* pbufferList */ );
+		if (!glw_state.pbuf.buffer) {
+			int error = GetLastError();
+			goto skip_pbuffer;
+		}
+
+		qwglGetPixelFormatAttribivARB( glw_state.hDC, pixelFormat, 0, 1, &attrib, &samples );
+
+		glw_state.pbuf.hDC = qwglGetPbufferDCARB( glw_state.pbuf.buffer );
+		if(!glw_state.pbuf.hDC)
+			goto skip_pbuffer;
+
+		glw_state.pbuf.hGLRC = qwglCreateContext( glw_state.pbuf.hDC );
+		if(!glw_state.pbuf.hGLRC )
+			goto skip_pbuffer;
+			
+		qwglShareLists( glw_state.hGLRC, glw_state.pbuf.hGLRC );
+		//Get the actual pBuffer dimensions
+		qwglQueryPbufferARB( glw_state.pbuf.buffer, WGL_PBUFFER_WIDTH_ARB, &width);
+		qwglQueryPbufferARB( glw_state.pbuf.buffer, WGL_PBUFFER_HEIGHT_ARB, &height);
+
+		ri.Printf(PRINT_ALL, "Pbuffer Created: (%d x %d) samples %d format %d\n", width, height, samples, pixelFormat );
+		glConfig.vidWidth = width;
+		glConfig.vidHeight = height;
+		qwglMakeCurrent( glw_state.pbuf.hDC, glw_state.pbuf.hGLRC );
+//		glConfig.windowAspect = 1;
+		/* Always force on the console with pbuffer drawing */
+//		Sys_ShowConsole( 1, qfalse );
+		return qtrue;
+	}
+skip_pbuffer:
+
 	rserr_t err;
 
 	err = GLW_SetMode( mode, colorbits, cdsFullscreen );
@@ -330,6 +513,36 @@ static void GLW_CreatePFD( PIXELFORMATDESCRIPTOR *pPFD, int colorbits, int depth
 static int GLW_MakeContext( PIXELFORMATDESCRIPTOR *pPFD )
 {
 	int pixelformat;
+	PIXELFORMATDESCRIPTOR tempPFD;
+
+
+	pixelformat = GLW_ChoosePixelFormatARB( 
+		pPFD->cColorBits, pPFD->cDepthBits, pPFD->cStencilBits, r_multiSample->integer, 0, (pPFD->dwFlags & PFD_STEREO));
+
+	if ( pixelformat ) {
+		int samples;
+		int attrib = WGL_SAMPLES_ARB;
+
+		qwglGetPixelFormatAttribivARB( glw_state.hDC, pixelformat, 0, 1, &attrib, &samples );
+		DescribePixelFormat( glw_state.hDC, pixelformat, sizeof( tempPFD ), &tempPFD );
+
+		if (!SetPixelFormat( glw_state.hDC, pixelformat, &tempPFD )) {
+			ri.Printf( PRINT_ALL, "...SetPixelFormat %d with %d multisampling failed, falling back\n", pixelformat, samples );
+			ri.Printf( PRINT_ALL, "Error code %d\n", GetLastError());
+			glw_state.pixelFormatSet = qfalse;
+		} else {
+			ri.Printf( PRINT_ALL, "...PixelFormat %d with %d multisampling selected\n", pixelformat, samples );
+			*pPFD = tempPFD;
+			glw_state.pixelFormatSet = qtrue;
+			if ( samples && r_multiSampleNvidia->integer && !strstr( glConfig.extensions_string, "GL_NV_multisample_filter_hint") ) {
+				qglHint( MULTISAMPLE_FILTER_HINT_NV, GL_NICEST );
+				ri.Printf( PRINT_ALL, "...Nvidia enhanced multisampling enabled\n", pixelformat, samples );
+			} else {
+				qglHint( MULTISAMPLE_FILTER_HINT_NV, GL_DONT_CARE );
+			}
+		}
+	}
+
 
 	//
 	// don't putz around with pixelformat if it's already set (e.g. this is a soft
@@ -369,7 +582,11 @@ static int GLW_MakeContext( PIXELFORMATDESCRIPTOR *pPFD )
 		if ( ( glw_state.hGLRC = qwglCreateContext( glw_state.hDC ) ) == 0 )
 		{
 			ri.Printf (PRINT_ALL, "failed\n");
-
+			if (r_multiSample->integer) {
+				Com_Printf( "...Trying again without multisampling\n" );
+				ri.Cvar_Set( "r_multiSample", "0" );
+				return TRY_PFD_FAIL_SOFT;
+			}
 			return TRY_PFD_FAIL_HARD;
 		}
 		ri.Printf( PRINT_ALL, "succeeded\n" );
@@ -576,7 +793,7 @@ static qboolean GLW_CreateWindow( int width, int height, int colorbits, qboolean
 
 		if ( cdsFullscreen )
 		{
-			exstyle = WS_EX_TOPMOST;
+			exstyle = 0;//WS_EX_TOPMOST;
 			stylebits = WS_SYSMENU|WS_POPUP|WS_VISIBLE;	//sysmenu gives you the icon
 		}
 		else
@@ -948,6 +1165,18 @@ bool GL_CheckForExtension(const char *ext)
 	return(false);
 }
 
+static const char *wglExtensions = NULL;
+
+/* WGL version of the above, ASSUMES wglExtensions is non-null */
+bool WGL_CheckForExtension(const char *ext)
+{
+	const char *ptr = Q_stristr( wglExtensions, ext );
+	if (ptr == NULL)
+		return false;
+	ptr += strlen(ext);
+	return ((*ptr == ' ') || (*ptr == '\0'));  // verify it's complete string.
+}
+
 //--------------------------------------------
 static void GLW_InitTextureCompression( void )
 {
@@ -1065,6 +1294,10 @@ static void GLW_InitExtensions( void )
 	if ( !r_allowExtensions->integer )
 	{
 		ri.Printf( PRINT_ALL, "*** IGNORING OPENGL EXTENSIONS ***\n" );
+#ifdef JEDIACADEMY_GLOW
+		g_bDynamicGlowSupported = false;
+		ri.Cvar_Set( "r_DynamicGlow","0" );
+#endif
 		return;
 	}
 
@@ -1223,6 +1456,245 @@ static void GLW_InitExtensions( void )
 	{
 		ri.Printf( PRINT_ALL, "...GL_EXT_point_parameters not found\n" );
 	}
+
+	typedef const char * (WINAPI * PFNWGLGETEXTENSIONSSTRINGARBPROC) (HDC hdc);
+	PFNWGLGETEXTENSIONSSTRINGARBPROC			qwglGetExtensionsStringARB;
+	qwglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC) qwglGetProcAddress("wglGetExtensionsStringARB");
+
+#ifdef JEDIACADEMY_GLOW
+	bool bNVRegisterCombiners = false;
+	// Register Combiners.
+	if ( GL_CheckForExtension( "GL_NV_register_combiners" ) )
+	{
+		// NOTE: This extension requires multitexture support (over 2 units).
+		if ( glConfig.maxActiveTextures >= 2 )
+		{
+			bNVRegisterCombiners = true;
+			// Register Combiners function pointer address load.	- AReis
+			// NOTE: VV guys will _definetly_ not be able to use regcoms. Pixel Shaders are just as good though :-)
+			// NOTE: Also, this is an nVidia specific extension (of course), so fragment shaders would serve the same purpose
+			// if we needed some kind of fragment/pixel manipulation support.
+			qglCombinerParameterfvNV = ( PFNGLCOMBINERPARAMETERFVNV ) qwglGetProcAddress( "glCombinerParameterfvNV" );
+			qglCombinerParameterivNV = ( PFNGLCOMBINERPARAMETERIVNV ) qwglGetProcAddress( "glCombinerParameterivNV" );
+			qglCombinerParameterfNV = ( PFNGLCOMBINERPARAMETERFNV ) qwglGetProcAddress( "glCombinerParameterfNV" );
+			qglCombinerParameteriNV = ( PFNGLCOMBINERPARAMETERINV ) qwglGetProcAddress( "glCombinerParameteriNV" );
+			qglCombinerInputNV = ( PFNGLCOMBINERINPUTNV ) qwglGetProcAddress( "glCombinerInputNV" );
+			qglCombinerOutputNV = ( PFNGLCOMBINEROUTPUTNV ) qwglGetProcAddress( "glCombinerOutputNV" );
+			qglFinalCombinerInputNV = ( PFNGLFINALCOMBINERINPUTNV ) qwglGetProcAddress( "glFinalCombinerInputNV" );
+			qglGetCombinerInputParameterfvNV	= ( PFNGLGETCOMBINERINPUTPARAMETERFVNV ) qwglGetProcAddress( "glGetCombinerInputParameterfvNV" );
+			qglGetCombinerInputParameterivNV	= ( PFNGLGETCOMBINERINPUTPARAMETERIVNV ) qwglGetProcAddress( "glGetCombinerInputParameterivNV" );
+			qglGetCombinerOutputParameterfvNV = ( PFNGLGETCOMBINEROUTPUTPARAMETERFVNV ) qwglGetProcAddress( "glGetCombinerOutputParameterfvNV" );
+			qglGetCombinerOutputParameterivNV = ( PFNGLGETCOMBINEROUTPUTPARAMETERIVNV ) qwglGetProcAddress( "glGetCombinerOutputParameterivNV" );
+			qglGetFinalCombinerInputParameterfvNV = ( PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV ) qwglGetProcAddress( "glGetFinalCombinerInputParameterfvNV" );
+			qglGetFinalCombinerInputParameterivNV = ( PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV ) qwglGetProcAddress( "glGetFinalCombinerInputParameterivNV" );
+
+			// Validate the functions we need.
+			if ( !qglCombinerParameterfvNV || !qglCombinerParameterivNV || !qglCombinerParameterfNV || !qglCombinerParameteriNV || !qglCombinerInputNV ||
+				 !qglCombinerOutputNV || !qglFinalCombinerInputNV || !qglGetCombinerInputParameterfvNV || !qglGetCombinerInputParameterivNV ||
+				 !qglGetCombinerOutputParameterfvNV || !qglGetCombinerOutputParameterivNV || !qglGetFinalCombinerInputParameterfvNV || !qglGetFinalCombinerInputParameterivNV )
+			{
+				bNVRegisterCombiners = false;
+				qglCombinerParameterfvNV = NULL;
+				qglCombinerParameteriNV = NULL;
+				Com_Printf ("...GL_NV_register_combiners failed\n" );
+			}
+		}
+		else
+		{
+			bNVRegisterCombiners = false;
+			Com_Printf ("...ignoring GL_NV_register_combiners\n" );
+		}
+	}
+	else
+	{
+		bNVRegisterCombiners = false;
+		Com_Printf ("...GL_NV_register_combiners not found\n" );
+	}
+
+	// NOTE: Vertex and Fragment Programs are very dependant on each other - this is actually a
+	// good thing! So, just check to see which we support (one or the other) and load the shared
+	// function pointers. ARB rocks!
+
+	// Vertex Programs.
+	bool bARBVertexProgram = false;
+	if ( GL_CheckForExtension( "GL_ARB_vertex_program" ) )
+	{
+		bARBVertexProgram = true;
+	}
+	else
+	{
+		bARBVertexProgram = false;
+		Com_Printf ("...GL_ARB_vertex_program not found\n" );
+	}
+
+	// Fragment Programs.
+	bool bARBFragmentProgram = false;
+	if ( GL_CheckForExtension( "GL_ARB_fragment_program" ) )
+	{
+		bARBFragmentProgram = true;
+	}
+	else
+	{
+		bARBFragmentProgram = false;
+		Com_Printf ("...GL_ARB_fragment_program not found\n" );
+	}
+
+	// If we support one or the other, load the shared function pointers.
+	if ( bARBVertexProgram || bARBFragmentProgram )
+	{
+		qglProgramStringARB					= (PFNGLPROGRAMSTRINGARBPROC)  qwglGetProcAddress("glProgramStringARB");
+		qglBindProgramARB					= (PFNGLBINDPROGRAMARBPROC)    qwglGetProcAddress("glBindProgramARB");
+		qglDeleteProgramsARB				= (PFNGLDELETEPROGRAMSARBPROC) qwglGetProcAddress("glDeleteProgramsARB");
+		qglGenProgramsARB					= (PFNGLGENPROGRAMSARBPROC)    qwglGetProcAddress("glGenProgramsARB");
+		qglProgramEnvParameter4dARB			= (PFNGLPROGRAMENVPARAMETER4DARBPROC)    qwglGetProcAddress("glProgramEnvParameter4dARB");
+		qglProgramEnvParameter4dvARB		= (PFNGLPROGRAMENVPARAMETER4DVARBPROC)   qwglGetProcAddress("glProgramEnvParameter4dvARB");
+		qglProgramEnvParameter4fARB			= (PFNGLPROGRAMENVPARAMETER4FARBPROC)    qwglGetProcAddress("glProgramEnvParameter4fARB");
+		qglProgramEnvParameter4fvARB		= (PFNGLPROGRAMENVPARAMETER4FVARBPROC)   qwglGetProcAddress("glProgramEnvParameter4fvARB");
+		qglProgramLocalParameter4dARB		= (PFNGLPROGRAMLOCALPARAMETER4DARBPROC)  qwglGetProcAddress("glProgramLocalParameter4dARB");
+		qglProgramLocalParameter4dvARB		= (PFNGLPROGRAMLOCALPARAMETER4DVARBPROC) qwglGetProcAddress("glProgramLocalParameter4dvARB");
+		qglProgramLocalParameter4fARB		= (PFNGLPROGRAMLOCALPARAMETER4FARBPROC)  qwglGetProcAddress("glProgramLocalParameter4fARB");
+		qglProgramLocalParameter4fvARB		= (PFNGLPROGRAMLOCALPARAMETER4FVARBPROC) qwglGetProcAddress("glProgramLocalParameter4fvARB");
+		qglGetProgramEnvParameterdvARB		= (PFNGLGETPROGRAMENVPARAMETERDVARBPROC) qwglGetProcAddress("glGetProgramEnvParameterdvARB");
+		qglGetProgramEnvParameterfvARB		= (PFNGLGETPROGRAMENVPARAMETERFVARBPROC) qwglGetProcAddress("glGetProgramEnvParameterfvARB");
+		qglGetProgramLocalParameterdvARB	= (PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC) qwglGetProcAddress("glGetProgramLocalParameterdvARB");
+		qglGetProgramLocalParameterfvARB	= (PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC) qwglGetProcAddress("glGetProgramLocalParameterfvARB");
+		qglGetProgramivARB					= (PFNGLGETPROGRAMIVARBPROC)     qwglGetProcAddress("glGetProgramivARB");
+		qglGetProgramStringARB				= (PFNGLGETPROGRAMSTRINGARBPROC) qwglGetProcAddress("glGetProgramStringARB");
+		qglIsProgramARB						= (PFNGLISPROGRAMARBPROC)        qwglGetProcAddress("glIsProgramARB");
+
+		// Validate the functions we need.
+		if ( !qglProgramStringARB || !qglBindProgramARB || !qglDeleteProgramsARB || !qglGenProgramsARB ||
+			 !qglProgramEnvParameter4dARB || !qglProgramEnvParameter4dvARB || !qglProgramEnvParameter4fARB ||
+             !qglProgramEnvParameter4fvARB || !qglProgramLocalParameter4dARB || !qglProgramLocalParameter4dvARB ||
+             !qglProgramLocalParameter4fARB || !qglProgramLocalParameter4fvARB || !qglGetProgramEnvParameterdvARB ||
+             !qglGetProgramEnvParameterfvARB || !qglGetProgramLocalParameterdvARB || !qglGetProgramLocalParameterfvARB ||
+             !qglGetProgramivARB || !qglGetProgramStringARB || !qglIsProgramARB )
+		{
+			bARBVertexProgram = false;
+			bARBFragmentProgram = false;
+			qglGenProgramsARB = NULL;	//clear ptrs that get checked
+			qglProgramEnvParameter4fARB = NULL;
+			Com_Printf ("...ignoring GL_ARB_vertex_program\n" );
+			Com_Printf ("...ignoring GL_ARB_fragment_program\n" );
+		}
+	}
+
+	// Figure out which texture rectangle extension to use.
+	bool bTexRectSupported = false;
+	if ( Q_stricmpn( glConfig.vendor_string, "ATI Technologies",16 )==0
+		&& Q_stricmpn( glConfig.version_string, "1.3.3",5 )==0 
+		&& glConfig.version_string[5] < '9' ) //1.3.34 and 1.3.37 and 1.3.38 are broken for sure, 1.3.39 is not
+	{
+		g_bTextureRectangleHack = true;
+	}
+
+	if ( GL_CheckForExtension( "GL_NV_texture_rectangle" ) || GL_CheckForExtension( "GL_EXT_texture_rectangle" ) )
+	{
+		bTexRectSupported = true;
+	}
+
+	bool bHasPixelFormat = false;
+	bool bHasRenderTexture = false;
+
+	// Get the WGL extensions string.
+	if ( qwglGetExtensionsStringARB )
+	{
+		wglExtensions = qwglGetExtensionsStringARB( glw_state.hDC );
+	}
+
+	// This externsion is used to get the wgl extension string.
+	if ( wglExtensions )
+	{
+		// Pixel Format.
+		if ( WGL_CheckForExtension( "WGL_ARB_pixel_format" ) )
+		{
+			qwglGetPixelFormatAttribivARB			=	(PFNWGLGETPIXELFORMATATTRIBIVARBPROC) qwglGetProcAddress("wglGetPixelFormatAttribivARB");
+			qwglGetPixelFormatAttribfvARB			=	(PFNWGLGETPIXELFORMATATTRIBFVARBPROC) qwglGetProcAddress("wglGetPixelFormatAttribfvARB");
+			qwglChoosePixelFormatARB				=	(PFNWGLCHOOSEPIXELFORMATARBPROC) qwglGetProcAddress("wglChoosePixelFormatARB");
+	
+			// Validate the functions we need.
+			if ( !qwglGetPixelFormatAttribivARB || !qwglGetPixelFormatAttribfvARB || !qwglChoosePixelFormatARB )
+			{
+				Com_Printf ("...ignoring WGL_ARB_pixel_format\n" );
+			}
+			else
+			{
+				bHasPixelFormat = true;
+			}
+		}
+		else
+		{
+			Com_Printf ("...ignoring WGL_ARB_pixel_format\n" );
+		}
+
+		// Offscreen pixel-buffer.
+		// NOTE: VV guys can use the equivelant SetRenderTarget() with the correct texture surfaces.
+		bool bWGLARBPbuffer = false;
+		if ( WGL_CheckForExtension( "WGL_ARB_pbuffer" ) && bHasPixelFormat )
+		{
+			bWGLARBPbuffer = true;
+			qwglCreatePbufferARB		=	(PFNWGLCREATEPBUFFERARBPROC) qwglGetProcAddress("wglCreatePbufferARB");
+			qwglGetPbufferDCARB			=	(HDC (WINAPI *) (HPBUFFERARB hPbuffer)) qwglGetProcAddress("wglGetPbufferDCARB");
+			qwglReleasePbufferDCARB		=	(int (WINAPI *) (HPBUFFERARB hPbuffer, HDC hDC)) qwglGetProcAddress("wglReleasePbufferDCARB");
+			qwglDestroyPbufferARB		=	(BOOL (WINAPI *) (HPBUFFERARB hPbuffer)) qwglGetProcAddress("wglDestroyPbufferARB");
+			qwglQueryPbufferARB			=	(BOOL (WINAPI *) (HPBUFFERARB hPbuffer, int iAttribute, int *piValue)) qwglGetProcAddress("wglQueryPbufferARB");
+	
+			// Validate the functions we need.
+			if ( !qwglCreatePbufferARB || !qwglGetPbufferDCARB || !qwglReleasePbufferDCARB || !qwglDestroyPbufferARB || !qwglQueryPbufferARB )
+			{
+				bWGLARBPbuffer = false;
+				Com_Printf ("...WGL_ARB_pbuffer failed\n" );
+			}
+		}
+		else
+		{
+			bWGLARBPbuffer = false;
+			Com_Printf ("...WGL_ARB_pbuffer not found\n" );
+		}
+
+		// Render-Texture (requires pbuffer ext (and it's dependancies of course).
+		if ( WGL_CheckForExtension( "WGL_ARB_render_texture" ) && bWGLARBPbuffer )
+		{
+			qwglBindTexImageARB			=	(PFNWGLBINDTEXIMAGEARBPROC) qwglGetProcAddress("wglBindTexImageARB");
+			qwglReleaseTexImageARB		=	(PFNWGLRELEASETEXIMAGEARBPROC) qwglGetProcAddress("wglReleaseTexImageARB");
+			qwglSetPbufferAttribARB		=	(PFNWGLSETPBUFFERATTRIBARBPROC) qwglGetProcAddress("wglSetPbufferAttribARB");
+	
+			// Validate the functions we need.
+			if ( !qwglCreatePbufferARB || !qwglGetPbufferDCARB || !qwglReleasePbufferDCARB || !qwglDestroyPbufferARB || !qwglQueryPbufferARB )
+			{
+				Com_Printf ("...ignoring WGL_ARB_render_texture\n" );
+			}
+			else
+			{
+				bHasRenderTexture = true;
+			}
+		}
+		else
+		{
+			Com_Printf ("...ignoring WGL_ARB_render_texture\n" );
+		}
+	}
+
+	// Find out how many general combiners they have.
+	#define GL_MAX_GENERAL_COMBINERS_NV       0x854D
+	GLint iNumGeneralCombiners = 0;
+	if(bNVRegisterCombiners)
+		qglGetIntegerv( GL_MAX_GENERAL_COMBINERS_NV, &iNumGeneralCombiners );
+
+	// Only allow dynamic glows/flares if they have the hardware
+	if ( bTexRectSupported && bARBVertexProgram && bHasRenderTexture && qglActiveTextureARB && glConfig.maxActiveTextures >= 4 &&
+		( ( bNVRegisterCombiners && iNumGeneralCombiners >= 2 ) || bARBFragmentProgram ) )
+	{
+		g_bDynamicGlowSupported = true;
+		// this would overwrite any achived setting gwg
+		// ri.Cvar_Set( "r_DynamicGlow", "1" );
+	}
+	else
+	{
+		g_bDynamicGlowSupported = false;
+		ri.Cvar_Set( "r_DynamicGlow","0" );
+	}
+#endif
 }
 
 /*
@@ -1506,6 +1978,26 @@ void GLimp_Shutdown( void )
 
 		ri.Printf( PRINT_ALL, "...wglMakeCurrent( NULL, NULL ): %s\n", success[retVal] );
 	}
+
+
+	if ( glw_state.pbuf.hGLRC )
+	{
+		retVal = qwglDeleteContext( glw_state.pbuf.hGLRC ) != 0;
+		glw_state.pbuf.hGLRC = NULL;
+	}
+
+	if ( glw_state.pbuf.hDC )
+	{
+		retVal = qwglReleasePbufferDCARB( glw_state.pbuf.buffer, glw_state.pbuf.hDC ) != 0;
+		glw_state.pbuf.hDC = NULL;
+	}
+
+	if ( glw_state.pbuf.buffer )
+	{
+		retVal = qwglDestroyPbufferARB( glw_state.pbuf.buffer ) != 0;
+		glw_state.pbuf.buffer = NULL;
+	}
+
 
 	// delete HGLRC
 	if ( glw_state.hGLRC )

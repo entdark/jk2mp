@@ -700,7 +700,7 @@ be moving and rotating.
 Returns qtrue if it should be mirrored
 =================
 */
-qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum, 
+qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int64_t entityNum, 
 							 orientation_t *surface, orientation_t *camera,
 							 vec3_t pvsOrigin, qboolean *mirror ) {
 	int			i;
@@ -713,7 +713,8 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != ENTITYNUM_WORLD ) {
+//	if ( entityNum != ENTITYNUM_WORLD ) {
+	if ( entityNum != REFENTITYNUM_WORLD ) {
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];
 
@@ -819,7 +820,7 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	return qfalse;
 }
 
-static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
+static qboolean IsMirror( const drawSurf_t *drawSurf, int64_t entityNum )
 {
 	int			i;
 	cplane_t	originalPlane, plane;
@@ -830,7 +831,8 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != ENTITYNUM_WORLD ) 
+//	if ( entityNum != ENTITYNUM_WORLD ) 
+	if ( entityNum != REFENTITYNUM_WORLD ) 
 	{
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];
@@ -886,11 +888,11 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 */
 static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128] ) {
 	float shortest = 100000000;
-	int entityNum;
+	int64_t entityNum;
 	int numTriangles;
 	shader_t *shader;
-	int		fogNum;
-	int dlighted;
+	int64_t	fogNum;
+	int64_t dlighted;
 	vec4_t clip, eye;
 	int i;
 	unsigned int pointOr = 0;
@@ -988,7 +990,7 @@ R_MirrorViewBySurface
 Returns qtrue if another view has been rendered
 ========================
 */
-qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum) {
+qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int64_t entityNum) {
 	vec4_t			clipDest[128];
 	viewParms_t		newParms;
 	viewParms_t		oldParms;
@@ -1272,6 +1274,74 @@ recurse:
 }
 
 
+/*
+==========================================================================================
+
+DRAWSURF SORTING
+
+==========================================================================================
+*/
+
+/*
+===============
+R_Radix
+===============
+*/
+static ID_INLINE void R_Radix( int byte, int size, drawSurf_t *source, drawSurf_t *dest )
+{
+  int           count[ 256 ] = { 0 };
+  int           index[ 256 ];
+  int           i;
+  unsigned char *sortKey = NULL;
+  unsigned char *end = NULL;
+
+  sortKey = ( (unsigned char *)&source[ 0 ].sort ) + byte;
+  end = sortKey + ( size * sizeof( drawSurf_t ) );
+  for( ; sortKey < end; sortKey += sizeof( drawSurf_t ) )
+    ++count[ *sortKey ];
+
+  index[ 0 ] = 0;
+
+  for( i = 1; i < 256; ++i )
+    index[ i ] = index[ i - 1 ] + count[ i - 1 ];
+
+  sortKey = ( (unsigned char *)&source[ 0 ].sort ) + byte;
+  for( i = 0; i < size; ++i, sortKey += sizeof( drawSurf_t ) )
+    dest[ index[ *sortKey ]++ ] = source[ i ];
+}
+
+/*
+===============
+R_RadixSort
+
+Radix sort with 4 byte size buckets
+===============
+*/
+static void R_RadixSort( drawSurf_t *source, int size )
+{
+  static drawSurf_t scratch[ MAX_DRAWSURFS ];
+#ifdef WIN32	//little endian
+  R_Radix( 0, size, source, scratch );
+  R_Radix( 1, size, scratch, source );
+  R_Radix( 2, size, source, scratch );
+  R_Radix( 3, size, scratch, source );
+  R_Radix( 4, size, source, scratch );
+  R_Radix( 5, size, scratch, source );
+  R_Radix( 6, size, source, scratch );
+  R_Radix( 7, size, scratch, source );
+#else			//big endian
+  R_Radix( 7, size, source, scratch );
+  R_Radix( 6, size, scratch, source );
+  R_Radix( 5, size, source, scratch );
+  R_Radix( 4, size, scratch, source );
+  R_Radix( 3, size, source, scratch );
+  R_Radix( 2, size, scratch, source );
+  R_Radix( 1, size, source, scratch );
+  R_Radix( 0, size, scratch, source );
+#endif //WIN32
+}
+
+
 //==========================================================================================
 
 /*
@@ -1280,7 +1350,7 @@ R_AddDrawSurf
 =================
 */
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, 
-				   int fogIndex, int dlightMap ) {
+				   int64_t fogIndex, int64_t dlightMap ) {
 	int			index;
 
 	// instead of checking for overflow, we just mask the index
@@ -1289,7 +1359,7 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader,
 	// the sort data is packed into a single 32 bit value so it can be
 	// compared quickly during the qsorting process
 	tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) 
-		| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | (int)dlightMap;
+		| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | (int64_t)dlightMap;
 	tr.refdef.drawSurfs[index].surface = surface;
 	tr.refdef.numDrawSurfs++;
 }
@@ -1299,11 +1369,12 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader,
 R_DecomposeSort
 =================
 */
-void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader, 
-					 int *fogNum, int *dlightMap ) {
+void R_DecomposeSort( uint64_t sort, int64_t *entityNum, shader_t **shader, 
+					 int64_t *fogNum, int64_t *dlightMap ) {
 	*fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
 	*shader = tr.sortedShaders[ ( sort >> QSORT_SHADERNUM_SHIFT ) & (MAX_SHADERS-1) ];
-	*entityNum = ( sort >> QSORT_ENTITYNUM_SHIFT ) & 1023;
+//	*entityNum = ( sort >> QSORT_ENTITYNUM_SHIFT ) & 1023;
+	*entityNum = ( sort >> QSORT_REFENTITYNUM_SHIFT ) & REFENTITYNUM_MASK;
 	*dlightMap = sort & 3;
 }
 
@@ -1314,9 +1385,9 @@ R_SortDrawSurfs
 */
 void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	shader_t		*shader;
-	int				fogNum;
-	int				entityNum;
-	int				dlighted;
+	int64_t			fogNum;
+	int64_t			entityNum;
+	int64_t			dlighted;
 	int				i;
 
 	// it is possible for some views to not have any surfaces
@@ -1334,7 +1405,8 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	}
 
 	// sort the drawsurfs by sort type, then orientation, then shader
-	qsortFast (drawSurfs, numDrawSurfs, sizeof(drawSurf_t) );
+	//qsortFast (drawSurfs, numDrawSurfs, sizeof(drawSurf_t) );
+	R_RadixSort( drawSurfs, numDrawSurfs ); //from jedi academy
 
 	// check for any pass through drawing, which
 	// may cause another view to be rendered first
@@ -1384,7 +1456,8 @@ void R_AddEntitySurfaces (void) {
 		ent->needDlights = qfalse;
 
 		// preshift the value we are going to OR into the drawsurf sort
-		tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
+		//tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
+		tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 		//
 		// the weapon model must be handled special --

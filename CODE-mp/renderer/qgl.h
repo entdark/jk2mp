@@ -53,6 +53,93 @@
 #endif
 
 
+#ifndef WGL_ARB_multisample
+#define WGL_SAMPLE_BUFFERS_ARB         0x2041
+#define WGL_SAMPLES_ARB                0x2042
+#endif
+
+#ifndef WGL_ARB_pixel_format
+#define WGL_NUMBER_PIXEL_FORMATS_ARB   0x2000
+#define WGL_DRAW_TO_WINDOW_ARB         0x2001
+#define WGL_DRAW_TO_BITMAP_ARB         0x2002
+#define WGL_ACCELERATION_ARB           0x2003
+#define WGL_NEED_PALETTE_ARB           0x2004
+#define WGL_NEED_SYSTEM_PALETTE_ARB    0x2005
+#define WGL_SWAP_LAYER_BUFFERS_ARB     0x2006
+#define WGL_SWAP_METHOD_ARB            0x2007
+#define WGL_NUMBER_OVERLAYS_ARB        0x2008
+#define WGL_NUMBER_UNDERLAYS_ARB       0x2009
+#define WGL_TRANSPARENT_ARB            0x200A
+#define WGL_TRANSPARENT_RED_VALUE_ARB  0x2037
+#define WGL_TRANSPARENT_GREEN_VALUE_ARB 0x2038
+#define WGL_TRANSPARENT_BLUE_VALUE_ARB 0x2039
+#define WGL_TRANSPARENT_ALPHA_VALUE_ARB 0x203A
+#define WGL_TRANSPARENT_INDEX_VALUE_ARB 0x203B
+#define WGL_SHARE_DEPTH_ARB            0x200C
+#define WGL_SHARE_STENCIL_ARB          0x200D
+#define WGL_SHARE_ACCUM_ARB            0x200E
+#define WGL_SUPPORT_GDI_ARB            0x200F
+#define WGL_SUPPORT_OPENGL_ARB         0x2010
+#define WGL_DOUBLE_BUFFER_ARB          0x2011
+#define WGL_STEREO_ARB                 0x2012
+#define WGL_PIXEL_TYPE_ARB             0x2013
+#define WGL_COLOR_BITS_ARB             0x2014
+#define WGL_RED_BITS_ARB               0x2015
+#define WGL_RED_SHIFT_ARB              0x2016
+#define WGL_GREEN_BITS_ARB             0x2017
+#define WGL_GREEN_SHIFT_ARB            0x2018
+#define WGL_BLUE_BITS_ARB              0x2019
+#define WGL_BLUE_SHIFT_ARB             0x201A
+#define WGL_ALPHA_BITS_ARB             0x201B
+#define WGL_ALPHA_SHIFT_ARB            0x201C
+#define WGL_ACCUM_BITS_ARB             0x201D
+#define WGL_ACCUM_RED_BITS_ARB         0x201E
+#define WGL_ACCUM_GREEN_BITS_ARB       0x201F
+#define WGL_ACCUM_BLUE_BITS_ARB        0x2020
+#define WGL_ACCUM_ALPHA_BITS_ARB       0x2021
+#define WGL_DEPTH_BITS_ARB             0x2022
+#define WGL_STENCIL_BITS_ARB           0x2023
+#define WGL_AUX_BUFFERS_ARB            0x2024
+#define WGL_NO_ACCELERATION_ARB        0x2025
+#define WGL_GENERIC_ACCELERATION_ARB   0x2026
+#define WGL_FULL_ACCELERATION_ARB      0x2027
+#define WGL_SWAP_EXCHANGE_ARB          0x2028
+#define WGL_SWAP_COPY_ARB              0x2029
+#define WGL_SWAP_UNDEFINED_ARB         0x202A
+#define WGL_TYPE_RGBA_ARB              0x202B
+#define WGL_TYPE_COLORINDEX_ARB        0x202C
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Pixel Buffer extension definitions. - AReis
+/***********************************************************************************************************/
+//DECLARE_HANDLE(HPBUFFERARB);
+
+#define WGL_SUPPORT_OPENGL_ARB         0x2010
+#define WGL_DOUBLE_BUFFER_ARB          0x2011
+#define WGL_DRAW_TO_PBUFFER_ARB        0x202D
+#define WGL_PBUFFER_WIDTH_ARB          0x2034
+#define WGL_PBUFFER_HEIGHT_ARB         0x2035
+#define WGL_RED_BITS_ARB               0x2015
+#define WGL_GREEN_BITS_ARB             0x2017
+#define WGL_BLUE_BITS_ARB              0x2019
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Render-Texture extension definitions. - AReis
+/***********************************************************************************************************/
+#define WGL_BIND_TO_TEXTURE_RGBA_ARB       0x2071
+#define WGL_TEXTURE_FORMAT_ARB             0x2072
+#define WGL_TEXTURE_TARGET_ARB             0x2073
+#define WGL_TEXTURE_RGB_ARB                0x2075
+#define WGL_TEXTURE_RGBA_ARB               0x2076
+#define WGL_TEXTURE_2D_ARB                 0x207A
+#define WGL_FRONT_LEFT_ARB                 0x2083
+
+
+#define WGL_MIPMAP_TEXTURE_ARB			   0x2074
+#define WGL_SAMPLES_ARB					   0x2042
+
+
 //===========================================================================
 
 /*
@@ -66,6 +153,8 @@
 #define GL_TEXTURE1_ARB                     0x84C1
 #define GL_TEXTURE2_ARB                     0x84C2
 #define GL_TEXTURE3_ARB                     0x84C3
+
+#define GL_TEXTURE_RECTANGLE_EXT			0x84F5
 
 // TTimo: FIXME
 // linux needs those prototypes
@@ -128,6 +217,178 @@ extern	void ( APIENTRY * qglUnlockArraysEXT) (void);
 
 extern	void ( APIENTRY * qglPointParameterfEXT)( GLenum, GLfloat);
 extern	void ( APIENTRY * qglPointParameterfvEXT)( GLenum, GLfloat *);
+
+
+#ifdef _WIN32
+#ifndef WGL_ARB_pbuffer
+DECLARE_HANDLE(HPBUFFERARB);
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Register Combiner extension definitions. - AReis
+/***********************************************************************************************************/
+// NOTE: These are obviously not all the regcom flags. I'm only including the ones I use (to reduce code clutter), so
+// if you need any of the other flags, just add them.
+#define GL_REGISTER_COMBINERS_NV			0x8522
+#define GL_COMBINER0_NV						0x8550
+#define GL_COMBINER1_NV						0x8551
+#define GL_COMBINER2_NV						0x8552
+#define GL_COMBINER3_NV						0x8553
+#define GL_COMBINER4_NV						0x8554
+#define GL_COMBINER5_NV						0x8555
+#define GL_COMBINER6_NV						0x8556
+#define GL_COMBINER7_NV						0x8557
+#define GL_NUM_GENERAL_COMBINERS_NV			0x854E
+#define GL_VARIABLE_A_NV					0x8523
+#define GL_VARIABLE_B_NV					0x8524
+#define GL_VARIABLE_C_NV					0x8525
+#define GL_VARIABLE_D_NV					0x8526
+#define GL_VARIABLE_E_NV					0x8527
+#define GL_VARIABLE_F_NV					0x8528
+#define GL_VARIABLE_G_NV					0x8529
+#define GL_DISCARD_NV						0x8530
+#define GL_CONSTANT_COLOR0_NV				0x852A
+#define GL_CONSTANT_COLOR1_NV				0x852B
+#define GL_SPARE0_NV						0x852E
+#define GL_SPARE1_NV						0x852F
+#define GL_UNSIGNED_IDENTITY_NV				0x8536
+#define GL_UNSIGNED_INVERT_NV				0x8537
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Vertex and Fragment Program extension definitions. - AReis
+/***********************************************************************************************************/
+#ifndef GL_ARB_fragment_program
+#define GL_FRAGMENT_PROGRAM_ARB           0x8804
+//#define GL_PROGRAM_ALU_INSTRUCTIONS_ARB   0x8805
+//#define GL_PROGRAM_TEX_INSTRUCTIONS_ARB   0x8806
+//#define GL_PROGRAM_TEX_INDIRECTIONS_ARB   0x8807
+//#define GL_PROGRAM_NATIVE_ALU_INSTRUCTIONS_ARB 0x8808
+//#define GL_PROGRAM_NATIVE_TEX_INSTRUCTIONS_ARB 0x8809
+//#define GL_PROGRAM_NATIVE_TEX_INDIRECTIONS_ARB 0x880A
+//#define GL_MAX_PROGRAM_ALU_INSTRUCTIONS_ARB 0x880B
+//#define GL_MAX_PROGRAM_TEX_INSTRUCTIONS_ARB 0x880C
+//#define GL_MAX_PROGRAM_TEX_INDIRECTIONS_ARB 0x880D
+//#define GL_MAX_PROGRAM_NATIVE_ALU_INSTRUCTIONS_ARB 0x880E
+//#define GL_MAX_PROGRAM_NATIVE_TEX_INSTRUCTIONS_ARB 0x880F
+//#define GL_MAX_PROGRAM_NATIVE_TEX_INDIRECTIONS_ARB 0x8810
+//#define GL_MAX_TEXTURE_COORDS_ARB         0x8871
+//#define GL_MAX_TEXTURE_IMAGE_UNITS_ARB    0x8872
+#endif
+
+// NOTE: These are obviously not all the vertex program flags (have you seen how many there actually are!). I'm
+// only including the ones I use (to reduce code clutter), so if you need any of the other flags, just add them.
+#define GL_VERTEX_PROGRAM_ARB                       0x8620
+#define GL_PROGRAM_FORMAT_ASCII_ARB                 0x8875
+
+typedef void (APIENTRY * PFNGLPROGRAMSTRINGARBPROC) (GLenum target, GLenum format, GLsizei len, const GLvoid *string); 
+typedef void (APIENTRY * PFNGLBINDPROGRAMARBPROC) (GLenum target, GLuint program);
+typedef void (APIENTRY * PFNGLDELETEPROGRAMSARBPROC) (GLsizei n, const GLuint *programs);
+typedef void (APIENTRY * PFNGLGENPROGRAMSARBPROC) (GLsizei n, GLuint *programs);
+typedef void (APIENTRY * PFNGLPROGRAMENVPARAMETER4DARBPROC) (GLenum target, GLuint index, GLdouble x, GLdouble y, GLdouble z, GLdouble w);
+typedef void (APIENTRY * PFNGLPROGRAMENVPARAMETER4DVARBPROC) (GLenum target, GLuint index, const GLdouble *params);
+typedef void (APIENTRY * PFNGLPROGRAMENVPARAMETER4FARBPROC) (GLenum target, GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+typedef void (APIENTRY * PFNGLPROGRAMENVPARAMETER4FVARBPROC) (GLenum target, GLuint index, const GLfloat *params);
+typedef void (APIENTRY * PFNGLPROGRAMLOCALPARAMETER4DARBPROC) (GLenum target, GLuint index, GLdouble x, GLdouble y, GLdouble z, GLdouble w);
+typedef void (APIENTRY * PFNGLPROGRAMLOCALPARAMETER4DVARBPROC) (GLenum target, GLuint index, const GLdouble *params);
+typedef void (APIENTRY * PFNGLPROGRAMLOCALPARAMETER4FARBPROC) (GLenum target, GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+typedef void (APIENTRY * PFNGLPROGRAMLOCALPARAMETER4FVARBPROC) (GLenum target, GLuint index, const GLfloat *params);
+typedef void (APIENTRY * PFNGLGETPROGRAMENVPARAMETERDVARBPROC) (GLenum target, GLuint index, GLdouble *params);
+typedef void (APIENTRY * PFNGLGETPROGRAMENVPARAMETERFVARBPROC) (GLenum target, GLuint index, GLfloat *params);
+typedef void (APIENTRY * PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC) (GLenum target, GLuint index, GLdouble *params);
+typedef void (APIENTRY * PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC) (GLenum target, GLuint index, GLfloat *params);
+typedef void (APIENTRY * PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, GLint *params);
+typedef void (APIENTRY * PFNGLGETPROGRAMSTRINGARBPROC) (GLenum target, GLenum pname, GLvoid *string);
+typedef GLboolean (APIENTRY * PFNGLISPROGRAMARBPROC) (GLuint program);
+
+typedef void (APIENTRY *PFNGLCOMBINERPARAMETERFVNV) (GLenum pname,const GLfloat *params);
+typedef void (APIENTRY *PFNGLCOMBINERPARAMETERIVNV) (GLenum pname,const GLint *params);
+typedef void (APIENTRY *PFNGLCOMBINERPARAMETERFNV) (GLenum pname,GLfloat param);
+typedef void (APIENTRY *PFNGLCOMBINERPARAMETERINV) (GLenum pname,GLint param);
+typedef void (APIENTRY *PFNGLCOMBINERINPUTNV) (GLenum stage,GLenum portion,GLenum variable,GLenum input,GLenum mapping,
+											   GLenum componentUsage);
+typedef void (APIENTRY *PFNGLCOMBINEROUTPUTNV) (GLenum stage,GLenum portion,GLenum abOutput,GLenum cdOutput,GLenum sumOutput,
+												GLenum scale, GLenum bias,GLboolean abDotProduct,GLboolean cdDotProduct,
+												GLboolean muxSum);
+typedef void (APIENTRY *PFNGLFINALCOMBINERINPUTNV) (GLenum variable,GLenum input,GLenum mapping,GLenum componentUsage);
+
+typedef void (APIENTRY *PFNGLGETCOMBINERINPUTPARAMETERFVNV) (GLenum stage,GLenum portion,GLenum variable,GLenum pname,GLfloat *params);
+typedef void (APIENTRY *PFNGLGETCOMBINERINPUTPARAMETERIVNV) (GLenum stage,GLenum portion,GLenum variable,GLenum pname,GLint *params);
+typedef void (APIENTRY *PFNGLGETCOMBINEROUTPUTPARAMETERFVNV) (GLenum stage,GLenum portion,GLenum pname,GLfloat *params);
+typedef void (APIENTRY *PFNGLGETCOMBINEROUTPUTPARAMETERIVNV) (GLenum stage,GLenum portion,GLenum pname,GLint *params);
+typedef void (APIENTRY *PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV) (GLenum variable,GLenum pname,GLfloat *params);
+typedef void (APIENTRY *PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV) (GLenum variable,GLenum pname,GLfloat *params);
+
+// Declare Vertex and Fragment Program function pointers.
+extern PFNGLCOMBINERPARAMETERFVNV				qglCombinerParameterfvNV;
+extern PFNGLCOMBINERPARAMETERIVNV				qglCombinerParameterivNV;
+extern PFNGLCOMBINERPARAMETERFNV				qglCombinerParameterfNV;
+extern PFNGLCOMBINERPARAMETERINV				qglCombinerParameteriNV;
+extern PFNGLCOMBINERINPUTNV						qglCombinerInputNV;
+extern PFNGLCOMBINEROUTPUTNV					qglCombinerOutputNV;
+extern PFNGLFINALCOMBINERINPUTNV				qglFinalCombinerInputNV;
+extern PFNGLGETCOMBINERINPUTPARAMETERFVNV		qglGetCombinerInputParameterfvNV;
+extern PFNGLGETCOMBINERINPUTPARAMETERIVNV		qglGetCombinerInputParameterivNV;
+extern PFNGLGETCOMBINEROUTPUTPARAMETERFVNV		qglGetCombinerOutputParameterfvNV;
+extern PFNGLGETCOMBINEROUTPUTPARAMETERIVNV		qglGetCombinerOutputParameterivNV;
+extern PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV	qglGetFinalCombinerInputParameterfvNV;
+extern PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV	qglGetFinalCombinerInputParameterivNV;
+
+// Declare Vertex and Fragment Program function pointers.
+extern PFNGLPROGRAMSTRINGARBPROC qglProgramStringARB;
+extern PFNGLBINDPROGRAMARBPROC qglBindProgramARB;
+extern PFNGLDELETEPROGRAMSARBPROC qglDeleteProgramsARB;
+extern PFNGLGENPROGRAMSARBPROC qglGenProgramsARB;
+extern PFNGLPROGRAMENVPARAMETER4DARBPROC qglProgramEnvParameter4dARB;
+extern PFNGLPROGRAMENVPARAMETER4DVARBPROC qglProgramEnvParameter4dvARB;
+extern PFNGLPROGRAMENVPARAMETER4FARBPROC qglProgramEnvParameter4fARB;
+extern PFNGLPROGRAMENVPARAMETER4FVARBPROC qglProgramEnvParameter4fvARB;
+extern PFNGLPROGRAMLOCALPARAMETER4DARBPROC qglProgramLocalParameter4dARB;
+extern PFNGLPROGRAMLOCALPARAMETER4DVARBPROC qglProgramLocalParameter4dvARB;
+extern PFNGLPROGRAMLOCALPARAMETER4FARBPROC qglProgramLocalParameter4fARB;
+extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC qglProgramLocalParameter4fvARB;
+extern PFNGLGETPROGRAMENVPARAMETERDVARBPROC qglGetProgramEnvParameterdvARB;
+extern PFNGLGETPROGRAMENVPARAMETERFVARBPROC qglGetProgramEnvParameterfvARB;
+extern PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC qglGetProgramLocalParameterdvARB;
+extern PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC qglGetProgramLocalParameterfvARB;
+extern PFNGLGETPROGRAMIVARBPROC qglGetProgramivARB;
+extern PFNGLGETPROGRAMSTRINGARBPROC qglGetProgramStringARB;
+extern PFNGLISPROGRAMARBPROC qglIsProgramARB;
+
+typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues);
+typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBFVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
+typedef BOOL (WINAPI * PFNWGLCHOOSEPIXELFORMATARBPROC) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+/***********************************************************************************************************/
+
+// Declare Pixel Format function pointers.
+extern PFNWGLGETPIXELFORMATATTRIBIVARBPROC		qwglGetPixelFormatAttribivARB;
+extern PFNWGLGETPIXELFORMATATTRIBFVARBPROC		qwglGetPixelFormatAttribfvARB;
+extern PFNWGLCHOOSEPIXELFORMATARBPROC			qwglChoosePixelFormatARB;
+
+typedef HPBUFFERARB (WINAPI * PFNWGLCREATEPBUFFERARBPROC) (HDC hDC, int iPixelFormat, int iWidth, int iHeight, const int *piAttribList);
+typedef HDC (WINAPI * PFNWGLGETPBUFFERDCARBPROC) (HPBUFFERARB hPbuffer);
+typedef int (WINAPI * PFNWGLRELEASEPBUFFERDCARBPROC) (HPBUFFERARB hPbuffer, HDC hDC);
+typedef BOOL (WINAPI * PFNWGLDESTROYPBUFFERARBPROC) (HPBUFFERARB hPbuffer);
+typedef BOOL (WINAPI * PFNWGLQUERYPBUFFERARBPROC) (HPBUFFERARB hPbuffer, int iAttribute, int *piValue);
+/***********************************************************************************************************/
+
+// Declare Pixel Buffer function pointers.
+extern PFNWGLCREATEPBUFFERARBPROC				qwglCreatePbufferARB;
+extern PFNWGLGETPBUFFERDCARBPROC				qwglGetPbufferDCARB;
+extern PFNWGLRELEASEPBUFFERDCARBPROC			qwglReleasePbufferDCARB;
+extern PFNWGLDESTROYPBUFFERARBPROC				qwglDestroyPbufferARB;
+extern PFNWGLQUERYPBUFFERARBPROC				qwglQueryPbufferARB;
+
+typedef BOOL (WINAPI * PFNWGLBINDTEXIMAGEARBPROC) (HPBUFFERARB hPbuffer, int iBuffer);
+typedef BOOL (WINAPI * PFNWGLRELEASETEXIMAGEARBPROC) (HPBUFFERARB hPbuffer, int iBuffer);
+typedef BOOL (WINAPI * PFNWGLSETPBUFFERATTRIBARBPROC) (HPBUFFERARB hPbuffer, const int *piAttribList);
+/***********************************************************************************************************/
+
+// Declare Render-Texture function pointers.
+extern PFNWGLBINDTEXIMAGEARBPROC			qwglBindTexImageARB;
+extern PFNWGLRELEASETEXIMAGEARBPROC			qwglReleaseTexImageARB;
+extern PFNWGLSETPBUFFERATTRIBARBPROC		qwglSetPbufferAttribARB;
+#endif
+
 
 #ifdef DYNAMIC_LINK_GL
 
@@ -479,6 +740,19 @@ extern  void ( APIENTRY * qglVertexPointer )(GLint size, GLenum type, GLsizei st
 extern  void ( APIENTRY * qglViewport )(GLint x, GLint y, GLsizei width, GLsizei height);
 
 #if defined( _WIN32 )
+
+extern const char *( WINAPI * qwglGetExtensionsStringARB) (HDC);
+
+
+extern HPBUFFERARB (WINAPI * qwglCreatePbufferARB) (HDC hDC, int iPixelFormat, int iWidth, int iHeight, const int *piAttribList);
+extern BOOL (WINAPI * qwglGetPixelFormatAttribivARB) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues);
+extern BOOL (WINAPI * qwglGetPixelFormatAttribfvARB) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
+extern HDC (WINAPI * qwglGetPbufferDCARB) (HPBUFFERARB hPbuffer);
+extern BOOL (WINAPI * qwglQueryPbufferARB) (HPBUFFERARB hPbuffer, int iAttribute, int *piValue);
+extern BOOL (WINAPI * qwglChoosePixelFormatARB) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+extern int (WINAPI * qwglReleasePbufferDCARB) (HPBUFFERARB hPbuffer, HDC hDC);
+extern BOOL (WINAPI * qwglDestroyPbufferARB) (HPBUFFERARB hPbuffer);
+
 
 extern BOOL  ( WINAPI * qwglCopyContext)(HGLRC, HGLRC, UINT);
 extern HGLRC ( WINAPI * qwglCreateContext)(HDC);

@@ -893,6 +893,8 @@ Ghoul2 Insert End
 
 	int				chargeTime;
 	qboolean		charging;
+
+	qboolean		ntModDetected;
 } cg_t;
 
 #define MAX_TICS	14

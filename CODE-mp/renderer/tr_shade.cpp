@@ -16,6 +16,10 @@ static qboolean	setArraysOnce;
 
 color4ub_t	styleColors[MAX_LIGHT_STYLES];
 
+#ifdef JEDIACADEMY_GLOW
+extern bool g_bRenderGlowingObjects;
+#endif
+
 /*
 ================
 R_ArrayElementDiscrete
@@ -259,8 +263,15 @@ static void DrawTris (shaderCommands_t *input) {
 	GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE );
 	qglDepthRange( 0, 0 );
 
-	qglDisableClientState (GL_COLOR_ARRAY);
-	qglDisableClientState (GL_TEXTURE_COORD_ARRAY);
+	if (!( r_showtris->integer & 0x2) ) {
+		qglDisableClientState (GL_COLOR_ARRAY);
+		qglDisableClientState (GL_TEXTURE_COORD_ARRAY);
+		qglColor3f (1,1,1);
+	}
+
+	if ( !(r_showtris->integer & 0x4 )) {
+		qglDepthRange( 0, 0 );
+	}
 
 	qglVertexPointer (3, GL_FLOAT, 16, input->xyz);	// padded for SIMD
 
@@ -1255,6 +1266,14 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 			break;
 		}
 
+#ifdef JEDIACADEMY_GLOW
+		// Reject this stage if it's not a glow stage but we are doing a glow pass.
+		if ( g_bRenderGlowingObjects && !pStage->glow )
+		{
+			continue;
+		}
+#endif
+
 		if ( stage && r_lightmap->integer && !( pStage->bundle[0].isLightmap || pStage->bundle[1].isLightmap || pStage->bundle[0].vertexLightmap ) )
 		{
 			break;
@@ -1731,10 +1750,10 @@ void RB_EndSurface( void ) {
 	//
 	// draw debugging stuff
 	//
-	if ( r_showtris->integer && com_developer->integer ) {
+	if ( r_showtris->integer/* && com_developer->integer*/ ) {
 		DrawTris (input);
 	}
-	if ( r_shownormals->integer && com_developer->integer ) {
+	if ( r_shownormals->integer/* && com_developer->integer*/ ) {
 		DrawNormals (input);
 	}
 	// clear shader so we can tell we don't have any unclosed surfaces

@@ -12,7 +12,7 @@
 #ifdef CHC
 	#define MAX_EFFECTS			1024
 #else // anything else
-	#define MAX_EFFECTS			1800
+	#define MAX_EFFECTS			1<<15//1800
 #endif
 
 // Generic group flags, used by parser, then get converted to the appropriate specific flags
