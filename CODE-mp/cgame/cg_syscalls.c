@@ -234,7 +234,10 @@ qhandle_t trap_R_RegisterFont( const char *fontName )
 
 int	trap_R_Font_StrLenPixels(const char *text, const int iFontIndex, const float scale)
 {
-	return syscall( CG_R_FONT_STRLENPIXELS, text, iFontIndex, PASSFLOAT(scale));
+	//ent:
+	//Raz: HACK! RE_Font_TtrLenPixels only works correctly with 1.0f scale
+	float width = (float)syscall( CG_R_FONT_STRLENPIXELS, text, iFontIndex, PASSFLOAT(1.0f));
+	return width * scale;
 }
 
 int trap_R_Font_StrLenChars(const char *text)

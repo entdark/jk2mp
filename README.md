@@ -14,7 +14,7 @@ joMME is an engine modification of Jedi Knight 2: Jedi Outcast for moviemaking. 
 * playing music on background to synchronize it with editing
 * saving depth of field mask
 * overriding players information: name, saber colours, hilts, team, model
-* realistic first person view with visible body (trueview)
+* dynamic glow effect from Jedi Academy
 * recording audio to wav
 * replacing world textures with your own
 * replacing skybox with one solid colour (chroma key)

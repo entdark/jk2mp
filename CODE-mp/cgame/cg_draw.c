@@ -2513,6 +2513,7 @@ static void CG_DrawCenterString( void ) {
 	int h;
 	float	*color;
 	const float scale = 1.0; //0.5
+	qboolean broke = qfalse;
 
 	if ( !cg.centerPrintTime ) {
 		return;
@@ -2531,21 +2532,31 @@ static void CG_DrawCenterString( void ) {
 	else
 		Q_StripColorNew(s);*/
 
-	start = cg.centerPrint;
-
 	if( mov_fragsOnly.integer != 0 ) {
 		char sKilledStr[256];
 		trap_SP_GetStringTextString("INGAMETEXT_KILLED_MESSAGE", sKilledStr, sizeof(sKilledStr));
 		if(strncmp(cg.centerPrint,sKilledStr,strlen(sKilledStr))!=0)return;
 	}
 
+	start = cg.centerPrint;
+
+	//in ctf instagib we have blank space at the beginning of some messages
+	if (start[0] == ' ' && start[1] == ' ' && start[2] == ' ' && start[3] == ' ')
+		while (*start && *start == ' ') start++;
+
 	y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
 
 	while ( 1 ) {
 		char linebuffer[1024];//, linebufferFix[1024];
 
+		//in ctf instagib we have blank space at the beginning of some messages
+		if (broke)
+			while (*start && *start == ' ') start++;
+		broke = qfalse;
+
 		for ( l = 0; l < 50; l++ ) {
 			if ( !start[l] || start[l] == '\n' ) {
+				broke = qtrue;
 				break;
 			}
 			linebuffer[l] = start[l];

@@ -520,7 +520,7 @@ void Con_DrawNotify (void)
 				if ( demo15detected && ntModDetected && ( (text[x]>>8)&127 ) != currentColor ) {
 					currentColor = (text[x]>>8)&127;
 					re.SetColor( g_color_table_nt[currentColor] );
-				} else if ( ( (text[x]>>8)&7 ) != currentColor ) {
+				} else if ( !ntModDetected && ( (text[x]>>8)&7 ) != currentColor ) {
 					currentColor = (text[x]>>8)&7;
 					re.SetColor( g_color_table[currentColor] );
 				}

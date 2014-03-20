@@ -274,9 +274,9 @@ clientkilled:
 			trap_SP_GetStringTextString("INGAMETEXT_KILLED_MESSAGE", sKilledStr, sizeof(sKilledStr));
 			s = va("%s %s", sKilledStr, targetName );
 		}
-		if (!(cg_singlePlayerActive.integer && cg_cameraOrbit.integer)) {
+//		if (!(cg_singlePlayerActive.integer && cg_cameraOrbit.integer)) {
 			CG_CenterPrint( s, SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
-		} 
+//		} 
 		// print the text message as well
 	}
 
@@ -853,7 +853,7 @@ void CG_PrintCTFMessage(clientInfo_t *ci, const char *teamName, int ctfMessage)
 
 			if (ci)
 			{
-				Com_sprintf(printMsg, sizeof(printMsg), "%s ", ci->name);
+				Com_sprintf(printMsg, sizeof(printMsg), "%s^7 ", ci->name);
 				strLen = strlen(printMsg);
 			}
 
@@ -885,7 +885,7 @@ void CG_PrintCTFMessage(clientInfo_t *ci, const char *teamName, int ctfMessage)
 
 	if (ci)
 	{
-		Com_sprintf(printMsg, sizeof(printMsg), "%s %s", ci->name, stripEdString);
+		Com_sprintf(printMsg, sizeof(printMsg), "%s^7 %s", ci->name, stripEdString);
 	}
 	else
 	{

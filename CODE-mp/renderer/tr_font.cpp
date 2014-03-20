@@ -799,7 +799,7 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 	
 	// Draw a dropshadow if required
 	if(!demo15detected && iFontHandle & STYLE_DROPSHADOW) {
-		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, 1};
+		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba[3]};
 
 		offset = Round(curfont->GetPointSize() * fScale * 0.075f);
 		
@@ -809,7 +809,7 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 	} else if (demo15detected && iFontHandle & STYLE_DROPSHADOW) {
 		int i = 0, r = 0;
 		char dropShadowText[1024];
-		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, 1};
+		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba[3]};
 
 		offset = Round(curfont->GetPointSize() * fScale * 0.075f);
 
@@ -831,7 +831,7 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 
 		RE_Font_DrawString(ox + offset, oy + offset, dropShadowText, v4DKGREY2, iFontHandle & SET_MASK, iCharLimit, fScale);
 	}
-	
+
 	RE_SetColor( rgba );
 
 	x = ox;
@@ -850,12 +850,18 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 		case '^':
 		{
 			if (demo15detected && ntModDetected) {
+				vec4_t color;
 				colour = ColorIndexNT(*psText++);
-				RE_SetColor( g_color_table_nt[colour] );
+				Com_Memcpy( color, g_color_table_nt[colour], sizeof( color ) );
+				color[3] = rgba[3];
+				RE_SetColor( color );
 			} else {
 				colour = ColorIndex(*psText++);
 				if (!gbInShadow || demo15detected) {
-					RE_SetColor( g_color_table[colour] );
+					vec4_t color;
+					Com_Memcpy( color, g_color_table[colour], sizeof( color ) );
+					color[3] = rgba[3];
+					RE_SetColor( color );
 				}
 			}
 		}

@@ -1009,7 +1009,7 @@ void demoPlaybackInit(void) {
 	demo15detected = trap_MME_Demo15Detection();
 
 	demo.media.additiveWhiteShader = trap_R_RegisterShader( "mme_additiveWhite" );
-	demo.media.mouseCursor = trap_R_RegisterShaderNoMip( "menu/art/3_cursor2" );
+	demo.media.mouseCursor = trap_R_RegisterShaderNoMip( "cursor" );
 	demo.media.switchOn = trap_R_RegisterShaderNoMip( "mme_message_on" );
 	demo.media.switchOff = trap_R_RegisterShaderNoMip( "mme_message_off" );
 
