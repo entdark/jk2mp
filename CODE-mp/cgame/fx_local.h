@@ -29,6 +29,7 @@ void FX_DisruptorAltMiss( vec3_t origin, vec3_t normal );
 void FX_DisruptorAltHit( vec3_t origin, vec3_t normal );
 void FX_DisruptorHitWall( vec3_t origin, vec3_t normal );
 void FX_DisruptorHitPlayer( vec3_t origin, vec3_t normal, qboolean humanoid );
+void FX_RailSpiral( clientInfo_t *ci, vec3_t start, vec3_t end );
 
 // Bowcaster
 void FX_BowcasterProjectileThink( centity_t *cent, const struct weaponInfo_s *weapon );

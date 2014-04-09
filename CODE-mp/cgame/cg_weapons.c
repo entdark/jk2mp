@@ -231,7 +231,7 @@ CG_CalculateWeaponPosition
 */
 static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 	float	scale;
-	int		delta;
+	float	delta;
 	float	fracsin;
 
 	playerEntity_t *pe = &cg.playerCent->pe;
@@ -272,7 +272,7 @@ static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 
 	// idle drift
 	scale = cg.xyspeed + 40;
-	fracsin = sin( cg.time * 0.001 );
+	fracsin = sin(cg.time * 0.001 + cg.timeFraction * 0.001);
 	angles[ROLL] += scale * fracsin * 0.01;
 	angles[YAW] += scale * fracsin * 0.01;
 	angles[PITCH] += scale * fracsin * 0.01;
@@ -759,15 +759,15 @@ void CG_AddViewWeaponDirect( centity_t *cent ) {
 	weaponInfo_t	*weapon;
 	float	cgFov = cg_fov.value;
 
+	// no gun if in third person view or a camera is active
+	if ( cg.renderingThirdPerson ) {
+		return;
+	}
+
 	if (cgFov < 1) {
 		cgFov = 1;
 	} else if (cgFov > 180) {
 		cgFov = 180;
-	}
-
-	// no gun if in third person view or a camera is active
-	if ( cg.renderingThirdPerson ) {
-		return;
 	}
 
 	// allow the gun to be completely removed
@@ -855,7 +855,7 @@ Add the weapon, and flash for the player's view
 ==============
 */
 void CG_AddViewWeapon( playerState_t *ps ) {
-	if ( ps->pm_type == PM_INTERMISSION ) {
+	if ( ps->pm_type == PM_INTERMISSION || ps->persistant[PERS_TEAM] == TEAM_SPECTATOR ) {
 		return;
 	}
 	CG_AddViewWeaponDirect( &cg.predictedPlayerEntity );
@@ -2183,21 +2183,30 @@ void CG_ShutDownG2Weapons(void)
 }
 
 // what ghoul2 model do we want to copy ?
-void CG_CopyG2WeaponInstance(int weaponNum, void *toGhoul2)
-{
+void CG_CopyG2WeaponInstance(centity_t *cent, int weaponNum, void *toGhoul2) {
 	//rww - the -1 is because there is no "weapon" for WP_NONE
 	assert(weaponNum < MAX_WEAPONS);
-	if (g2WeaponInstances[weaponNum/*-1*/])
-	{
-		if (weaponNum == WP_EMPLACED_GUN)
-		{ //a bit of a hack to remove gun model when using an emplaced weap
-			if (trap_G2API_HasGhoul2ModelOnIndex(&(toGhoul2), 1))
-			{
+	if (g2WeaponInstances[weaponNum/*-1*/]) {
+		if (weaponNum == WP_SABER) {
+			clientInfo_t *ci = &cgs.clientinfo[cent->currentState.number];
+			const char *saberModel = ci->saberModel;
+			if (saberModel && saberModel[0]) {
+				void *ghoul2sab;
+				memset(&ghoul2sab, 0, sizeof(&ghoul2sab));
+				trap_G2API_InitGhoul2Model(&ghoul2sab, va("models/weapons2/%s/saber_w.glm", saberModel), 0, 0, 0, 0, 0);
+				trap_G2API_SetBoltInfo(ghoul2sab, 0, 0);
+				trap_G2API_AddBolt(ghoul2sab, 0, "*flash");
+				trap_G2API_CopySpecificGhoul2Model(ghoul2sab, 0, toGhoul2, 1); 
+			} else {
+				trap_G2API_CopySpecificGhoul2Model(g2WeaponInstances[weaponNum/*-1*/], 0, toGhoul2, 1);
+			}
+
+		} else if (weaponNum == WP_EMPLACED_GUN) {
+		//a bit of a hack to remove gun model when using an emplaced weap
+			if (trap_G2API_HasGhoul2ModelOnIndex(&(toGhoul2), 1)) {
 				trap_G2API_RemoveGhoul2Model(&(toGhoul2), 1);
 			}
-		}
-		else
-		{
+		} else {
 			trap_G2API_CopySpecificGhoul2Model(g2WeaponInstances[weaponNum/*-1*/], 0, toGhoul2, 1); 
 		}
 	}
@@ -2237,7 +2246,7 @@ void CG_CheckPlayerG2Weapons(playerState_t *ps, centity_t *cent)
 	if (cent->ghoul2 && cent->ghoul2weapon != g2WeaponInstances[ps->weapon] &&
 		ps->clientNum == cent->currentState.number) //don't want spectator mode forcing one client's weapon instance over another's
 	{
-		CG_CopyG2WeaponInstance(ps->weapon, cent->ghoul2);
+		CG_CopyG2WeaponInstance(cent, ps->weapon, cent->ghoul2);
 		cent->ghoul2weapon = g2WeaponInstances[ps->weapon];
 		if (cent->weapon == WP_SABER && cg_entities[cent->currentState.number].weapon != ps->weapon && !ps->saberHolstered)
 		{ //switching away from the saber

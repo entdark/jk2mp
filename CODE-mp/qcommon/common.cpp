@@ -76,7 +76,7 @@ cvar_t	*com_cameraMode;
 #if defined(_WIN32) && defined(_DEBUG)
 cvar_t	*com_noErrorInterrupt;
 #endif
-cvar_t	*com_numcores;
+static cvar_t	*com_affinity;
 
 // com_speeds times
 int		time_game;
@@ -2468,7 +2468,7 @@ static void Com_WriteCDKey( const char *filename, const char *ikey ) {
 
 /*
 ==================
-CL_UpdateProcessCoresAffinity
+Com_UpdateProcessCoresAffinity
 
 ==================
 */
@@ -2489,13 +2489,8 @@ static void Com_SetProcessCoresAffinity() {
 		return;
 	}
 
-	// set desired affinity mask based on cl_numcores
-	if ((com_numcores->integer > 0) && (com_numcores->integer <= 32) ) {
-		processMask = 0;
-		for(i = 0; i < com_numcores->integer; ++i) {
-			processMask |= (1 << i);
-		}
-	}
+	if ( sscanf( com_affinity->string, "%X", &processMask ) != 1 )
+		processMask = 1; // set to first core only
 
 	// call win API to set desired affinity mask
 	if (!SetProcessAffinityMask(GetCurrentProcess(), processMask) && dev) {
@@ -2609,7 +2604,7 @@ void Com_Init( char *commandLine ) {
 		com_noErrorInterrupt = Cvar_Get( "com_noErrorInterrupt", "0", 0 );
 	#endif
 
-		com_numcores = Cvar_Get ("com_numcores", "1", CVAR_ARCHIVE);
+		com_affinity = Cvar_Get ("com_affinity", "1", CVAR_ARCHIVE);
 
 		if ( com_dedicated->integer ) {
 			if ( !com_viewlog->integer ) {

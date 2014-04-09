@@ -170,6 +170,7 @@ typedef struct {
 
 	int (*CM_PointContents)( const vec3_t p, clipHandle_t model );
 
+	qboolean (*S_MMEAviExport)(byte *out, int *size);
 } refimport_t;
 
 

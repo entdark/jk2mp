@@ -2174,7 +2174,6 @@ static unsigned int frameCount;
 static float avgFrametime=0.0;
 extern void SP_CheckForLanguageUpdates(void);
 void CL_Frame ( int msec ) {
-
 	if ( !com_cl_running->integer ) {
 		return;
 	}
@@ -2250,24 +2249,22 @@ void CL_Frame ( int msec ) {
 	}
 
 	if (cl_mme_capture->integer) {
-//		CL_CaptureStereo(cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value);
-		float stereoSep;
+		float stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
 		float frameTime, fps;
 		
-		stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
 		if (stereoSep != 0) {
-			if (stereoSep > 0)
-				stereoSep = -stereoSep; // we start always with negative for correct sync
-
+			if (stereoSep < 0)
+				stereoSep = -stereoSep; // we start always with positive for correct sync
 			Cvar_SetValue("r_stereoSeparation", stereoSep);
 			SCR_UpdateScreen();
+
 			re.Capture( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value );
 //			Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme left\n" );
 
 			stereoSep = -stereoSep;
-
 			Cvar_SetValue("r_stereoSeparation", stereoSep);
 			SCR_UpdateScreen();
+
 			re.CaptureStereo( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value  );
 //			Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme right\n" );
 		} else {
@@ -2347,7 +2344,34 @@ void CL_Frame ( int msec ) {
 	}
 
 	// update the screen
-	SCR_UpdateScreen();
+/*	if (cl_mme_capture->integer) {
+		float stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
+		float frameTime, fps;
+		
+		if (stereoSep != 0) {
+			if (stereoSep < 0)
+				stereoSep = -stereoSep; // we start always with positive for correct sync
+			Cvar_SetValue("r_stereoSeparation", stereoSep);
+			SCR_UpdateScreen();
+
+			re.Capture( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value );
+
+			stereoSep = -stereoSep;
+			Cvar_SetValue("r_stereoSeparation", stereoSep);
+			SCR_UpdateScreen();
+
+			re.CaptureStereo( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value  );
+			Cvar_SetLatched("cl_mme_capture", "2");
+//			stereoSep = -stereoSep;
+//			Cvar_SetValue("r_stereoSeparation", stereoSep);
+			SCR_UpdateScreen();
+			Cvar_SetLatched("cl_mme_capture", "1");
+			skipScreenUpdate = qtrue;
+		} else {
+			SCR_UpdateScreen();
+		}
+	} else*/
+		SCR_UpdateScreen();
 
 	// update audio
 	S_Update();
@@ -2536,6 +2560,9 @@ void CL_InitRef( void ) {
 	ri.CIN_RunCinematic = CIN_RunCinematic;
 
 	ri.CM_PointContents = CM_PointContents;
+
+	//mme
+	ri.S_MMEAviExport = S_MMEAviExport;
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );
 

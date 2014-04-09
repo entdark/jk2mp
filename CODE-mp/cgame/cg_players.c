@@ -1005,7 +1005,7 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 	qboolean wasATST = qfalse;
 
 	const char	*strings[6];
-	qboolean	friendly, skipColor, skipColor2;
+	qboolean	friendly;
 	int			psTeam;
 
 	ci = &cgs.clientinfo[clientNum];
@@ -1040,9 +1040,18 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 
 	// colors
 	v = ConfigValue( strings, "c1" );
-	CG_ColorFromString( v, newInfo.color1 );
-
-	newInfo.icolor1 = atoi(v);
+	Q_parseColor( v, defaultColors, newInfo.color1 );
+	if ((v[0] >= 'u' || v[0] >= 'U') && (v[0] <= 'z' || v[0] <= 'Z')) {
+		if ( v[0] >= 'u' && v[0] <= 'z') {
+			newInfo.icolor1 = v[0] - 'u' + 6;
+		} else if ( v[0] >= 'U' && v[0] <= 'Z') {
+			newInfo.icolor1 = v[0] - 'U' + 6;
+		}
+		Q_parseColor( v, defaultColors, newInfo.rgb1 );
+		VectorScale(newInfo.rgb1, 255, newInfo.rgb1);
+	} else {
+		newInfo.icolor1 = atoi(v);
+	}
 
 	v = ConfigValue( strings, "c2" );
 	CG_ColorFromString( v, newInfo.color2 );
@@ -1054,6 +1063,18 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 	v = ConfigValue( strings, "effect");
 	if ( v[0] )
 		newInfo.effectOverride = trap_FX_RegisterEffect( v );
+
+	v = ConfigValue( strings, "hilt");
+	if ( v[0] ) {
+		fileHandle_t hilt;
+		trap_FS_FOpenFile(va("models/weapons2/%s/saber_w.glm", v), &hilt, FS_READ);
+		if (hilt) {
+			Q_strncpyz( newInfo.saberModel, v, sizeof( newInfo.saberModel ) );
+			cg_entities[clientNum].weapon = 0;
+			cg_entities[clientNum].ghoul2weapon = NULL; //force a refresh
+			trap_FS_FCloseFile(hilt);
+		}
+	}
 
 	// bot skill
 	v = ConfigValue( strings, "skill" );
@@ -1303,7 +1324,7 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 
 static void CG_ShowOverride( const char *configString, const char *overrideString ) {
 	static char * entryList[] = {
-		"n", "t", "model", "c1", "c2", "st", "st2", "shader", "effect", 0
+		"n", "t", "model", "c1", "hilt", "shader", "effect", 0
 	};
 	int n;
 
@@ -1358,9 +1379,7 @@ void CG_ClientOverride_f(void) {
 		CG_Printf("n \"name\", Change name\n" );
 		CG_Printf("t \"0-3\", Change team number\n" );
 		CG_Printf("c1 \"0-9,w-zhexcode\", Change saber color1\n" );
-		CG_Printf("c2 \"0-9,w-zhexcode\", Change saber color2\n" );
-		CG_Printf("st \"hiltname\", Change saber hilt\n" );
-		CG_Printf("st2 \"hiltname\", Change saber hilt2\n" );
+		CG_Printf("hilt \"hiltname\", Change saber hilt\n" );
 		CG_Printf("shader \"shadername\", Shader override to be use on the whole player\n" );
 		CG_Printf("effect \"effectname\", Effect .efx to run from the player's position\n" );
 		return;
@@ -2222,9 +2241,9 @@ static void CG_RunLerpFrame( centity_t *cent, clientInfo_t *ci, lerpFrame_t *lf,
 	}
 	// calculate current lerp value
 	if ( lf->frameTime == lf->oldFrameTime ) {
-		lf->backlerp = 0;
+		lf->backlerp = 0.0f;
 	} else {
-		lf->backlerp = 1.0 - (cg.timeFraction + ( cg.time - lf->oldFrameTime )) / ( lf->frameTime - lf->oldFrameTime );
+		lf->backlerp = 1.0f - (cg.timeFraction + ( cg.time - lf->oldFrameTime )) / (float)( lf->frameTime - lf->oldFrameTime );
 	}
 }
 
@@ -3039,7 +3058,7 @@ static void CG_G2PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t legsAngle
 	viewAngles[YAW] = viewAngles[ROLL] = 0;
 	viewAngles[PITCH] *= 0.5;
 
-/*	if (demo15detected) {
+	if (demo15detected) {
 		VectorCopy( cent->lerpAngles, angles );
 		angles[PITCH] = 0;
 
@@ -3056,7 +3075,7 @@ static void CG_G2PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t legsAngle
 		ulAngles[ROLL] += torsoAngles[ROLL]*0.3;
 		llAngles[ROLL] += torsoAngles[ROLL]*0.3;
 		thoracicAngles[ROLL] += torsoAngles[ROLL]*0.4;
-	} else */{
+	} else {
 		VectorSet( angles, 0, legsAngles[1], 0 );
 		angles[0] = legsAngles[0];
 		if ( angles[0] > 30 )
@@ -3982,7 +4001,7 @@ void CG_DrawPlayerShield(centity_t *cent, vec3_t origin)
 	ent.origin[2] += 10.0;
 	AnglesToAxis( cent->damageAngles, ent.axis );
 
-	alpha = 255.0 * (((cent->damageTime - cg.time) - cg.timeFraction) / MIN_SHIELD_TIME) + random()*16;
+	alpha = 255.0f * (((cent->damageTime - cg.time) - cg.timeFraction) / MIN_SHIELD_TIME) + random()*16;
 	if (alpha>255)
 		alpha=255;
 
@@ -4060,63 +4079,132 @@ int CG_LightVerts( vec3_t normal, int numVerts, polyVert_t *verts )
 	return qtrue;
 }
 
-void CG_DoSaber( vec3_t origin, vec3_t dir, float length, saber_colors_t color, int rfx )
-{
+static void CG_RGBForSaberColor(saber_colors_t color, vec3_t rgb, int cnum) {
+	switch(color) {
+	case SABER_RED:
+		VectorSet(rgb, 1.0f, 0.2f, 0.2f);
+		break;
+	case SABER_ORANGE:
+		VectorSet(rgb, 1.0f, 0.5f, 0.1f);
+		break;
+	case SABER_YELLOW:
+		VectorSet(rgb, 1.0f, 1.0f, 0.2f);
+		break;
+	case SABER_GREEN:
+		VectorSet(rgb, 0.2f, 1.0f, 0.2f);
+		break;
+	case SABER_BLUE:
+		VectorSet(rgb, 0.2f, 0.4f, 1.0f);
+		break;
+	case SABER_PURPLE:
+		VectorSet(rgb, 0.9f, 0.2f, 1.0f);
+		break;
+	case SABER_BLACK:
+		VectorSet(rgb, 1.0f, 1.0f, 1.0f);
+		break;
+	default:
+	case SABER_RGB:
+		if (cnum < MAX_CLIENTS) {
+			int i;
+			clientInfo_t *ci = &cgs.clientinfo[cnum];
+			VectorCopy(ci->rgb1, rgb);
+			for(i = 0; i < 3; i++)
+				rgb[i] /= 255;
+		} else {
+			VectorSet( rgb, 0.2f, 0.4f, 1.0f );
+		}
+		break;
+	}
+}
+
+//void CG_DoSaber( vec3_t origin, vec3_t dir, float length, saber_colors_t color, int rfx )
+//[RGBSabers]
+void CG_DoSaber(vec3_t origin, vec3_t dir, float length, saber_colors_t color, int rfx, int cnum) {
 	vec3_t		mid, rgb={1,1,1};
 	qhandle_t	blade = 0, glow = 0;
 	refEntity_t saber;
 	float radiusmult;
+	qboolean doLight = qtrue;
+	//[RGBSabers]
+	refEntity_t sbak;
+	float lol;
+	int i;
+	//[/RGBSabers]
 
-	if ( length < 0.5f )
-	{
-		// if the thing is so short, just forget even adding me.
+	// if the thing is so short, just forget even adding me.
+	if (length < 0.5f) {
 		return;
 	}
 
 	// Find the midpoint of the saber for lighting purposes
-	VectorMA( origin, length * 0.5f, dir, mid );
+	VectorMA(origin, length * 0.5f, dir, mid);
 
-	switch( color )
-	{
-		case SABER_RED:
-			glow = cgs.media.redSaberGlowShader;
-			blade = cgs.media.redSaberCoreShader;
-			VectorSet( rgb, 1.0f, 0.2f, 0.2f );
-			break;
-		case SABER_ORANGE:
-			glow = cgs.media.orangeSaberGlowShader;
-			blade = cgs.media.orangeSaberCoreShader;
-			VectorSet( rgb, 1.0f, 0.5f, 0.1f );
-			break;
-		case SABER_YELLOW:
-			glow = cgs.media.yellowSaberGlowShader;
-			blade = cgs.media.yellowSaberCoreShader;
-			VectorSet( rgb, 1.0f, 1.0f, 0.2f );
-			break;
-		case SABER_GREEN:
-			glow = cgs.media.greenSaberGlowShader;
-			blade = cgs.media.greenSaberCoreShader;
-			VectorSet( rgb, 0.2f, 1.0f, 0.2f );
-			break;
-		case SABER_BLUE:
-			glow = cgs.media.blueSaberGlowShader;
-			blade = cgs.media.blueSaberCoreShader;
-			VectorSet( rgb, 0.2f, 0.4f, 1.0f );
-			break;
-		case SABER_PURPLE:
-			glow = cgs.media.purpleSaberGlowShader;
-			blade = cgs.media.purpleSaberCoreShader;
-			VectorSet( rgb, 0.9f, 0.2f, 1.0f );
-			break;
-		default:
-			glow = cgs.media.blueSaberGlowShader;
-			blade = cgs.media.blueSaberCoreShader;
-			VectorSet( rgb, 0.2f, 0.4f, 1.0f );
-			break;
+	switch(color) {
+	case SABER_RED:
+		glow = cgs.media.redSaberGlowShader;
+		blade = cgs.media.redSaberCoreShader;
+		break;
+	case SABER_ORANGE:
+		glow = cgs.media.orangeSaberGlowShader;
+		blade = cgs.media.orangeSaberCoreShader;
+		break;
+	case SABER_YELLOW:
+		glow = cgs.media.yellowSaberGlowShader;
+		blade = cgs.media.yellowSaberCoreShader;
+		break;
+	case SABER_GREEN:
+		glow = cgs.media.greenSaberGlowShader;
+		blade = cgs.media.greenSaberCoreShader;
+		break;
+	case SABER_BLUE:
+		glow = cgs.media.blueSaberGlowShader;
+		blade = cgs.media.blueSaberCoreShader;
+		break;
+	case SABER_PURPLE:
+		glow = cgs.media.purpleSaberGlowShader;
+		blade = cgs.media.purpleSaberCoreShader;
+		break;
+	default:
+		glow = cgs.media.blueSaberGlowShader;
+		blade = cgs.media.blueSaberCoreShader;
+		break;
+	//[RGBSabers]
+	case SABER_RGB:
+		glow = cgs.media.rgbSaberGlowShader;
+		blade = cgs.media.rgbSaberCoreShader;
+		break;
+	case SABER_FLAME1:
+		glow = cgs.media.rgbSaberGlow2Shader;
+		blade = cgs.media.rgbSaberCore2Shader;
+		break;
+	case SABER_ELEC1:
+		glow = cgs.media.rgbSaberGlow3Shader;
+		blade = cgs.media.rgbSaberCore3Shader;
+		break;
+	case SABER_FLAME2:
+		glow = cgs.media.rgbSaberGlow4Shader;
+		blade = cgs.media.rgbSaberCore4Shader;
+		break;
+	case SABER_ELEC2:
+		glow = cgs.media.rgbSaberGlow5Shader;
+		blade = cgs.media.rgbSaberCore5Shader;
+		break;
+	case SABER_BLACK:
+		glow = cgs.media.blackSaberGlowShader;
+		blade = cgs.media.blackSaberCoreShader;
+		doLight = qfalse;
+	//[/RGBSabers]
 	}
 
-	// always add a light because sabers cast a nice glow before they slice you in half!!  or something...
-	trap_R_AddLightToScene( mid, (length*2.0f) + (random()*8.0f), rgb[0], rgb[1], rgb[2] );
+//	// always add a light because sabers cast a nice glow before they slice you in half!!  or something...
+//	trap_R_AddLightToScene( mid, (length*2.0f) + (random()*8.0f), rgb[0], rgb[1], rgb[2] );
+	//[RGBSabers]
+	if (doLight) {
+		// always add a light because sabers cast a nice glow before they slice you in half!!  or something...
+		CG_RGBForSaberColor(color, rgb, cnum);
+		trap_R_AddLightToScene(mid, (length*2.0f) + (random()*8.0f), rgb[0], rgb[1], rgb[2]);
+	}
+	//[/RGBSabers]
 
 	memset( &saber, 0, sizeof( refEntity_t ));
 
@@ -4126,24 +4214,33 @@ void CG_DoSaber( vec3_t origin, vec3_t dir, float length, saber_colors_t color, 
 
 	// Jeff, I did this because I foolishly wished to have a bright halo as the saber is unleashed.  
 	// It's not quite what I'd hoped tho.  If you have any ideas, go for it!  --Pat
-	if (length < SABER_LENGTH_MAX)
-	{
+	if (length < SABER_LENGTH_MAX) {
 		radiusmult = 1.0 + (2.0 / length);		// Note this creates a curve, and length cannot be < 0.5.
-	}
-	else
-	{
+	} else {
 		radiusmult = 1.0;
 	}
 
+	//[RGBSabers]
+	for (i = 0; i < 3; i++ )
+		rgb[i] *= 255;
+	//[/RGBSabers]
 
 	saber.radius = (2.8 + crandom() * 0.2f)*radiusmult;
-
 
 	VectorCopy( origin, saber.origin );
 	VectorCopy( dir, saber.axis[0] );
 	saber.reType = RT_SABER_GLOW;
 	saber.customShader = glow;
-	saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
+//	saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
+	//[RGBSabers]
+	if ( color < SABER_RGB ) {
+		saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
+	} else {
+		for (i = 0; i < 3; i++)
+			saber.shaderRGBA[i] = rgb[i];
+		saber.shaderRGBA[3] = 0xff;
+	}
+	//[/RGBSabers]
 	saber.renderfx = rfx;
 
 	trap_R_AddRefEntityToScene( &saber );
@@ -4162,6 +4259,59 @@ void CG_DoSaber( vec3_t origin, vec3_t dir, float length, saber_colors_t color, 
 	saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
 
 	trap_R_AddRefEntityToScene( &saber );
+
+	//[RGBSabers]
+#if 0
+	if(color < SABER_RGB)
+		saber.shaderRGBA[0] = saber.shaderRGBA[1] = saber.shaderRGBA[2] = saber.shaderRGBA[3] = 0xff;
+	else
+	{
+		for(i=0;i<3;i++)
+			saber.shaderRGBA[i] = rgb[i];
+		saber.shaderRGBA[3] = 255;
+	}
+
+
+	//	SE_R_AddRefEntityToScene( &saber, MAX_CLIENTS );
+
+	if(color < SABER_RGB)
+		return;
+#endif
+
+	memcpy(&sbak, &saber, sizeof(sbak));
+
+	if (color >= SABER_RGB) {
+		switch (color) {
+		default:
+		case SABER_RGB:
+			sbak.customShader = cgs.media.rgbSaberCoreShader;
+			break;
+		case SABER_FLAME1:
+			sbak.customShader = cgs.media.rgbSaberCore2Shader;
+			break;
+		case SABER_ELEC1:
+			sbak.customShader = cgs.media.rgbSaberCore3Shader;
+			break;
+		case SABER_FLAME2:
+			sbak.customShader = cgs.media.rgbSaberCore4Shader;
+			break;
+		case SABER_ELEC2:
+			sbak.customShader = cgs.media.rgbSaberCore5Shader;
+			break;
+		case SABER_BLACK:
+			sbak.customShader = cgs.media.blackSaberCoreShader;
+		}
+	}
+
+	sbak.shaderRGBA[0] = sbak.shaderRGBA[1] = sbak.shaderRGBA[2] = sbak.shaderRGBA[3] = 0xff;
+
+	lol = Q_fabs((float)sin(cg.time / 400.0 + cg.timeFraction / 400.0));
+	lol = (lol * 0.1f) + 0.8f;//cg_saberWidth.value;
+	sbak.radius = lol;
+
+//	SE_R_AddRefEntityToScene( &sbak );
+	trap_R_AddRefEntityToScene( &sbak );
+	//[/RGBSabers]
 }
 
 //--------------------------------------------------------------
@@ -4459,8 +4609,7 @@ static void CG_G2SaberEffects(vec3_t start, vec3_t end, centity_t *owner) {
 #define FX_USE_ALPHA		0x08000000
 
 void CG_AddSaberBlade( centity_t *cent, centity_t *scent, refEntity_t *saber, int renderfx, int modelIndex, vec3_t origin, vec3_t angles, qboolean fromSaber) {
-	vec3_t	org_, end, v,
-			axis_[3] = {0,0,0, 0,0,0, 0,0,0};	// shut the compiler up
+	vec3_t	org_, end, v, axis_[3] = {0,0,0, 0,0,0, 0,0,0}; // shut the compiler up
 	trace_t	trace;
 	int i = 0;
 	float saberLen, dualSaberLen;
@@ -4486,7 +4635,7 @@ void CG_AddSaberBlade( centity_t *cent, centity_t *scent, refEntity_t *saber, in
 		}
 
 		if (cent->saberLength < SABER_LENGTH_MAX) {
-			cent->saberLength += ((cg.time - cent->saberExtendTime) + cg.timeFraction)*0.05;
+			cent->saberLength += ((cg.time - cent->saberExtendTime) + cg.timeFraction)*0.05f;
 		}
 
 		if (cent->saberLength > SABER_LENGTH_MAX) {
@@ -4719,16 +4868,15 @@ CheckTrail:
 
 	// if we happen to be timescaled or running in a high framerate situation, we don't want to flood
 	//	the system with very small trail slices...but perhaps doing it by distance would yield better results?
-	if ( cg.time > saberTrail->lastTime + 2 ) // 2ms
-	{
+	if ( cg.time > saberTrail->lastTime + 2 ) { // 2ms
 		if ((saberMoveData[cent->currentState.saberMove].trailLength > 0
 			|| ((cent->currentState.powerups & (1 << PW_SPEED) && (cg_speedTrail.integer || cg_saberTrail.integer == 2))) || cent->currentState.saberInFlight)
 			&& cg.time < saberTrail->lastTime + 2000 ) // if we have a stale segment, don't draw until we have a fresh one
 		{
 			vec3_t	rgb1={255.0f,255.0f,255.0f};
+			qhandle_t trailShader = cgs.media.saberBlurShader;
 
-			switch( scolor )
-			{
+			switch(scolor) {
 				case SABER_RED:
 					VectorSet( rgb1, 255.0f, 0.0f, 0.0f );
 					break;
@@ -4750,6 +4898,55 @@ CheckTrail:
 				default:
 					VectorSet( rgb1, 0.0f, 64.0f, 255.0f );
 					break;
+					//[RGBSabers]
+			//	case SABER_WHITE:
+				case SABER_BLACK:
+					VectorSet( rgb1, 255.0f, 255.0f, 255.0f );
+					break;
+				case SABER_FLAME1:
+				case SABER_ELEC1:
+				case SABER_FLAME2:
+				case SABER_ELEC2:
+				case SABER_RGB:
+					{
+						int cnum = cent->currentState.clientNum;
+						if(cnum < MAX_CLIENTS) {
+							clientInfo_t *ci = &cgs.clientinfo[cnum];
+							VectorCopy(ci->rgb1, rgb1);
+						} else {
+							VectorSet( rgb1, 0.0f, 64.0f, 255.0f );
+						}
+					}
+					break;
+					//[/RGBSabers]
+			}
+
+			switch (scolor) {
+			default:
+			case SABER_RED:
+			case SABER_ORANGE:
+			case SABER_YELLOW:
+			case SABER_GREEN:
+			case SABER_BLUE:
+			case SABER_PURPLE:
+			case SABER_RGB:
+				trailShader = cgs.media.saberBlurShader;
+				break;
+			case SABER_FLAME1:
+				trailShader = cgs.media.rgbSaberTrail2Shader;
+				break;
+			case SABER_ELEC1:
+				trailShader = cgs.media.rgbSaberTrail3Shader;
+				break;
+			case SABER_FLAME2:
+				trailShader = cgs.media.rgbSaberTrail4Shader;
+				break;
+			case SABER_ELEC2:
+				trailShader = cgs.media.rgbSaberTrail5Shader;
+				break;
+			case SABER_BLACK:
+				trailShader = cgs.media.blackBlurShader;
+				break;
 			}
 
 			//Here we will use the happy process of filling a struct in with arguments and passing it to a trap function
@@ -4808,15 +5005,15 @@ CheckTrail:
 				fx.mVerts[3].destST[0] = 1.0f + fx.mVerts[2].ST[0];
 				fx.mVerts[3].destST[1] = 1.0f;
 		
-				fx.mShader = cgs.media.saberBlurShader;
+				//[RGBSabers]
+				fx.mShader = trailShader;//cgs.media.saberBlurShader;
 				fx.mSetFlags = FX_USE_ALPHA;
 				fx.mKillTime = SABER_TRAIL_TIME;
 
 				trap_FX_AddPrimitive(&fx);
 			}
 
-			if (cent->currentState.bolt2)
-			{
+			if (cent->currentState.bolt2) {
 				float oldAlpha = 1.0f - ( diff / SABER_TRAIL_TIME );
 
 				VectorCopy( otherPos, fx.mVerts[0].origin );
@@ -4861,7 +5058,8 @@ CheckTrail:
 				fx.mVerts[3].destST[0] = 1.0f + fx.mVerts[2].ST[0];
 				fx.mVerts[3].destST[1] = 1.0f;
 		
-				fx.mShader = cgs.media.saberBlurShader;
+				//[RGBSabers]
+				fx.mShader = trailShader;//cgs.media.saberBlurShader;
 				fx.mSetFlags = FX_USE_ALPHA;
 				fx.mKillTime = SABER_TRAIL_TIME;
 
@@ -4885,70 +5083,49 @@ JustDoIt:
 	if (cg_saberTrail.integer && cg.time < saberTrail->lastTime)
 		saberTrail->lastTime = cg.time;
 
-	if (client && cent->currentState.bolt2)
-	{
+	if (client && cent->currentState.bolt2) {
 		float sideOneLen = saberLen*dualLen;
 		float sideTwoLen = dualSaberLen*dualLen;
-
-		if (sideOneLen < 1)
-		{
+		if (sideOneLen < 1) {
 			sideOneLen = 1;
-		}
-		
-		CG_DoSaber( org_, axis_[0], sideOneLen, scolor, renderfx );
-
-		CG_DoSaber( otherPos, otherDir, sideTwoLen, scolor, renderfx );
-	}
-	else
-	{
+		}		
+		CG_DoSaber(org_, axis_[0], sideOneLen, scolor, renderfx, cent->currentState.clientNum);
+		CG_DoSaber(otherPos, otherDir, sideTwoLen, scolor, renderfx, cent->currentState.clientNum);
+	} else {
 		// Pass in the renderfx flags attached to the saber weapon model...this is done so that saber glows
 		//	will get rendered properly in a mirror...not sure if this is necessary??
-		CG_DoSaber( org_, axis_[0], saberLen, scolor, renderfx );
+		CG_DoSaber(org_, axis_[0], saberLen, scolor, renderfx, cent->currentState.clientNum);
 	}
 }
 
-int CG_IsMindTricked(int trickIndex1, int trickIndex2, int trickIndex3, int trickIndex4, int client)
-{
+int CG_IsMindTricked(int trickIndex1, int trickIndex2, int trickIndex3, int trickIndex4, int client) {
 	int checkIn;
 	int sub = 0;
 
-	if (cg_entities[client].currentState.forcePowersActive & (1 << FP_SEE))
-	{
+	if (cg_entities[client].currentState.forcePowersActive & (1 << FP_SEE)) {
 		return 0;
 	}
-
-	if (client > 47)
-	{
+	if (client > 47) {
 		checkIn = trickIndex4;
 		sub = 48;
-	}
-	else if (client > 31)
-	{
+	} else if (client > 31) {
 		checkIn = trickIndex3;
 		sub = 32;
-	}
-	else if (client > 15)
-	{
+	} else if (client > 15) {
 		checkIn = trickIndex2;
 		sub = 16;
-	}
-	else
-	{
+	} else {
 		checkIn = trickIndex1;
 	}
-
-	if (checkIn & (1 << (client-sub)))
-	{
+	if (checkIn & (1 << (client-sub))) {
 		return 1;
-	}
-	
+	}	
 	return 0;
 }
 
 #define SPEED_TRAIL_DISTANCE 6
 
-void CG_DrawPlayerSphere(centity_t *cent, vec3_t origin, float scale, int shader)
-{
+void CG_DrawPlayerSphere(centity_t *cent, vec3_t origin, float scale, int shader) {
 	refEntity_t ent;
 	
 	// Don't draw the shield when the player is dead.
@@ -5449,9 +5626,9 @@ static void CG_G2EntRunLerpFrame( centity_t *cent, lerpFrame_t *lf, int newAnima
 	}
 	// calculate current lerp value
 	if ( lf->frameTime == lf->oldFrameTime ) {
-		lf->backlerp = 0;
+		lf->backlerp = 0.0f;
 	} else {
-		lf->backlerp = 1.0 - ((cg.time - lf->oldFrameTime) + cg.timeFraction) / (lf->frameTime - lf->oldFrameTime);
+		lf->backlerp = 1.0f - ((cg.time - lf->oldFrameTime) + cg.timeFraction) / (float)(lf->frameTime - lf->oldFrameTime);
 	}
 }
 
@@ -6116,6 +6293,34 @@ void CG_ForceFPLSPlayerModel(centity_t *cent, clientInfo_t *ci)
 
 /*
 ===============
+CG_ForceLoopingSounds
+MME replacement for force looping sounds
+===============
+*/
+void CG_ForceLoopingSounds( centity_t *cent ) {
+	int activePowers = cent->currentState.forcePowersActive;
+	int num = cent->currentState.number;
+	vec3_t origin;
+	VectorCopy(cent->lerpOrigin, origin);
+	if (activePowers & (1 << FP_SPEED)) {
+		trap_S_AddRealLoopingSound(num, origin, vec3_origin, cgs.media.speedLoopSound );
+	}
+	if (activePowers & (1 << FP_PROTECT)) {
+		trap_S_AddRealLoopingSound(num, origin, vec3_origin, cgs.media.protectLoopSound );
+	}
+	if (activePowers & (1 << FP_ABSORB)) {
+		trap_S_AddRealLoopingSound(num, origin, vec3_origin, cgs.media.absorbLoopSound );
+	}
+	if (activePowers & (1 << FP_RAGE)) {
+		trap_S_AddRealLoopingSound(num, origin, vec3_origin, cgs.media.rageLoopSound );
+	}
+	if (activePowers & (1 << FP_SEE)) {
+		trap_S_AddRealLoopingSound(num, origin, vec3_origin, cgs.media.seeLoopSound );
+	}
+}
+
+/*
+===============
 CG_Player
 ===============
 */
@@ -6347,7 +6552,7 @@ skipEffectOverride:
 		cent->ghoul2weapon != g2WeaponInstances[cent->currentState.weapon] &&
 		!(cent->currentState.eFlags & EF_DEAD) && !cent->torsoBolt && !cent->isATST)
 	{
-		CG_CopyG2WeaponInstance(cent->currentState.weapon, cent->ghoul2);
+		CG_CopyG2WeaponInstance(cent, cent->currentState.weapon, cent->ghoul2);
 
 		if (!(cg.snap->ps.pm_flags & PMF_FOLLOW))
 		{
@@ -6447,16 +6652,15 @@ skipEffectOverride:
 		seeker.renderfx = 0; //renderfx;
 							 //don't show in first person?
 
-		angle = (((cg.time / 12) & 255) + cg.timeFraction / 12) * (M_PI * 2) / 255;
-		dir[0] = cos(angle) * 20;
-		dir[1] = sin(angle) * 20;
-		dir[2] = cos(angle) * 5;
+		dir[0] = cos(((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * ((double)M_PI * 2.0) / 255.0) * 20.0f;
+		dir[1] = sin(((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * ((double)M_PI * 2.0) / 255.0) * 20.0f;
+		dir[2] = cos(((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * ((double)M_PI * 2.0) / 255.0) * 5.0f;
 		VectorAdd(elevated, dir, seeker.origin);
 
 		VectorCopy(seeker.origin, seekorg);
 
 		if (cent->currentState.genericenemyindex > 1024) {
-			prefig = ((cent->currentState.genericenemyindex-cg.time)-cg.timeFraction)/80;
+			prefig = ((cent->currentState.genericenemyindex - cg.time) - cg.timeFraction) / 80.0f;
 
 			if (prefig > 55)
 				prefig = 55;
@@ -6465,10 +6669,9 @@ skipEffectOverride:
 
 			elevated[2] -= 55-prefig;
 
-			angle = (((cg.time / 12) & 255) + cg.timeFraction / 12) * (M_PI * 2) / 255;
-			dir[0] = cos(angle) * 20;
-			dir[1] = sin(angle) * 20;
-			dir[2] = cos(angle) * 5;
+			dir[0] = cos(((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * ((double)M_PI * 2.0) / 255.0) * 20.0f;
+			dir[1] = sin(((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * ((double)M_PI * 2.0) / 255.0) * 20.0f;
+			dir[2] = cos(((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * ((double)M_PI * 2.0) / 255.0) * 5.0f;
 			VectorAdd(elevated, dir, seeker.origin);
 		}
 		else if (cent->currentState.genericenemyindex != ENTITYNUM_NONE && cent->currentState.genericenemyindex != -1)
@@ -6486,10 +6689,11 @@ skipEffectOverride:
 
 		if (!successchange)
 		{
-			angles[0] = sin(angle) * 30;
-			angles[1] = (angle * 180 / M_PI) + 90;
-			if (angles[1] > 360)
-				angles[1] -= 360;
+			angles[0] = sin(((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * ((double)M_PI * 2.0) / 255.0) * 30.0f;
+			angles[1] = ((((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * (2.0) / 255.0) * 180.0) + 90.0f;
+			/*if (angles[1] > 360)
+				angles[1] -= 360;*/
+			AngleNormalize360(angles[1]);
 			angles[2] = 0;
 		}
 
@@ -6517,6 +6721,8 @@ doEssentialOne:
 	legs.shadowPlane = shadowPlane;
 	legs.renderfx = renderfx;
 	VectorCopy (legs.origin, legs.oldorigin);	// don't positionally lerp at all
+
+	CG_ForceLoopingSounds( cent );
 
 	CG_G2PlayerAngles( cent, legs.axis, rootAngles );
 
@@ -6934,10 +7140,12 @@ doEssentialTwo:
 		}
 	}
 
+#ifndef _DEBUG
 	if (cent->currentState.weapon == WP_STUN_BATON/* && cent->currentState.number == cg.snap->ps.clientNum*/) {
 		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, 
 			trap_S_RegisterSound( "sound/weapons/baton/idle.wav" ) );
 	}
+#endif
 
 	//NOTE: All effects that should be visible during mindtrick should go above here
 
@@ -7000,7 +7208,7 @@ skipPowerType3:
 				legs.shaderRGBA[2] = 0;
 			}
 
-			legs.shaderRGBA[3] = (((cg_entities[cent->currentState.number].teamPowerEffectTime - cg.time) - cg.timeFraction) / 8);
+			legs.shaderRGBA[3] = (((cg_entities[cent->currentState.number].teamPowerEffectTime - cg.time) - cg.timeFraction) / 8.0f);
 
 			legs.customShader = trap_R_RegisterShader( "powerups/ysalimarishell" );
 			trap_R_AddRefEntityToScene(&legs);
@@ -7071,65 +7279,48 @@ skipPowerType3:
 		}
 	}
 
-	if (cgs.gametype == GT_HOLOCRON && cent->currentState.time2
-		&& (cg.renderingThirdPerson || (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number)))
-	{
+	if (cgs.gametype == GT_HOLOCRON && cent->currentState.time2 && (cg.renderingThirdPerson ||
+		(cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number))) {
 		int i = 0;
 		int renderedHolos = 0;
 		refEntity_t		holoRef;
 
-		while (i < NUM_FORCE_POWERS && renderedHolos < 3)
-		{
-			if (cent->currentState.time2 & (1 << i))
-			{
-				memset( &holoRef, 0, sizeof(holoRef) );
+		while (i < NUM_FORCE_POWERS && renderedHolos < 3) {
+			if (cent->currentState.time2 & (1 << i)) {
+				memset(&holoRef, 0, sizeof(holoRef));
 
 				VectorCopy(cent->lerpOrigin, elevated);
 				elevated[2] += 8;
 
-				VectorCopy( elevated, holoRef.lightingOrigin );
+				VectorCopy(elevated, holoRef.lightingOrigin);
 				holoRef.shadowPlane = shadowPlane;
 				holoRef.renderfx = 0;//RF_THIRD_PERSON;
 
-				if (renderedHolos == 0)
-				{
-					angle = (((cg.time / 8) & 255) + cg.timeFraction / 8) * (M_PI * 2) / 255;
-					dir[0] = cos(angle) * 20;
-					dir[1] = sin(angle) * 20;
-					dir[2] = cos(angle) * 20;
+				if (renderedHolos == 0) {
+					dir[0] = cos(((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) * 20.0f;
+					dir[1] = sin(((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) * 20.0f;
+					dir[2] = cos(((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) * 20.0f;
 					VectorAdd(elevated, dir, holoRef.origin);
 
-					angles[0] = sin(angle) * 30;
-					angles[1] = (angle * 180 / M_PI) + 90;
-					if (angles[1] > 360)
-						angles[1] -= 360;
+					angles[0] = sin(((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) * 30.0f;
+					angles[1] = ((((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * (2.0) / 255.0) * 180.0) + 900.0f;
+					AngleNormalize360(angles[1]);
 					angles[2] = 0;
-					AnglesToAxis( angles, holoRef.axis );
-				}
-				else if (renderedHolos == 1)
-				{
-					angle = (((cg.time / 8) & 255) + cg.timeFraction / 8) * (M_PI * 2) / 255 + M_PI;
-					if (angle > M_PI * 2)
-						angle -= (float)M_PI * 2;
-					dir[0] = sin(angle) * 20;
-					dir[1] = cos(angle) * 20;
-					dir[2] = cos(angle) * 20;
+					AnglesToAxis(angles, holoRef.axis);
+				} else if (renderedHolos == 1) {
+					dir[0] = sin((((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) + M_PI) * 20.0f;
+					dir[1] = cos((((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) + M_PI) * 20.0f;
+					dir[2] = cos((((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) + M_PI) * 20.0f;
 					VectorAdd(elevated, dir, holoRef.origin);
 
-					angles[0] = cos(angle - 0.5 * M_PI) * 30;
-					angles[1] = 360 - (angle * 180 / M_PI);
-					if (angles[1] > 360)
-						angles[1] -= 360;
+					angles[0] = cos((double)((((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) + M_PI) - (0.5 * M_PI)) * 30.0f;
+					angles[1] = 360.0f - (((((double)cg.time / 8.0 + (double)cg.timeFraction / 8.0) * ((double)M_PI * 2.0) / 255.0) + M_PI) * 180.0 / M_PI);
+					AngleNormalize360(angles[1]);
 					angles[2] = 0;
-					AnglesToAxis( angles, holoRef.axis );
-				}
-				else
-				{
-					angle = (((cg.time / 6) & 255) + cg.timeFraction / 6) * (M_PI * 2) / 255 + 0.5 * M_PI;
-					if (angle > M_PI * 2)
-						angle -= (float)M_PI * 2;
-					dir[0] = sin(angle) * 20;
-					dir[1] = cos(angle) * 20;
+					AnglesToAxis(angles, holoRef.axis);
+				} else {
+					dir[0] = sin((((double)cg.time / 6.0 + (double)cg.timeFraction / 6.0) * ((double)M_PI * 2.0) / 255.0) + 0.5 * M_PI) * 20;
+					dir[1] = cos((((double)cg.time / 6.0 + (double)cg.timeFraction / 6.0) * ((double)M_PI * 2.0) / 255.0) + 0.5 * M_PI) * 20;
 					dir[2] = 0;
 					VectorAdd(elevated, dir, holoRef.origin);
 			
@@ -7273,12 +7464,10 @@ stillDoSaber:
 #endif
 		}
 
-		if (iwantout && !cent->currentState.saberInFlight)
-		{
-			if (cent->currentState.eFlags & EF_DEAD)
-			{
-				if (cent->ghoul2 && cent->currentState.saberInFlight && g2HasWeapon)
-				{ //special case, kill the saber on a freshly dead player if another source says to.
+		if (iwantout && !cent->currentState.saberInFlight) {
+			if (cent->currentState.eFlags & EF_DEAD) {
+				if (cent->ghoul2 && cent->currentState.saberInFlight && g2HasWeapon) {
+				//special case, kill the saber on a freshly dead player if another source says to.
 					trap_G2API_RemoveGhoul2Model(&(cent->ghoul2), 1);
 					g2HasWeapon = qfalse;
 				}
@@ -7287,14 +7476,13 @@ stillDoSaber:
 			goto endOfCall;
 		}
 
-		if (cent->currentState.saberInFlight && cent->currentState.saberEntityNum)
-		{
+		if (cent->currentState.saberInFlight && cent->currentState.saberEntityNum) {
 			centity_t *saberEnt;
 
 			saberEnt = &cg_entities[cent->currentState.saberEntityNum];
 
-			if (/*!cent->bolt4 &&*/ g2HasWeapon)
-			{ //saber is in flight, do not have it as a standard weapon model
+			if (/*!cent->bolt4 &&*/ g2HasWeapon) {
+			//saber is in flight, do not have it as a standard weapon model
 				trap_G2API_RemoveGhoul2Model(&(cent->ghoul2), 1);
 				g2HasWeapon = qfalse;
 
@@ -7311,17 +7499,17 @@ stillDoSaber:
 
 				saberEnt->currentState.bolt2 = 123;
 
-				if (saberEnt->ghoul2)
-				{
+				if (saberEnt->ghoul2) {
 					// now set up the gun bolt on it
 					trap_G2API_AddBolt(saberEnt->ghoul2, 0, "*flash");
-				}
-				else
-				{
-					trap_G2API_InitGhoul2Model(&saberEnt->ghoul2, "models/weapons2/saber/saber_w.glm", 0, 0, 0, 0, 0);
+				} else {
+					const char *saberModel = ci->saberModel;
+					if (saberModel && saberModel[0])
+						trap_G2API_InitGhoul2Model(&saberEnt->ghoul2, va("models/weapons2/%s/saber_w.glm", saberModel), 0, 0, 0, 0, 0);
+					else
+						trap_G2API_InitGhoul2Model(&saberEnt->ghoul2, "models/weapons2/saber/saber_w.glm", 0, 0, 0, 0, 0);
 
-					if (saberEnt->ghoul2)
-					{
+					if (saberEnt->ghoul2) {
 						trap_G2API_AddBolt(saberEnt->ghoul2, 0, "*flash");
 						//cent->bolt4 = 2;
 						
@@ -7341,32 +7529,21 @@ stillDoSaber:
 				}
 			}*/
 
-			if (saberEnt && saberEnt->ghoul2 /*&& cent->bolt4 == 2*/)
-			{
+			if (saberEnt && saberEnt->ghoul2 /*&& cent->bolt4 == 2*/) {
 				vec3_t bladeAngles;
 
-				if (!cent->bolt2)
-				{
+				if (!cent->bolt2) {
 					cent->bolt2 = cg.time;
 				}
-
-				if (cent->bolt3 != 90)
-				{
-					if (cent->bolt3 < 90)
-					{
+				if (cent->bolt3 != 90) {
+					if (cent->bolt3 < 90) {
 						cent->bolt3 += ((cg.time - cent->bolt2) + cg.timeFraction) * 0.5f;
-
-						if (cent->bolt3 > 90)
-						{
+						if (cent->bolt3 > 90) {
 							cent->bolt3 = 90;
 						}
-					}
-					else if (cent->bolt3 > 90)
-					{
+					} else if (cent->bolt3 > 90) {
 						cent->bolt3 -= ((cg.time - cent->bolt2) + cg.timeFraction) * 0.5f;
-
-						if (cent->bolt3 < 90)
-						{
+						if (cent->bolt3 < 90) {
 							cent->bolt3 = 90;
 						}
 					}
@@ -7634,32 +7811,27 @@ doEssentialThree:
 
 	trap_R_AddRefEntityToScene(&legs);
 
-	if (cent->isATST)
-	{
+	if (cent->isATST) {
 		//return;
 		goto endOfCall;
 	}
 
 	cent->frame_minus2 = cent->frame_minus1;
-	if (cent->frame_minus1_refreshed)
-	{
+	if (cent->frame_minus1_refreshed) {
 		cent->frame_minus2_refreshed = 1;
 	}
 	cent->frame_minus1 = legs;
 	cent->frame_minus1_refreshed = 1;
 
-	if (!cent->frame_hold_refreshed && (cent->currentState.powerups & (1 << PW_SPEEDBURST)))
-	{
+	if (!cent->frame_hold_refreshed && (cent->currentState.powerups & (1 << PW_SPEEDBURST))) {
 		cent->frame_hold_time = cg.time + 254;
 	}
 
-	if (cent->frame_hold_time >= cg.time)
-	{
-		if (!cent->frame_hold_refreshed)
-		{ //We're taking the ghoul2 instance from the original refent and duplicating it onto our refent alias so that we can then freeze the frame and fade it for the effect
+	if (cent->frame_hold_time >= cg.time) {
+		if (!cent->frame_hold_refreshed) {
+		//We're taking the ghoul2 instance from the original refent and duplicating it onto our refent alias so that we can then freeze the frame and fade it for the effect
 			if (cent->frame_hold.ghoul2 && trap_G2_HaveWeGhoul2Models(cent->frame_hold.ghoul2) &&
-				cent->frame_hold.ghoul2 != cent->ghoul2)
-			{
+				cent->frame_hold.ghoul2 != cent->ghoul2) {
 				trap_G2API_CleanGhoul2Models(&(cent->frame_hold.ghoul2));
 			}
 			cent->frame_hold = legs;
@@ -7674,20 +7846,15 @@ doEssentialThree:
 		}
 
 		cent->frame_hold.renderfx |= RF_FORCE_ENT_ALPHA;
-		cent->frame_hold.shaderRGBA[3] = (cent->frame_hold_time - cg.time) - cg.timeFraction;
-		if (cent->frame_hold.shaderRGBA[3] > 254)
-		{
+		cent->frame_hold.shaderRGBA[3] = (float)((cent->frame_hold_time - cg.time) - cg.timeFraction);
+		if (cent->frame_hold.shaderRGBA[3] > 254) {
 			cent->frame_hold.shaderRGBA[3] = 254;
-		}
-		if (cent->frame_hold.shaderRGBA[3] < 1)
-		{
+		} else if (cent->frame_hold.shaderRGBA[3] < 1) {
 			cent->frame_hold.shaderRGBA[3] = 1;
 		}
 
 		trap_R_AddRefEntityToScene(&cent->frame_hold);
-	}
-	else
-	{
+	} else {
 		cent->frame_hold_refreshed = 0;
 	}
 
@@ -7959,7 +8126,7 @@ void CG_ResetPlayerEntity( centity_t *cent ) {
 	if ((cent->ghoul2 == NULL) && trap_G2_HaveWeGhoul2Models(cgs.clientinfo[cent->currentState.clientNum].ghoul2Model))
 	{
 		trap_G2API_DuplicateGhoul2Instance(cgs.clientinfo[cent->currentState.clientNum].ghoul2Model, &cent->ghoul2);
-		CG_CopyG2WeaponInstance(cent->currentState.weapon, cgs.clientinfo[cent->currentState.clientNum].ghoul2Model);
+		CG_CopyG2WeaponInstance(cent, cent->currentState.weapon, cgs.clientinfo[cent->currentState.clientNum].ghoul2Model);
 		cent->weapon = cent->currentState.weapon;
 	}
 

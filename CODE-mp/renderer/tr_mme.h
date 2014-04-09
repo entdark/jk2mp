@@ -15,11 +15,13 @@ typedef struct mmeAviFile_s {
 	fileHandle_t f;
 	float fps;
 	int	width, height;
-	unsigned int frames;
-	int index[AVI_MAX_FRAMES];
-	int	written;
-	unsigned __int64 writtenTotal;
+	unsigned int frames, aframes, iframes;
+	int index[2*AVI_MAX_FRAMES];
+	int aindex[2*AVI_MAX_FRAMES];
+	int	written, awritten, maxSize;
+	int header;
 	int format;
+	qboolean audio;
 	mmeShotType_t type;
 } mmeAviFile_t;
 
@@ -55,9 +57,9 @@ void R_MME_GetStencil( void *output );
 void R_MME_GetDepth( byte *output );
 void R_MME_SaveShot( mmeShot_t *shot, int width, int height, float fps, byte *inBuf );
 
-void mmeAviShot( mmeAviFile_t *aviFile, const char *name, mmeShotType_t type, int width, int height, float fps, byte *inBuf );
+void mmeAviShot( mmeAviFile_t *aviFile, const char *name, mmeShotType_t type, int width, int height, float fps, byte *inBuf, qboolean audio );
+void mmeAviSound( mmeAviFile_t *aviFile, const char *name, mmeShotType_t type, int width, int height, float fps, const byte *soundBuf, int size );
 void aviClose( mmeAviFile_t *aviFile );
-void aviCloseAppend( mmeAviFile_t *aviFile );
 
 void MME_AccumClearSSE( void *w, const void *r, short int mul, int count );
 void MME_AccumAddSSE( void* w, const void* r, short int mul, int count );

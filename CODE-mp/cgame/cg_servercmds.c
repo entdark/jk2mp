@@ -129,7 +129,7 @@ This is called explicitly when the gamestate is first received,
 and whenever the server updates any serverinfo flagged cvars
 ================
 */
-extern void trap_MME_NTXIIDetection( qboolean ntDetected );
+extern void trap_MME_NTDetection( qboolean ntDetected );
 void CG_ParseServerinfo( void ) {
 	const char	*info;
 	char	*mapname, *gamename;
@@ -152,9 +152,11 @@ void CG_ParseServerinfo( void ) {
 	
 	cg.ntModDetected = qfalse;
 	gamename = Info_ValueForKey(info, "gamename");
-	if (!Q_stricmp(gamename, "< NT XII >") || !Q_stricmp(gamename, "JDFix.")) {
-		Com_Printf("\n< NT XII > mod detected\n\n");
-		trap_MME_NTXIIDetection(qtrue);
+	if (!Q_stricmp(gamename, "< NT XII >")
+		|| !Q_stricmp(gamename, "< NT XIII >")
+		/* || !Q_stricmp(gamename, "JDFix.")*/) {
+		Com_Printf("\nNT mod detected\n\n");
+		trap_MME_NTDetection(qtrue);
 		cg.ntModDetected = qtrue;
 	}
 
@@ -1174,6 +1176,9 @@ The string has been tokenized and can be retrieved with
 Cmd_Argc() / Cmd_Argv()
 =================
 */
+static char demo15chat[MAX_SAY_TEXT] = "";			//not only 1.02?
+static qboolean demo15trychat = qfalse;	//not only 1.02?
+extern void CG_ChatBox_AddString(char *chatStr); //cg_draw.c
 static void CG_ServerCommand( void ) {
 	const char	*cmd;
 	char		text[MAX_SAY_TEXT];
@@ -1183,6 +1188,11 @@ static void CG_ServerCommand( void ) {
 	if ( !cmd[0] ) {
 		// server claimed the command
 		return;
+	}
+
+	if (!(!strcmp(cmd, "chat") || !strcmp(cmd, "tchat")) && demo15trychat) {
+		CG_Printf("%s", demo15chat);
+		demo15trychat = qfalse;
 	}
 
 	if ( !strcmp( cmd, "spd" ) ) 
@@ -1289,7 +1299,12 @@ static void CG_ServerCommand( void ) {
 	if ( !strcmp( cmd, "print" ) ) {
 		char strEd[MAX_STRIPED_SV_STRING];
 		CG_CheckSVStripEdRef(strEd, CG_Argv(1));
-		CG_Printf( "%s", strEd );
+		if (!cg_chatBox.integer) {
+			CG_Printf( "%s", strEd );
+		} else {
+			Q_strncpyz(demo15chat, strEd, sizeof(demo15chat));
+			demo15trychat = qtrue;
+		}
 		return;
 	}
 
@@ -1299,7 +1314,15 @@ static void CG_ServerCommand( void ) {
 				trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 			Q_strncpyz( text, CG_Argv(1), MAX_SAY_TEXT );
 			CG_RemoveChatEscapeChar( text );
-			CG_Printf( "%s\n", text );
+			if (demo15trychat && !strcmp( text, "" )) {
+				Q_strncpyz( text, demo15chat, MAX_SAY_TEXT );
+				demo15trychat = qfalse;
+			}
+			CG_ChatBox_AddString(text);
+			if (!cg_chatBox.integer)
+				CG_Printf( "%s\n", text );
+			else
+				CG_Printf( "*%s\n", text );
 		}
 		return;
 	}
@@ -1309,8 +1332,16 @@ static void CG_ServerCommand( void ) {
 			trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 		Q_strncpyz( text, CG_Argv(1), MAX_SAY_TEXT );
 		CG_RemoveChatEscapeChar( text );
+		if (demo15trychat && !strcmp( text, "" )) {
+			Q_strncpyz( text, demo15chat, MAX_SAY_TEXT );
+			demo15trychat = qfalse;
+		}
+		CG_ChatBox_AddString(text);
 		CG_AddToTeamChat( text );
-		CG_Printf( "%s\n", text );
+		if (!cg_chatBox.integer)
+			CG_Printf( "%s\n", text );
+		else
+			CG_Printf( "*%s\n", text );
 		return;
 	}
 	if ( !strcmp( cmd, "vchat" ) ) {
@@ -1380,4 +1411,8 @@ void CG_ExecuteNewServerCommands( int latestSequence ) {
 			CG_ServerCommand();
 		}
 	}
+	if (demo15trychat) {
+		CG_Printf("%s", demo15chat);
+	}
+	demo15trychat = qfalse;
 }

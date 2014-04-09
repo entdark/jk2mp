@@ -390,7 +390,7 @@ void CG_RegisterWeapon( int weaponNum) {
 		weaponInfo->chargeSound			= NULL_SOUND;
 		weaponInfo->muzzleEffect		= trap_FX_RegisterEffect( "rocket/muzzle_flash" );
 		weaponInfo->missileModel		= trap_R_RegisterModel( "models/weapons2/merr_sonn/projectile.md3" );
-		weaponInfo->missileSound		= trap_S_RegisterSound( "sound/weapons/rocket/missileloop.wav");
+		weaponInfo->missileSound		= trap_S_RegisterSound( "sound/weapons/rocket/missleloop.wav");
 		weaponInfo->missileDlight		= 125;
 		VectorSet(weaponInfo->missileDlightColor, 1.0, 1.0, 0.5);
 		weaponInfo->missileHitSound		= NULL_SOUND;
@@ -401,7 +401,7 @@ void CG_RegisterWeapon( int weaponNum) {
 		weaponInfo->altChargeSound		= NULL_SOUND;
 		weaponInfo->altMuzzleEffect		= trap_FX_RegisterEffect( "rocket/muzzle_flash" );
 		weaponInfo->altMissileModel		= trap_R_RegisterModel( "models/weapons2/merr_sonn/projectile.md3" );
-		weaponInfo->altMissileSound		= trap_S_RegisterSound( "sound/weapons/rocket/missileloop.wav");
+		weaponInfo->altMissileSound		= trap_S_RegisterSound( "sound/weapons/rocket/missleloop.wav");
 		weaponInfo->altMissileDlight	= 125;
 		VectorSet(weaponInfo->altMissileDlightColor, 1.0, 1.0, 0.5);
 		weaponInfo->altMissileHitSound	= NULL_SOUND;

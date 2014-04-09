@@ -228,8 +228,7 @@ void CG_AddFragment( localEntity_t *le ) {
 	vec3_t	newOrigin;
 	trace_t	trace;
 
-	if (le->forceAlpha)
-	{
+	if (le->forceAlpha) {
 		le->refEntity.renderfx |= RF_FORCE_ENT_ALPHA;
 		le->refEntity.shaderRGBA[3] = le->forceAlpha;
 	}
@@ -245,17 +244,13 @@ void CG_AddFragment( localEntity_t *le ) {
 			t_e = (float)(t/(SINK_TIME*2));
 			t_e = (int)((t_e)*255);
 
-			if (t_e > 255)
-			{
+			if (t_e > 255) {
 				t_e = 255;
-			}
-			if (t_e < 1)
-			{
+			} else if (t_e < 1) {
 				t_e = 1;
 			}
 
-			if (le->refEntity.shaderRGBA[3] && t_e > le->refEntity.shaderRGBA[3])
-			{
+			if (le->refEntity.shaderRGBA[3] && t_e > le->refEntity.shaderRGBA[3]) {
 				t_e = le->refEntity.shaderRGBA[3];
 			}
 
@@ -396,7 +391,7 @@ static void CG_AddMoveScaleFade( localEntity_t *le ) {
 
 	if ( le->fadeInTime > le->startTime && cg.time < le->fadeInTime ) {
 		// fade / grow time
-		c = 1.0 - (( le->fadeInTime - cg.time) - cg.timeFraction) / ( le->fadeInTime - le->startTime );
+		c = 1.0f - (( le->fadeInTime - cg.time) - cg.timeFraction) / ( le->fadeInTime - le->startTime );
 	}
 	else {
 		// fade / grow time
@@ -553,9 +548,8 @@ static void CG_AddExplosion( localEntity_t *ex ) {
 
 	// add the dlight
 	if ( ex->light ) {
-		float		light;
+		float light = (float)((cg.time - ex->startTime) + cg.timeFraction) / (ex->endTime - ex->startTime);
 
-		light = (float)((cg.time - ex->startTime) + cg.timeFraction) / (ex->endTime - ex->startTime);
 		if ( light < 0.5 ) {
 			light = 1.0;
 		} else {
@@ -594,9 +588,8 @@ static void CG_AddSpriteExplosion( localEntity_t *le ) {
 
 	// add the dlight
 	if ( le->light ) {
-		float		light;
+		float light = (( cg.time - le->startTime ) + cg.timeFraction) / ( le->endTime - le->startTime );
 
-		light = (( cg.time - le->startTime ) + cg.timeFraction) / ( le->endTime - le->startTime );
 		if ( light < 0.5 ) {
 			light = 1.0;
 		} else {

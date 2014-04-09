@@ -484,6 +484,14 @@ typedef enum
 	SABER_GREEN,
 	SABER_BLUE,
 	SABER_PURPLE,
+	//[RGBSaber]
+	SABER_RGB,
+	SABER_FLAME1,
+	SABER_ELEC1,
+	SABER_FLAME2,
+	SABER_ELEC2,
+	SABER_BLACK,
+	//[/RGBSaber]
 	NUM_SABER_COLORS
 
 } saber_colors_t;
@@ -997,6 +1005,8 @@ float	Q_crandom( int *seed );
 
 #define random()	((rand () & 0x7fff) / ((float)0x7fff))
 #define crandom()	(2.0 * (random() - 0.5))
+
+void AxisToAngles( const vec3_t axis[3], vec3_t angles );
 
 void vectoangles( const vec3_t value1, vec3_t angles);
 void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
@@ -2191,6 +2201,8 @@ enum {
 
 #endif	// __Q_SHARED_H
 
+
+#define MME_SAMPLERATE	44100 //ja is full of 44khz mp3
 
 typedef struct {
 	fileHandle_t fileHandle;

@@ -1174,6 +1174,12 @@ Ghoul2 Insert End
 	case CG_MME_CAPTURE_STEREO:
 		re.CaptureStereo( (char *)VMA(1), VMF(2), VMF(3) );
 		return 0;
+	case CG_MME_BEGIN_FRAME:
+		re.BeginFrame( (stereoFrame_t)args[1] );
+		return 0;
+	case CG_MME_END_FRAME:
+		re.EndFrame( NULL, NULL );
+		return 0;
 	case CG_MME_BLURINFO:
 		re.BlurInfo( (int *)VMA(1), (int *)VMA(2) );
 		return 0;
@@ -1182,7 +1188,7 @@ Ghoul2 Insert End
         return 0;
 	case CG_MME_DEMO15DETECTION:
         return demo15detected;
-	case CG_MME_NTXIIDETECTION:
+	case CG_MME_NTDETECTION:
         ntModDetected = (qboolean)args[1];
 		return 0;
 	case CG_R_RANDOMSEED:

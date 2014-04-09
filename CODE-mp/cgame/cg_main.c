@@ -515,11 +515,13 @@ vmCvar_t	cg_recordSPDemoName;
 
 vmCvar_t	ui_myteam;
 
+//JA
+vmCvar_t	cg_chatBox;
+vmCvar_t	cg_chatBoxHeight;
 
 //mme
 vmCvar_t	mov_chatBeep;
 vmCvar_t	mov_fragsOnly;
-vmCvar_t	mov_captureCamera;
 vmCvar_t	mov_captureName;
 vmCvar_t	mov_captureFPS;
 
@@ -543,6 +545,24 @@ vmCvar_t	fx_Vibrate;
 vmCvar_t	fx_vfps;
 
 vmCvar_t	mme_demoFileName;
+
+vmCvar_t	fx_disruptTime;
+vmCvar_t	fx_disruptTeamColour;
+vmCvar_t	fx_disruptSpiral;
+vmCvar_t	fx_disruptCoreColor;
+vmCvar_t	fx_disruptSpiralColor;
+
+#ifdef TRUEVIEW
+vmCvar_t	cg_trueEyePosition;
+vmCvar_t	cg_trueFlip;
+vmCvar_t	cg_trueFOV;
+vmCvar_t	cg_trueGuns;
+vmCvar_t	cg_trueInvertSaber;
+vmCvar_t	cg_trueMoveRoll;
+vmCvar_t	cg_trueRoll;
+vmCvar_t	cg_trueSaberOnly;
+vmCvar_t	cg_trueSpin;
+#endif
 
 
 typedef struct {
@@ -700,7 +720,11 @@ Ghoul2 Insert Start
 /*
 Ghoul2 Insert End
 */
-	{ &mme_demoFileName,	"mme_demoFileName",		"",			0		},
+	//JA
+	{ &cg_chatBox,			"cg_chatBox",			"0",		CVAR_ARCHIVE	},
+	{ &cg_chatBoxHeight,	"cg_chatBoxHeight",		"350",		CVAR_ARCHIVE	},
+	//mme
+	{ &mme_demoFileName,	"mme_demoFileName",		"",			0				},
 	{ &mov_chatBeep,		"mov_chatBeep",			"1",		CVAR_ARCHIVE	},
 	{ &mov_fragsOnly,		"mov_fragsOnly",		"0",		CVAR_ARCHIVE	},
 	{ &mov_filterMask,		"mov_filterMask",		"0",		CVAR_ARCHIVE	},
@@ -708,7 +732,6 @@ Ghoul2 Insert End
 	{ &mov_deltaYaw,		"mov_deltaYaw",			"0",		CVAR_ARCHIVE	},
 	{ &mov_deltaPitch,		"mov_deltaPitch",		"0",		CVAR_ARCHIVE	},
 	{ &mov_deltaRoll,		"mov_deltaRoll",		"0",		CVAR_ARCHIVE	},
-	{ &mov_captureCamera,	"mov_captureCamera",	"0",		CVAR_ARCHIVE	},
 	{ &mov_captureName,		"mov_captureName",		"",			CVAR_TEMP		},
 	{ &mov_captureFPS,		"mov_captureFPS",		"25",		CVAR_ARCHIVE	},
 	{ &mov_musicFile,		"mov_musicFile",		"",			CVAR_TEMP		},
@@ -721,6 +744,22 @@ Ghoul2 Insert End
 	{ &mov_wallhack,		"mov_wallhack",			"0",		CVAR_ARCHIVE	},
 	{ &fx_Vibrate,			"fx_Vibrate",			"1",		CVAR_ARCHIVE	},
 	{ &fx_vfps,				"fx_vfps",				"1000",		CVAR_ARCHIVE	},
+	{ &fx_disruptTime,		"fx_disruptTime",		"150",		CVAR_ARCHIVE	},	//from smod
+	{ &fx_disruptTeamColour,"fx_disruptTeamColour",	"0",		CVAR_ARCHIVE	},
+	{ &fx_disruptSpiral,	"fx_disruptSpiral",		"0",		CVAR_ARCHIVE	},
+	{ &fx_disruptCoreColor,	"fx_disruptCoreColor",	"0",		CVAR_ARCHIVE	},
+	{ &fx_disruptSpiralColor,"fx_disruptSpiralColor","0",		CVAR_ARCHIVE	},
+#ifdef TRUEVIEW
+	{ &cg_trueEyePosition,	"cg_trueEyePosition",	"-2",		CVAR_ARCHIVE	},
+	{ &cg_trueFlip,			"cg_trueFlip",			"2",		CVAR_ARCHIVE	},
+	{ &cg_trueFOV,			"cg_trueFOV",			"0",		CVAR_ARCHIVE	},
+	{ &cg_trueGuns,			"cg_trueGuns",			"0",		CVAR_ARCHIVE	},
+	{ &cg_trueInvertSaber,	"cg_trueInvertSaber",	"0",		CVAR_ARCHIVE	},
+	{ &cg_trueMoveRoll,		"cg_trueMoveRoll",		"0",		CVAR_ARCHIVE	},
+	{ &cg_trueRoll,			"cg_trueRoll",			"2",		CVAR_ARCHIVE	},
+	{ &cg_trueSaberOnly,	"cg_trueSaberOnly",		"1",		CVAR_ARCHIVE	},
+	{ &cg_trueSpin,			"cg_trueSpin",			"1",		CVAR_ARCHIVE	},
+#endif
 };
 
 static int  cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
@@ -1006,6 +1045,54 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.purpleSaberCoreShader		= trap_R_RegisterShader( "gfx/effects/sabers/purple_line" );
 	cgs.media.saberBlurShader			= trap_R_RegisterShader( "gfx/effects/sabers/saberBlur" );
 
+	//[RGBSabers]
+	//if no ja++ shader
+		//then try ja+ shader
+	cgs.media.rgbSaberGlowShader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBglow1" );
+	if (!cgs.media.rgbSaberGlowShader)
+		cgs.media.rgbSaberGlowShader	= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBGlow" );
+	cgs.media.rgbSaberCoreShader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBcore1" );
+	if (!cgs.media.rgbSaberCoreShader)
+		cgs.media.rgbSaberCoreShader	= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBLine" );
+
+	//Flame 1
+	cgs.media.rgbSaberGlow2Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBglow2" );
+	if (!cgs.media.rgbSaberGlow2Shader)
+		cgs.media.rgbSaberGlow2Shader	= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBGlow" );
+	cgs.media.rgbSaberCore2Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBcore2" );
+	cgs.media.rgbSaberTrail2Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBtrail2" );
+
+	//Electric 1
+	cgs.media.rgbSaberGlow3Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBglow3" );
+	if (!cgs.media.rgbSaberGlow3Shader)
+		cgs.media.rgbSaberGlow3Shader	= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBGlow" );
+	cgs.media.rgbSaberCore3Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBcore3" );
+	cgs.media.rgbSaberTrail3Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBtrail3" );
+
+	//Flame 2
+	cgs.media.rgbSaberGlow4Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBglow4" );
+	cgs.media.rgbSaberCore4Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBcore4" );
+	cgs.media.rgbSaberTrail4Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBtrail4" );
+
+	//Electric 2
+	cgs.media.rgbSaberGlow5Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBglow5" );
+	if (!cgs.media.rgbSaberGlow5Shader)
+		cgs.media.rgbSaberGlow5Shader	= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBGlow" );
+	cgs.media.rgbSaberCore5Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/RGBcore5" );
+	cgs.media.rgbSaberTrail5Shader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/swordTrail" );
+
+	//Black
+	cgs.media.blackSaberGlowShader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/blackglow" );
+	if (!cgs.media.blackSaberGlowShader)
+		cgs.media.blackSaberGlowShader	= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/black_glow" );
+	cgs.media.blackSaberCoreShader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/blackcore" );
+	if (!cgs.media.blackSaberCoreShader)
+		cgs.media.blackSaberCoreShader	= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/black_line" );
+	cgs.media.blackBlurShader			= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/blacktrail" );
+	if (!cgs.media.blackBlurShader)
+		cgs.media.blackBlurShader		= trap_R_RegisterShaderNoMip( "gfx/effects/sabers/blacksaberBlur" );
+	//[/RGBSabers]
+
 	cgs.media.yellowDroppedSaberShader	= trap_R_RegisterShader("gfx/effects/yellow_glow");
 
 	cgs.media.rivetMarkShader			= trap_R_RegisterShader( "gfx/damage/rivetmark" );
@@ -1096,7 +1183,11 @@ static void CG_RegisterSounds( void ) {
 	trap_S_RegisterSound( "sound/weapons/rocket/tick.wav" );
 	trap_S_RegisterSound( "sound/weapons/rocket/lock.wav" );
 
-	trap_S_RegisterSound("sound/weapons/force/speedloop.wav");
+	cgs.media.speedLoopSound = trap_S_RegisterSound("sound/weapons/force/speedloop.wav");
+	cgs.media.protectLoopSound = trap_S_RegisterSound("sound/weapons/force/protectloop.wav");
+	cgs.media.absorbLoopSound = trap_S_RegisterSound("sound/weapons/force/absorbloop.wav");
+	cgs.media.rageLoopSound = trap_S_RegisterSound("sound/weapons/force/rageloop.wav");
+	cgs.media.seeLoopSound = trap_S_RegisterSound("sound/weapons/force/seeloop.wav");
 
 	trap_S_RegisterSound("sound/weapons/force/protecthit.mp3"); //PDSOUND_PROTECTHIT
 	trap_S_RegisterSound("sound/weapons/force/protect.mp3"); //PDSOUND_PROTECT

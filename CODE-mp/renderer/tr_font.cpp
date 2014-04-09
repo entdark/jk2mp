@@ -799,7 +799,7 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 	
 	// Draw a dropshadow if required
 	if(!demo15detected && iFontHandle & STYLE_DROPSHADOW) {
-		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba[3]};
+		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba?rgba[3]:1.0f};
 
 		offset = Round(curfont->GetPointSize() * fScale * 0.075f);
 		

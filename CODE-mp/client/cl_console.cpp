@@ -302,13 +302,16 @@ void Con_Init (void) {
 Con_Linefeed
 ===============
 */
-void Con_Linefeed (void)
-{
+static void Con_Linefeed (qboolean skipnotify) {
 	int		i;
 
 	// mark time for transparent overlay
-	if (con.current >= 0)
-		con.times[con.current % NUM_CON_TIMES] = cls.realtime;
+	if (con.current >= 0) {
+		if (skipnotify)
+			  con.times[con.current % NUM_CON_TIMES] = 0;
+		else
+			  con.times[con.current % NUM_CON_TIMES] = cls.realtime;
+	}
 
 	con.x = 0;
 	if (con.display == con.current)
@@ -331,6 +334,13 @@ void CL_ConsolePrint( char *txt ) {
 	int		y;
 	int		c, l;
 	int		color;
+	qboolean skipnotify = qfalse;		// NERVE - SMF
+	int prev;							// NERVE - SMF
+
+	if ( txt[0] == '*' ) {
+		skipnotify = qtrue;
+		txt += 1;
+	}
 
 	// for some demos we don't want to ever show anything on the console
 	if ( cl_noprint && cl_noprint->integer ) {
@@ -370,16 +380,15 @@ void CL_ConsolePrint( char *txt ) {
 
 		// word wrap
 		if (l != con.linewidth && (con.x + l >= con.linewidth) ) {
-			Con_Linefeed();
+			Con_Linefeed(skipnotify);
 
 		}
 
 		txt++;
 
-		switch (c)
-		{
+		switch (c) {
 		case '\n':
-			Con_Linefeed ();
+			Con_Linefeed (skipnotify);
 			break;
 		case '\r':
 			con.x = 0;
@@ -389,8 +398,7 @@ void CL_ConsolePrint( char *txt ) {
 			con.text[y*con.linewidth+con.x] = (short) ((color << 8) | c);
 			con.x++;
 			if (con.x >= con.linewidth) {
-
-				Con_Linefeed();
+				Con_Linefeed(skipnotify);
 				con.x = 0;
 			}
 			break;
@@ -400,8 +408,18 @@ void CL_ConsolePrint( char *txt ) {
 
 	// mark time for transparent overlay
 
-	if (con.current >= 0)
-		con.times[con.current % NUM_CON_TIMES] = cls.realtime;
+	if (con.current >= 0 ) {
+		// NERVE - SMF
+		if ( skipnotify ) {
+			prev = con.current % NUM_CON_TIMES - 1;
+			if ( prev < 0 )
+				prev = NUM_CON_TIMES - 1;
+			con.times[prev] = 0;
+		}
+		else
+		// -NERVE - SMF
+			con.times[con.current % NUM_CON_TIMES] = cls.realtime;
+	}
 }
 
 
@@ -564,22 +582,24 @@ void Con_DrawNotify (void)
 }
 
 //I want it be rainbow :>
-vec4_t		conColorRed			= {1, 0, 0, 1};
-vec4_t		conColorRedOrange	= {1, 0.25f, 0, 1};
-vec4_t		conColorOrange		= {1, 0.5f, 0, 1};
-vec4_t		conColorOrangeYellow= {1, 0.75f, 0, 1};
-vec4_t		conColorYellow		= {1, 1, 0, 1};
-vec4_t		conColorYellowGreen	= {0.5f, 1, 0, 1};
-vec4_t		conColorGreen		= {0, 1, 0, 1};
-vec4_t		conColorGreenTurq	= {0, 1, 0.25f, 1};
-vec4_t		conColorTurquoise	= {0, 1, 0.5f, 1};
-vec4_t		conColorCyan		= {0, 1, 1, 1};
-vec4_t		conColorCyanBlue	= {0, 0.5f, 1, 1};
-vec4_t		conColorBlue		= {0, 0, 1, 1};
-vec4_t		conColorBluePurple	= {0.25f, 0, 1, 1};
-vec4_t		conColorPurple		= {0.5f, 0, 1, 1};
-vec4_t		conColorPink		= {1, 0, 1, 1};
-vec4_t		conColorMagenta		= {1, 0, 0.5f, 1};
+static vec4_t conColourTable[16] = {
+	{1, 0, 0, 1},		//conColorRed
+	{1, 0.25f, 0, 1},	//conColorRedOrange
+	{1, 0.5f, 0, 1},	//conColorOrange
+	{1, 0.75f, 0, 1},	//conColorOrangeYellow
+	{1, 1, 0, 1},		//conColorYellow
+	{0.5f, 1, 0, 1},	//conColorYellowGreen
+	{0, 1, 0, 1},		//conColorGreen
+	{0, 1, 0.25f, 1},	//conColorGreenTurq
+	{0, 1, 0.5f, 1},	//conColorTurquoise
+	{0, 1, 1, 1},		//conColorCyan
+	{0, 0.5f, 1, 1},	//conColorCyanBlue
+	{0, 0, 1, 1},		//conColorBlue
+	{0.25f, 0, 1, 1},	//conColorBluePurple
+	{0.5f, 0, 1, 1},	//conColorPurple
+	{1, 0, 1, 1},		//conColorPink
+	{1, 0, 0.5f, 1}		//conColorMagenta
+};
 
 /*
 ================
@@ -626,7 +646,7 @@ void Con_DrawSolidConsole( float frac ) {
 		if (version[x] ==' ')
 			continue;
 		/* Hackish use of color table */
-		re.SetColor( conColorRed + (y&15) * 4 );
+		re.SetColor( conColourTable[y&15] );
 		y++;
 		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x ) * SMALLCHAR_WIDTH, 
 			(lines-(SMALLCHAR_HEIGHT+SMALLCHAR_HEIGHT/2)), version[x] );

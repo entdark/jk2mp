@@ -480,6 +480,7 @@ typedef struct {
 	vec3_t			color2;
 	qhandle_t		shaderOverride;
 	fxHandle_t		effectOverride;
+	char			saberModel[MAX_QPATH];
 
 	int				icolor1;
 
@@ -555,6 +556,11 @@ typedef struct {
 
 	int				legsAnim;
 	int				torsoAnim;
+
+	//[RGBSabers]
+	vec3_t			rgb1;
+	vec3_t			rgb2;
+	//[/RGBSabers]
 } clientInfo_t;
 
 
@@ -652,7 +658,16 @@ typedef struct {
 // occurs, and they will have visible effects for #define STEP_TIME or whatever msec after
 
 #define MAX_PREDICTED_EVENTS	16
- 
+
+
+#define	MAX_CHATBOX_ITEMS		5
+typedef struct chatBoxItem_s
+{
+	char	string[MAX_SAY_TEXT];
+	int		time;
+	int		lines;
+} chatBoxItem_t;
+
 typedef struct {
 	int			clientFrame;		// incremented each frame
 
@@ -731,7 +746,10 @@ typedef struct {
 
 	// view rendering
 	refdef_t	refdef;
+	refdef_t	refdefStereo;
 	vec3_t		refdefViewAngles;		// will be converted to refdef.viewaxis
+
+	qboolean	stereoCapture;
 
 	float		constrictValue;
 	float		constrict;
@@ -884,6 +902,9 @@ Ghoul2 Insert End
 
 	char			sharedBuffer[MAX_CG_SHARED_BUFFER_SIZE];
 
+	chatBoxItem_t	chatItems[MAX_CHATBOX_ITEMS];
+	int				chatItemActive;
+
 	int				eventTime;
 	int				eventOldTime;
 	float			eventRadius;
@@ -985,6 +1006,31 @@ typedef struct {
 	qhandle_t	purpleSaberGlowShader;
 	qhandle_t	purpleSaberCoreShader;
 	qhandle_t	saberBlurShader;
+
+	//[RGBSabers]
+	qhandle_t	rgbSaberGlowShader;
+	qhandle_t	rgbSaberCoreShader;
+
+	qhandle_t	rgbSaberGlow2Shader;
+	qhandle_t	rgbSaberCore2Shader;
+	qhandle_t	rgbSaberTrail2Shader;
+
+	qhandle_t	rgbSaberGlow3Shader;
+	qhandle_t	rgbSaberCore3Shader;
+	qhandle_t	rgbSaberTrail3Shader;
+
+	qhandle_t	rgbSaberGlow4Shader;
+	qhandle_t	rgbSaberCore4Shader;
+	qhandle_t	rgbSaberTrail4Shader;
+
+	qhandle_t	rgbSaberGlow5Shader;
+	qhandle_t	rgbSaberCore5Shader;
+	qhandle_t	rgbSaberTrail5Shader;
+
+	qhandle_t	blackSaberGlowShader;
+	qhandle_t	blackSaberCoreShader;
+	qhandle_t	blackBlurShader;
+	//[/RGBSabers]
 
 	qhandle_t	yellowDroppedSaberShader;
 
@@ -1252,6 +1298,11 @@ typedef struct {
 	sfxHandle_t	zoomEnd;
 	sfxHandle_t	disruptorZoomLoop;
 
+	sfxHandle_t speedLoopSound;
+	sfxHandle_t protectLoopSound;
+	sfxHandle_t absorbLoopSound;
+	sfxHandle_t rageLoopSound;
+	sfxHandle_t seeLoopSound;
 } cgMedia_t;
 
 
@@ -1598,10 +1649,13 @@ extern  vmCvar_t		cg_recordSPDemoName;
 
 extern	vmCvar_t		ui_myteam;
 
+//JA
+extern	vmCvar_t	cg_chatBox;
+extern	vmCvar_t	cg_chatBoxHeight;
+
 //New MME cvars
 extern	vmCvar_t	mov_chatBeep;
 extern	vmCvar_t	mov_fragsOnly;
-extern	vmCvar_t	mov_captureCamera;
 extern	vmCvar_t	mov_captureName;
 extern	vmCvar_t	mov_captureFPS;
 
@@ -1625,6 +1679,24 @@ extern	vmCvar_t	fx_Vibrate;
 extern	vmCvar_t	fx_vfps;
 
 extern	vmCvar_t	mme_demoFileName;
+
+extern	vmCvar_t	fx_disruptTime;
+extern	vmCvar_t	fx_disruptTeamColour;
+extern	vmCvar_t	fx_disruptSpiral;
+extern	vmCvar_t	fx_disruptCoreColor;
+extern	vmCvar_t	fx_disruptSpiralColor;
+
+#ifdef TRUEVIEW
+extern	vmCvar_t	cg_trueEyePosition;
+extern	vmCvar_t	cg_trueFlip;
+extern	vmCvar_t	cg_trueFOV;
+extern	vmCvar_t	cg_trueGuns;
+extern	vmCvar_t	cg_trueInvertSaber;
+extern	vmCvar_t	cg_trueMoveRoll;
+extern	vmCvar_t	cg_trueRoll;
+extern	vmCvar_t	cg_trueSaberOnly;
+extern	vmCvar_t	cg_trueSpin;
+#endif
 
 
 /*
@@ -1796,6 +1868,8 @@ void CG_PredictPlayerState( void );
 void CG_LoadDeferredPlayers( void );
 
 qboolean CG_InKnockDown( int anim );
+
+void CG_StartBehindCamera(vec3_t start, vec3_t end, const vec3_t camOrg, const vec3_t camAxis[3], vec3_t entDirection);
 
 
 //
@@ -2333,7 +2407,7 @@ void CG_CreateBBRefEnts(entityState_t *s1, vec3_t origin );
 
 void CG_InitG2Weapons(void);
 void CG_ShutDownG2Weapons(void);
-void CG_CopyG2WeaponInstance(int weaponNum, void *toGhoul2);
+void CG_CopyG2WeaponInstance(centity_t *cent, int weaponNum, void *toGhoul2);
 void CG_CheckPlayerG2Weapons(playerState_t *ps, centity_t *cent);
 
 extern void *g2WeaponInstances[MAX_WEAPONS];

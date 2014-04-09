@@ -514,11 +514,6 @@ void RB_BeginDrawingView (void) {
 		glState.finishCalled = qtrue;
 	}
 
-	if (!com_developer->integer && r_shadows->integer == 2)
-	{
-		Cvar_Set("cg_shadows", "1");
-	}
-
 	// we will need to change the projection matrix before drawing
 	// 2D images again
 	backEnd.projection2D = qfalse;
@@ -673,6 +668,9 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	}
 
 	for (i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++) {
+		if (*drawSurf->surface < 0)
+			continue;
+		
 		if ( drawSurf->sort == oldSort ) {
 			// fast path, same as previous sort
 			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );

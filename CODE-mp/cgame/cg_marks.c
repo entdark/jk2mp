@@ -235,7 +235,7 @@ void CG_AddMarks( void ) {
 		// fade out the energy bursts
 		if ( mp->markShader == cgs.media.energyMarkShader ) {
 
-			fade = 450 - 450 * (((cg.time - mp->time) + cg.timeFraction) / 3000.0);
+			fade = 450 - 450.0f * (((cg.time - mp->time) + cg.timeFraction) / 3000.0f);
 			if ( fade < 255 ) {
 				if ( fade < 0 ) {
 					fade = 0;

@@ -1057,10 +1057,10 @@ void R_Register( void )
 	r_autolodscalevalue = ri.Cvar_Get( "r_autolodscalevalue", "0", CVAR_ROM );
 
 	r_flares = ri.Cvar_Get ("r_flares", "0", CVAR_ARCHIVE );
-	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
-	AssertCvarRange( r_znear, 0.001f, 200, qtrue );
+	r_znear = ri.Cvar_Get( "r_znear", "1", CVAR_CHEAT );
+	AssertCvarRange( r_znear, 0.001f, 200, qfalse );
 	r_zproj = ri.Cvar_Get( "r_zproj", "107", CVAR_ARCHIVE );
-	r_stereoSeparation = ri.Cvar_Get( "r_stereoSeparation", "0", CVAR_ARCHIVE );
+	r_stereoSeparation = ri.Cvar_Get( "r_stereoSeparation", "0", 0 );
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );

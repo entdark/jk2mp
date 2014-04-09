@@ -1030,7 +1030,7 @@ Ghoul2 Insert End
 		VectorCopy( cg.autoAngles, cent->lerpAngles );
 		AxisCopy( cg.autoAxis, ent.axis );
 	}
-	else if (!doNotSetModel && !demo15detected)
+	else if (!doNotSetModel || demo15detected)
 	{
 		ent.hModel = cgs.gameModels[s1->modelindex];
 	}
@@ -1258,23 +1258,24 @@ Ghoul2 Insert End
 	if ( cent->currentState.time == -1 && cent->currentState.weapon == WP_TRIP_MINE && (cent->currentState.eFlags & EF_FIRING) )
 	{ //if force sight is active, render the laser multiple times up to the force sight level to increase visibility
 		int i = 0;
+		vec3_t beamDirection;
 
 		VectorMA( ent.origin, 6.6f, ent.axis[0], beamOrg );// forward
 		beamID = cgs.effects.tripmineLaserFX;
 
-		if (cg.snap->ps.fd.forcePowersActive & (1 << FP_SEE))
-		{
-			i = cg.snap->ps.fd.forcePowerLevel[FP_SEE];
+		VectorCopy(cent->currentState.pos.trDelta, beamDirection);
+		CG_StartBehindCamera(beamOrg, NULL, cg.refdef.vieworg, cg.refdef.viewaxis, beamDirection);
 
-			while (i > 0)
-			{
-				trap_FX_PlayEffectID( beamID, beamOrg, cent->currentState.pos.trDelta );
-				trap_FX_PlayEffectID( beamID, beamOrg, cent->currentState.pos.trDelta );
+		if ((cg.playerPredicted && cg.snap->ps.fd.forcePowersActive & (1 << FP_SEE))
+			|| (!cg.playerPredicted && cg.playerCent && (cg.playerCent->currentState.forcePowersActive & (1 << FP_SEE)))) {
+			i = cg.playerPredicted?cg.snap->ps.fd.forcePowerLevel[FP_SEE]:FORCE_LEVEL_3; //we assume non-predicted clients have always level 3
+			while (i > 0) {
+				trap_FX_PlayEffectID( beamID, beamOrg, beamDirection);
+				trap_FX_PlayEffectID( beamID, beamOrg, beamDirection);
 				i--;
 			}
 		}
-
-		trap_FX_PlayEffectID( beamID, beamOrg, cent->currentState.pos.trDelta );
+		trap_FX_PlayEffectID( beamID, beamOrg, beamDirection);	
 	}
 /*
 Ghoul2 Insert Start
@@ -1828,7 +1829,11 @@ static void CG_Missile( centity_t *cent ) {
 	{
 		if (!cent->ghoul2 && !(s1->eFlags & EF_NODRAW))
 		{
-			trap_G2API_InitGhoul2Model(&cent->ghoul2, "models/weapons2/saber/saber_w.glm", 0, 0, 0, 0, 0);
+			const char *saberModel = &cgs.clientinfo[cent->currentState.number];
+			if (saberModel && saberModel[0])
+				trap_G2API_InitGhoul2Model(&cent->ghoul2, va("models/weapons2/%s/saber_w.glm", saberModel), 0, 0, 0, 0, 0);
+			else
+				trap_G2API_InitGhoul2Model(&cent->ghoul2, "models/weapons2/saber/saber_w.glm", 0, 0, 0, 0, 0);
 			return;
 		}
 		else if (s1->eFlags & EF_NODRAW)

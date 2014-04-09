@@ -164,10 +164,14 @@ void	trap_S_StopSound( int entityNum, int entchannel, sfxHandle_t sfx ) {
 }
 
 void	trap_S_StartSound( vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx ) {
+	if (cg.stereoCapture)
+		return;
 	syscall( CG_S_STARTSOUND, origin, entityNum, entchannel, sfx );
 }
 
 void	trap_S_StartLocalSound( sfxHandle_t sfx, int channelNum ) {
+	if (cg.stereoCapture)
+		return;
 	//announcer is always hearable, rite?
 	if ( channelNum == CHAN_ANNOUNCER )
 		syscall( CG_S_STARTSOUND, 0, ENTITYNUM_NONE, CHAN_ANNOUNCER, sfx );
@@ -180,6 +184,8 @@ void	trap_S_ClearLoopingSounds( qboolean killall ) {
 }
 
 void	trap_S_AddLoopingSound( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx ) {
+	if (cg.stereoCapture)
+		return;
 	syscall( CG_S_ADDLOOPINGSOUND, entityNum, origin, velocity, sfx );
 }
 
@@ -188,6 +194,8 @@ void	trap_S_UpdateEntityPosition( int entityNum, const vec3_t origin ) {
 }
 
 void	trap_S_AddRealLoopingSound( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx ) {
+	if (cg.stereoCapture)
+		return;
 	syscall( CG_S_ADDREALLOOPINGSOUND, entityNum, origin, velocity, sfx );
 }
 
@@ -196,6 +204,8 @@ void	trap_S_StopLoopingSound( int entityNum ) {
 }
 
 void	trap_S_Respatialize( int entityNum, const vec3_t origin, vec3_t axis[3], int inwater ) {
+	if (cg.stereoCapture)
+		return;
 	syscall( CG_S_RESPATIALIZE, entityNum, origin, axis, inwater );
 }
 
@@ -204,6 +214,8 @@ sfxHandle_t	trap_S_RegisterSound( const char *sample ) {
 }
 
 void	trap_S_StartBackgroundTrack( const char *intro, const char *loop, qboolean bReturnWithoutStarting  ) {
+	if (cg.stereoCapture)
+		return;
 	syscall( CG_S_STARTBACKGROUNDTRACK, intro, loop, bReturnWithoutStarting  );
 }
 
@@ -887,6 +899,12 @@ void trap_MME_Capture( const char *baseName, float fps, float focus ) {
 void trap_MME_CaptureStereo( const char *baseName, float fps, float focus ) {
 	syscall( CG_MME_CAPTURE_STEREO, baseName, PASSFLOAT(fps), PASSFLOAT(focus) );
 }
+void trap_MME_BeginFrame( stereoFrame_t stereoView ) {
+	syscall( CG_MME_BEGIN_FRAME, stereoView );
+}
+void trap_MME_EndFrame( void ) {
+	syscall( CG_MME_END_FRAME );
+}
 void trap_MME_BlurInfo( int* total, int* index ) {
 	syscall( CG_MME_BLURINFO, total, index );
 }
@@ -899,8 +917,8 @@ void trap_MME_Music( const char *musicName, float time, float length ) {
 qboolean trap_MME_Demo15Detection( void ) {
 	return syscall( CG_MME_DEMO15DETECTION );
 }
-void trap_MME_NTXIIDetection( qboolean ntDetected ) {
-	syscall( CG_MME_NTXIIDETECTION, ntDetected );
+void trap_MME_NTDetection( qboolean ntDetected ) {
+	syscall( CG_MME_NTDETECTION, ntDetected );
 }
 void trap_R_RandomSeed( int time, float timeFraction ) {
 	syscall( CG_R_RANDOMSEED, time, PASSFLOAT(timeFraction) );

@@ -511,7 +511,11 @@ void SCR_UpdateScreen( void ) {
 			SCR_DrawScreenField( STEREO_LEFT );
 			SCR_DrawScreenField( STEREO_RIGHT );
 		} else {
-			SCR_DrawScreenField( STEREO_CENTER );
+/*			float stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
+			if (stereoSep != 0)
+				SCR_DrawScreenField( STEREO_LEFT );
+			else*/
+				SCR_DrawScreenField( STEREO_CENTER );
 		}
 
 		if ( com_speeds->integer ) {

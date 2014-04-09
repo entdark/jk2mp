@@ -204,11 +204,9 @@ static void CG_CalcVrect (void) {
 //==============================================================================
 // this causes a compiler bug on mac MrC compiler
 static void CG_StepOffset( void ) {
-	int		timeDelta;
-	
-	// smooth out stair climbing
 	//mme
-	timeDelta = (cg.time - cg.playerCent->pe.stepTime) + cg.timeFraction;
+	// smooth out stair climbing
+	float timeDelta = (cg.time - cg.playerCent->pe.stepTime) + cg.timeFraction;
 	if ( timeDelta < STEP_TIME ) {
 		cg.refdef.vieworg[2] -= cg.playerCent->pe.stepChange 
 			* (STEP_TIME - timeDelta) / STEP_TIME;
@@ -703,7 +701,7 @@ static void CG_OffsetFirstPersonView( void ) {
 	float			speed;
 	float			f;
 	vec3_t			predictedVelocity;
-	int				timeDelta;
+	float			timeDelta;
 	
 	//mme
 	centity_t		*cent = cg.playerCent;
@@ -1096,7 +1094,7 @@ CG_DamageBlendBlob
 */
 void CG_DamageBlendBlob( void ) 
 {
-	int			t;
+	float		t;
 	int			maxTime;
 	refEntity_t		ent;
 
@@ -1733,6 +1731,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		CG_AddTestModel();
 	}
 	cg.refdef.time = cg.time;
+	cg.refdef.timeFraction = cg.timeFraction;
 	memcpy( cg.refdef.areamask, cg.snap->areamask, sizeof( cg.refdef.areamask ) );
 
 	// warning sounds when powerup is wearing off

@@ -443,7 +443,15 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 			ri.Error( ERR_FATAL, "RE_BeginFrame: Stereo is enabled, but stereoFrame was %i", stereoFrame );
 		}
 	} else {
-		if ( stereoFrame != STEREO_CENTER ) {
+/*		if (r_stereoSeparation->value != 0) {
+			if ( stereoFrame == STEREO_LEFT ) {
+				cmd->buffer = (int)GL_BACK_LEFT;
+			} else if ( stereoFrame == STEREO_RIGHT ) {
+				cmd->buffer = (int)GL_BACK_RIGHT;
+			} else {
+				ri.Error( ERR_FATAL, "RE_BeginFrame: Stereo is enabled, but stereoFrame was %i", stereoFrame );
+			}
+		} else */if ( stereoFrame != STEREO_CENTER ) {
 			ri.Error( ERR_FATAL, "RE_BeginFrame: Stereo is disabled, but stereoFrame was %i", stereoFrame );
 		}
 		if ( !Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) ) {

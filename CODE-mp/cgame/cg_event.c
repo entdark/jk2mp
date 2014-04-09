@@ -797,8 +797,7 @@ static void CG_BodyQueueCopy(centity_t *cent, int clientNum, int knownWeapon)
 	}
 }
 
-const char *CG_TeamName(int team)
-{
+const char *CG_TeamName(int team) {
 	if (team==TEAM_RED)
 		return "RED";
 	else if (team==TEAM_BLUE)
@@ -808,28 +807,57 @@ const char *CG_TeamName(int team)
 	return "FREE";
 }
 
-void CG_PrintCTFMessage(clientInfo_t *ci, const char *teamName, int ctfMessage)
-{
+static int gotRedFlag = 0, gotBlueFlag = 0;
+static qboolean blueOnStand = qtrue, redOnStand = qtrue;
+
+void CG_PrintCTFMessage(clientInfo_t *ci, const char *teamName, int ctfMessage) {
 	char printMsg[1024];
 	char *refName = NULL;
 	const char *stripEdString = NULL;
+	int team = 0, time = 0;
 
-	switch (ctfMessage)
-	{
+	if (!Q_stricmp(teamName, "RED"))
+		team = 1;
+	else if (!Q_stricmp(teamName, "BLUE"))
+		team = 2;
+
+	switch (ctfMessage) {
 	case CTFMESSAGE_FRAGGED_FLAG_CARRIER:
 		refName = "FRAGGED_FLAG_CARRIER";
 		break;
 	case CTFMESSAGE_FLAG_RETURNED:
 		refName = "FLAG_RETURNED";
+		if (team == 1)
+			redOnStand = qtrue;
+		else if (team == 2)
+			blueOnStand = qtrue;
 		break;
 	case CTFMESSAGE_PLAYER_RETURNED_FLAG:
 		refName = "PLAYER_RETURNED_FLAG";
+		if (team == 1)
+			redOnStand = qtrue;
+		else if (team == 2)
+			blueOnStand = qtrue;
 		break;
 	case CTFMESSAGE_PLAYER_CAPTURED_FLAG:
 		refName = "PLAYER_CAPTURED_FLAG";
+		if (team == 1 && cg.snap->serverTime - gotRedFlag > 0) {
+			time = cg.snap->serverTime - gotRedFlag;
+		} else if (team == 2 && cg.snap->serverTime - gotBlueFlag > 0) {
+			time = cg.snap->serverTime - gotBlueFlag;
+		}
+		redOnStand = qtrue;
+		blueOnStand = qtrue;
 		break;
 	case CTFMESSAGE_PLAYER_GOT_FLAG:
 		refName = "PLAYER_GOT_FLAG";
+		if (team == 1 && redOnStand) {
+			gotRedFlag = cg.snap->serverTime;
+			redOnStand = qfalse;
+		} else if (team == 2 && blueOnStand) {
+			gotBlueFlag = cg.snap->serverTime;
+			blueOnStand = qfalse;
+		}
 		break;
 	default:
 		return;
@@ -837,63 +865,58 @@ void CG_PrintCTFMessage(clientInfo_t *ci, const char *teamName, int ctfMessage)
 
 	stripEdString = CG_GetStripEdString("INGAMETEXT", refName);
 
-	if (!stripEdString || !stripEdString[0])
-	{
+	if (!stripEdString || !stripEdString[0]) {
 		return;
 	}
 
-	if (teamName && teamName[0])
-	{
+	if (teamName && teamName[0]) {
 		const char *f = strstr(stripEdString, "%s");
-
-		if (f)
-		{
+		if (f) {
 			int strLen = 0;
 			int i = 0;
-
-			if (ci)
-			{
+			if (ci) {
 				Com_sprintf(printMsg, sizeof(printMsg), "%s^7 ", ci->name);
 				strLen = strlen(printMsg);
 			}
-
-			while (stripEdString[i] && i < 512)
-			{
-				if (stripEdString[i] == '%' &&
-					stripEdString[i+1] == 's')
-				{
+			while (stripEdString[i] && i < 512) {
+				if (stripEdString[i] == '%' && stripEdString[i+1] == 's') {
 					printMsg[strLen] = '\0';
 					Q_strcat(printMsg, sizeof(printMsg), teamName);
 					strLen = strlen(printMsg);
-
 					i++;
-				}
-				else
-				{
+				} else {
 					printMsg[strLen] = stripEdString[i];
 					strLen++;
 				}
-
 				i++;
 			}
-
 			printMsg[strLen] = '\0';
-
 			goto doPrint;
 		}
 	}
 
-	if (ci)
-	{
+	if (ci) {
 		Com_sprintf(printMsg, sizeof(printMsg), "%s^7 %s", ci->name, stripEdString);
-	}
-	else
-	{
+	} else {
 		Com_sprintf(printMsg, sizeof(printMsg), "%s", stripEdString);
 	}
 
 doPrint:
 	Com_Printf("%s\n", printMsg);
+
+	if (time) {
+		char capTime[32];
+		int msec = time % 1000;
+		int secs = (time / 1000);
+		int mins = (secs / 60);
+		if (time >= 60000) {
+			secs %= 60;
+			Com_sprintf(capTime, sizeof(capTime), "%d:%02d.%03d", mins, secs, msec);
+		} else {
+			Com_sprintf(capTime, sizeof(capTime), "%d.%03d", secs, msec);
+		}
+		Com_Printf("%sCapture time: %s%s\n", S_COLOR_WHITE, S_COLOR_RED, capTime);
+	}
 }
 
 void CG_GetCTFMessageEvent(entityState_t *es)
@@ -952,8 +975,8 @@ void DoFall(centity_t *cent, entityState_t *es, int clientNum)
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.landSound );
 	}
 	
-	if ( clientNum == cg.predictedPlayerState.clientNum )
-	{
+//	if ( clientNum == cg.predictedPlayerState.clientNum )
+//	{
 		// smooth landing z changes
 /*		cg.landChange = -delta;
 		if (cg.landChange > 32)
@@ -977,7 +1000,7 @@ void DoFall(centity_t *cent, entityState_t *es, int clientNum)
 			pe->landChange = -32;
 		}
 		pe->landTime = cg.time;
-	}
+//	}
 }
 
 int CG_InClientBitflags(entityState_t *ent, int client)
@@ -1649,36 +1672,42 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	case EV_DISRUPTOR_MAIN_SHOT:
 		DEBUGNAME("EV_DISRUPTOR_MAIN_SHOT");
-		if ((cg.playerCent && cent->currentState.eventParm != cg.snap->ps.clientNum) ||
-			cg.renderingThirdPerson)
-		{ //h4q3ry
+		if ((cg.playerCent && cent->currentState.eventParm != cg.playerCent->currentState.number)
+			|| cg.renderingThirdPerson) { //h4q3ry
 			CG_GetClientWeaponMuzzleBoltPoint(cent->currentState.eventParm, cent->currentState.origin2);
+		} else if (cg.lastFPFlashPoint[0] ||cg.lastFPFlashPoint[1] || cg.lastFPFlashPoint[2]) {
+		//get the position of the muzzle flash for the first person weapon model from the last frame
+			VectorCopy(cg.lastFPFlashPoint, cent->currentState.origin2);
 		}
-		else
-		{
-			if (cg.lastFPFlashPoint[0] ||cg.lastFPFlashPoint[1] || cg.lastFPFlashPoint[2])
-			{ //get the position of the muzzle flash for the first person weapon model from the last frame
-				VectorCopy(cg.lastFPFlashPoint, cent->currentState.origin2);
-			}
+		if (fx_disruptSpiral.integer) {
+			FX_RailSpiral( &cgs.clientinfo[cent->currentState.eventParm], cent->currentState.origin2, cent->lerpOrigin );
+		} else {
+			vec3_t start, end;
+			VectorCopy(cent->currentState.origin2, start);
+			VectorCopy(cent->lerpOrigin, end);
+			CG_StartBehindCamera(start, end, cg.refdef.vieworg, cg.refdef.viewaxis, NULL);
+			FX_DisruptorMainShot(start, end);
 		}
-		FX_DisruptorMainShot( cent->currentState.origin2, cent->lerpOrigin ); 
 		break;
 
 	case EV_DISRUPTOR_SNIPER_SHOT:
 		DEBUGNAME("EV_DISRUPTOR_SNIPER_SHOT");
-		if ((cg.playerCent && cent->currentState.eventParm != cg.playerCent->currentState.number) ||
-			cg.renderingThirdPerson)
-		{ //h4q3ry
+		if ((cg.playerCent && cent->currentState.eventParm != cg.playerCent->currentState.number)
+			|| cg.renderingThirdPerson) { //h4q3ry
 			CG_GetClientWeaponMuzzleBoltPoint(cent->currentState.eventParm, cent->currentState.origin2);
+		} else if (cg.lastFPFlashPoint[0] ||cg.lastFPFlashPoint[1] || cg.lastFPFlashPoint[2]) {
+		//get the position of the muzzle flash for the first person weapon model from the last frame
+			VectorCopy(cg.lastFPFlashPoint, cent->currentState.origin2);
 		}
-		else
-		{
-			if (cg.lastFPFlashPoint[0] ||cg.lastFPFlashPoint[1] || cg.lastFPFlashPoint[2])
-			{ //get the position of the muzzle flash for the first person weapon model from the last frame
-				VectorCopy(cg.lastFPFlashPoint, cent->currentState.origin2);
-			}
+		if (fx_disruptSpiral.integer) {
+			FX_RailSpiral(&cgs.clientinfo[cent->currentState.eventParm], cent->currentState.origin2, cent->lerpOrigin);
+		} else {
+			vec3_t start, end;
+			VectorCopy(cent->currentState.origin2, start);
+			VectorCopy(cent->lerpOrigin, end);
+			CG_StartBehindCamera(start, end, cg.refdef.vieworg, cg.refdef.viewaxis, NULL);
+			FX_DisruptorAltShot(start, end, cent->currentState.shouldtarget);
 		}
-		FX_DisruptorAltShot( cent->currentState.origin2, cent->lerpOrigin, cent->currentState.shouldtarget );
 		break;
 
 	case EV_DISRUPTOR_SNIPER_MISS:
@@ -2202,6 +2231,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		{ //channels 2 and 3 are for speed and rage, 5 for sight
 			if ( cgs.gameSounds[ es->eventParm ] )
 			{
+				//does not work at all
 				trap_S_AddRealLoopingSound(es->number, es->pos.trBase, vec3_origin, cgs.gameSounds[ es->eventParm ] );
 			}
 		}
@@ -2227,78 +2257,69 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 
 	case EV_GLOBAL_TEAM_SOUND:	// play from the player's head so it never diminishes
-		{
-			DEBUGNAME("EV_GLOBAL_TEAM_SOUND");
-			switch( es->eventParm ) {
-				case GTS_RED_CAPTURE: // CTF: red team captured the blue flag, 1FCTF: red team captured the neutral flag
-					//CG_AddBufferedSound( cgs.media.redScoredSound );
-					break;
-				case GTS_BLUE_CAPTURE: // CTF: blue team captured the red flag, 1FCTF: blue team captured the neutral flag
-					//CG_AddBufferedSound( cgs.media.blueScoredSound );
-					break;
-				case GTS_RED_RETURN: // CTF: blue flag returned, 1FCTF: never used
-					if (cgs.gametype == GT_CTY)
-					{
-						CG_AddBufferedSound( cgs.media.blueYsalReturnedSound );
-					}
-					else
-					{
-						CG_AddBufferedSound( cgs.media.blueFlagReturnedSound );
-					}
-					break;
-				case GTS_BLUE_RETURN: // CTF red flag returned, 1FCTF: neutral flag returned
-					if (cgs.gametype == GT_CTY)
-					{
-						CG_AddBufferedSound( cgs.media.redYsalReturnedSound );
-					}
-					else
-					{
-						CG_AddBufferedSound( cgs.media.redFlagReturnedSound );
-					}
-					break;
-
-				case GTS_RED_TAKEN: // CTF: red team took blue flag, 1FCTF: blue team took the neutral flag
-					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
-					if (cgs.gametype == GT_CTY)
-					{
-						CG_AddBufferedSound( cgs.media.redTookYsalSound );
-					}
-					else
-					{
-					 	CG_AddBufferedSound( cgs.media.redTookFlagSound );
-					}
-					break;
-				case GTS_BLUE_TAKEN: // CTF: blue team took the red flag, 1FCTF red team took the neutral flag
-					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
-					if (cgs.gametype == GT_CTY)
-					{
-						CG_AddBufferedSound( cgs.media.blueTookYsalSound );
-					}
-					else
-					{
-						CG_AddBufferedSound( cgs.media.blueTookFlagSound );
-					}
-					break;
-				case GTS_REDTEAM_SCORED:
-					CG_AddBufferedSound(cgs.media.redScoredSound);
-					break;
-				case GTS_BLUETEAM_SCORED:
-					CG_AddBufferedSound(cgs.media.blueScoredSound);
-					break;
-				case GTS_REDTEAM_TOOK_LEAD:
-					CG_AddBufferedSound(cgs.media.redLeadsSound);
-					break;
-				case GTS_BLUETEAM_TOOK_LEAD:
-					CG_AddBufferedSound(cgs.media.blueLeadsSound);
-					break;
-				case GTS_TEAMS_ARE_TIED:
-					CG_AddBufferedSound( cgs.media.teamsTiedSound );
-					break;
-				default:
-					break;
-			}
-			break;
+		DEBUGNAME("EV_GLOBAL_TEAM_SOUND");
+		switch( es->eventParm ) {
+			case GTS_RED_CAPTURE: // CTF: red team captured the blue flag, 1FCTF: red team captured the neutral flag
+				//CG_AddBufferedSound( cgs.media.redScoredSound );
+				redOnStand = qtrue;
+				blueOnStand = qtrue;
+				break;
+			case GTS_BLUE_CAPTURE: // CTF: blue team captured the red flag, 1FCTF: blue team captured the neutral flag
+				//CG_AddBufferedSound( cgs.media.blueScoredSound );
+				redOnStand = qtrue;
+				blueOnStand = qtrue;
+				break;
+			case GTS_RED_RETURN: // CTF: blue flag returned, 1FCTF: never used
+				if (cgs.gametype == GT_CTY) {
+					CG_AddBufferedSound( cgs.media.blueYsalReturnedSound );
+				} else {
+					CG_AddBufferedSound( cgs.media.blueFlagReturnedSound );
+				}
+				blueOnStand = qtrue;
+				break;
+			case GTS_BLUE_RETURN: // CTF red flag returned, 1FCTF: neutral flag returned
+				if (cgs.gametype == GT_CTY) {
+					CG_AddBufferedSound( cgs.media.redYsalReturnedSound );
+				} else {
+					CG_AddBufferedSound( cgs.media.redFlagReturnedSound );
+				}
+				redOnStand = qtrue;
+				break;
+			case GTS_RED_TAKEN: // CTF: red team took blue flag, 1FCTF: blue team took the neutral flag
+				// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
+				if (cgs.gametype == GT_CTY) {
+					CG_AddBufferedSound( cgs.media.redTookYsalSound );
+				} else {
+					CG_AddBufferedSound( cgs.media.redTookFlagSound );
+				}
+				break;
+			case GTS_BLUE_TAKEN: // CTF: blue team took the red flag, 1FCTF red team took the neutral flag
+				// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
+				if (cgs.gametype == GT_CTY) {
+					CG_AddBufferedSound( cgs.media.blueTookYsalSound );
+				} else {
+					CG_AddBufferedSound( cgs.media.blueTookFlagSound );
+				}
+				break;
+			case GTS_REDTEAM_SCORED:
+				CG_AddBufferedSound(cgs.media.redScoredSound);
+				break;
+			case GTS_BLUETEAM_SCORED:
+				CG_AddBufferedSound(cgs.media.blueScoredSound);
+				break;
+			case GTS_REDTEAM_TOOK_LEAD:
+				CG_AddBufferedSound(cgs.media.redLeadsSound);
+				break;
+			case GTS_BLUETEAM_TOOK_LEAD:
+				CG_AddBufferedSound(cgs.media.blueLeadsSound);
+				break;
+			case GTS_TEAMS_ARE_TIED:
+				CG_AddBufferedSound( cgs.media.teamsTiedSound );
+				break;
+			default:
+				break;
 		}
+		break;
 
 	case EV_ENTITY_SOUND:
 		DEBUGNAME("EV_ENTITY_SOUND");

@@ -21,6 +21,8 @@ extern void trap_FX_Reset ( void );
 extern void trap_MME_BlurInfo( int* total, int * index );
 extern void trap_MME_Capture( const char *baseName, float fps, float focus );
 extern void trap_MME_CaptureStereo( const char *baseName, float fps, float focus );
+extern void trap_MME_BeginFrame( stereoFrame_t stereoView );
+extern void trap_MME_EndFrame( void );
 extern int trap_MME_SeekTime( int seekTime );
 extern void trap_MME_Music( const char *musicName, float time, float length );
 extern qboolean trap_MME_Demo15Detection( void );
@@ -143,22 +145,23 @@ static void FX_VibrateView( const float scale, vec3_t origin, vec3_t angles ) {
 static void CG_SetPredictedThirdPerson(void) {
 	cg.renderingThirdPerson = ((cg_thirdPerson.integer
 		|| (cg.snap->ps.stats[STAT_HEALTH] <= 0)
-//		|| (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
-//		|| (cg.playerCent->currentState.weapon == WP_MELEE && !cg_trueGuns.integer)
-
-//		|| (cg.predictedPlayerState.forceHandExtend == HANDEXTEND_KNOCKDOWN 
-//		&& ((cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
-//		|| (cg.playerCent->currentState.weapon != WP_SABER && !cg_trueGuns.integer)))
-
+#ifdef TRUEVIEW
+		|| (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
+		|| (cg.predictedPlayerState.forceHandExtend == HANDEXTEND_KNOCKDOWN 
+		&& ((cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
+		|| (cg.playerCent->currentState.weapon != WP_SABER && !cg_trueGuns.integer)))
+#endif
 		|| (cg.predictedPlayerState.fallingToDeath) || cg.predictedPlayerState.usingATST
 		|| cg.predictedPlayerState.forceHandExtend == HANDEXTEND_KNOCKDOWN
 		|| cg.predictedPlayerState.weapon == WP_SABER
 		|| (CG_InKnockDown(cg.predictedPlayerState.torsoAnim) || CG_InKnockDown(cg.predictedPlayerState.legsAnim)
-//		&& ((cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
-//		|| (cg.playerCent->currentState.weapon != WP_SABER && !cg_trueGuns.integer))
+#ifdef TRUEVIEW
+		&& ((cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
+		|| (cg.playerCent->currentState.weapon != WP_SABER && !cg_trueGuns.integer))
+#endif
 		))
 
-		&& !cg_fpls.integer)
+		&& !(cg_fpls.integer && cg.predictedPlayerState.weapon == WP_SABER))
 		&& !cg.snap->ps.zoomMode;
 
 	if (cg.predictedPlayerState.pm_type == PM_SPECTATOR) { //always first person for spec
@@ -196,15 +199,16 @@ static int demoSetupView( void) {
 					CG_SetPredictedThirdPerson();
 				else
 					cg.renderingThirdPerson = ((cg_thirdPerson.integer || cent->currentState.eFlags & EF_DEAD
-						//|| (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
-						//|| (cg.playerCent->currentState.weapon == WP_MELEE && !cg_trueGuns.integer)
+#ifdef TRUEVIEW
+						|| (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
+#endif
 						|| cg.playerCent->currentState.weapon == WP_SABER)
 						&& !(((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
 						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
 						||
 						((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
 						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))
-						&& !cg_fpls.integer);
+						&& !(cg_fpls.integer && cg.playerCent->currentState.weapon == WP_SABER));
 				inwater = CG_DemosCalcViewValues();
 				// first person blend blobs, done after AnglesToAxis
 				if (!cg.renderingThirdPerson) {
@@ -412,6 +416,8 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	int blurTotal, blurIndex;
 	float blurFraction;
 	float stereo = CG_Cvar_Get("r_stereoSeparation");
+	int renderScenes = 1, i = 0;
+//	int cl_mme_capture = CG_Cvar_Get("cl_mme_capture");
 	static qboolean intermission = qfalse;
 
 	int inwater;
@@ -453,14 +459,20 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		}
 	}
 
+	if (captureFrame && stereo != 0) {
+		renderScenes = 2;
+	}
+
 	/* Forward the demo */
 	deltaTime = serverTime - demo.serverTime;
 	if (deltaTime > 50)
 		deltaTime = 50;
-	demo.serverTime = serverTime;
-	demo.serverDeltaTime = 0.001 * deltaTime;
-	cg.oldTime = cg.time;
-	cg.oldTimeFraction = cg.timeFraction;
+//	if (!(captureFrame && stereo > 0 && cl_mme_capture == 1)) {
+		demo.serverTime = serverTime;
+		demo.serverDeltaTime = 0.001 * deltaTime;
+		cg.oldTime = cg.time;
+		cg.oldTimeFraction = cg.timeFraction;
+//	}
 
 	if (demo.play.time < 0) {
 		demo.play.time = demo.play.fraction = 0;
@@ -500,7 +512,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		demo.play.fraction = demo.loop.range * loopFraction;
 		demo.play.time += (int)demo.play.fraction;
 		demo.play.fraction -= (int)demo.play.fraction;
-	} else if (captureFrame && stereo == 0) {
+	} else if ( captureFrame && stereo == 0 ) {
 		float frameDelay = 1000.0f / captureFPS;
 		demo.play.fraction += frameDelay * demo.play.speed;
 		demo.play.time += (int)demo.play.fraction;
@@ -510,7 +522,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		demo.play.fraction = 0;
 		if ( demo.play.paused )
 			demo.find = findNone;
-	} else if (!demo.play.paused/* && !captureFrame*/) {
+	} else if ( !demo.play.paused/* && !captureFrame*/ ) {
 		float delta = demo.play.fraction + deltaTime * demo.play.speed;
 		demo.play.time += (int)delta;
 		demo.play.fraction = delta - (int)delta;
@@ -553,7 +565,8 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	/* cg.time is shifted ahead a bit to correct some issues.. */
 	frameSpeed *= demo.play.speed;
 
-	cg.frametime = (cg.time - cg.oldTime) + (cg.timeFraction - cg.oldTimeFraction);
+//	if (!(captureFrame && stereo > 0))
+		cg.frametime = (cg.time - cg.oldTime) + (cg.timeFraction - cg.oldTimeFraction);
 	if (cg.frametime < 0) {
 		cg.frametime = 0;
 		hadSkip = qtrue;
@@ -589,189 +602,211 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	trap_FX_RandomSeed(cg.time, cg.timeFraction);
 
 	//silly hack :s
-	if (demo.play.paused || !frameSpeed) {
+	if (demo.play.paused || !frameSpeed/* || (captureFrame && stereo != 0)*/) {
 		static float lastTimeFraction = 0.0f;
-		if (!frameSpeed)
+		if (!frameSpeed) {
 			trap_FX_AdjustTime(cg.time, cg.frametime, lastTimeFraction, cg.refdef.vieworg, cg.refdef.viewaxis);
-		else {
+/*		} else if (captureFrame && stereo > 0) {
+			trap_FX_AdjustTime(cg.time, cg.frametime, cg.timeFraction, cg.refdef.vieworg, cg.refdef.viewaxis);
+			lastTimeFraction = cg.timeFraction;
+		} else if (captureFrame && stereo < 0) {
+			trap_FX_AdjustTime(cg.time, cg.frametime, lastTimeFraction, cg.refdef.vieworg, cg.refdef.viewaxis);*/
+		} else {
 			trap_FX_AdjustTime(cg.time, cg.frametime, 0, cg.refdef.vieworg, cg.refdef.viewaxis);
 			lastTimeFraction = cg.timeFraction;
 		}
-	} else
+	} else {
 		trap_FX_AdjustTime(cg.time, cg.frametime, cg.timeFraction, cg.refdef.vieworg, cg.refdef.viewaxis);
+	}
 
 	CG_RunLightStyles();
 	/* Prepare to render the screen */		
 	trap_S_ClearLoopingSounds(qfalse);
-	trap_R_ClearScene();
-	/* Update demo related information */
-	if (cg.snap && cg.snap->ps.saberLockTime > cg.time) {
-		trap_SetUserCmdValue( cg.weaponSelect, 0.01, cg.forceSelect, cg.itemSelect );
-	} else if (cg.snap && cg.snap->ps.usingATST) {
-		trap_SetUserCmdValue( cg.weaponSelect, 0.2, cg.forceSelect, cg.itemSelect );
-	} else {
-		trap_SetUserCmdValue( cg.weaponSelect, cg.zoomSensitivity, cg.forceSelect, cg.itemSelect );
-	}
-	demoProcessSnapShots( hadSkip );
-	trap_ROFF_UpdateEntities();
-	if ( !cg.snap ) {
-		CG_DrawInformation();
-		return;
-	}
-
-	CG_PreparePacketEntities( );
-	CG_DemosUpdatePlayer( );
-	chaseUpdate( demo.play.time, demo.play.fraction );
-	cameraUpdate( demo.play.time, demo.play.fraction );
-	cg.clientFrame++;
-	// update cg.predictedPlayerState
-	CG_InterpolatePlayerState( qfalse );
-	cg.predictedPlayerEntity.ghoul2 = cg_entities[ cg.snap->ps.clientNum].ghoul2;
-	CG_CheckPlayerG2Weapons( &cg.predictedPlayerState, &cg.predictedPlayerEntity );
-	BG_PlayerStateToEntityState( &cg.predictedPlayerState, &cg.predictedPlayerEntity.currentState, qfalse );
-	cg.predictedPlayerEntity.currentValid = qtrue;
-	VectorCopy( cg.predictedPlayerEntity.currentState.pos.trBase, cg.predictedPlayerEntity.lerpOrigin );
-	VectorCopy( cg.predictedPlayerEntity.currentState.apos.trBase, cg.predictedPlayerEntity.lerpAngles );
-
-	inwater = demoSetupView();
-
-	CG_CalcScreenEffects();
-		
-	CG_AddPacketEntities();			// adter calcViewValues, so predicted player state is correct
-	CG_AddMarks();
-	CG_AddParticles ();
-	CG_AddLocalEntities();
-
-	if ( cg.playerCent == &cg.predictedPlayerEntity ) {
-		// warning sounds when powerup is wearing off
-		CG_PowerupTimerSounds();
-		CG_AddViewWeapon( &cg.predictedPlayerState  );
-	} else if ( cg.playerCent && cg.playerCent->currentState.number < MAX_CLIENTS )  {
-		CG_AddViewWeaponDirect( cg.playerCent );
-	}
-	trap_S_UpdateEntityPosition(ENTITYNUM_NONE, cg.refdef.vieworg);
-	CG_PlayBufferedSounds();
-	CG_PlayBufferedVoiceChats();
-
-	trap_FX_AddScheduledEffects();
-
-	cg.refdef.time = cg.time;
-	cg.refdef.timeFraction = cg.timeFraction;
-	memcpy( cg.refdef.areamask, cg.snap->areamask, sizeof( cg.refdef.areamask ) );
-	/* Render some extra demo related stuff */
-	if (!captureFrame) {
-		switch (demo.editType) {
-		case editCamera:
-			cameraDraw( demo.play.time, demo.play.fraction );
-			break;
-		case editChase:
-			chaseDraw( demo.play.time, demo.play.fraction );
-			break;
-		}
-		/* Add bounding boxes for easy aiming */
-		if (demo.editType && (demo.cmd.buttons & BUTTON_ATTACK) && (demo.cmd.buttons & BUTTON_ALT_ATTACK)) {
-			int i;
-			centity_t *targetCent;
-			for (i = 0;i<MAX_GENTITIES;i++) {
-	            targetCent = demoTargetEntity( i );
-				if (targetCent) {
-					vec3_t container, traceStart, traceImpact, forward;
-					const float *color;
-
-					demoCentityBoxSize( targetCent, container );
-					VectorSubtract( demo.viewOrigin, targetCent->lerpOrigin, traceStart );
-					AngleVectors( demo.viewAngles, forward, 0, 0 );
-					if (BoxTraceImpact( traceStart, forward, container, traceImpact )) {
-						color = colorRed;
-					} else {
-						color = colorYellow;
-					}
-					demoDrawBox( targetCent->lerpOrigin, container, color );
-				}
-			}
-
-		}
-	}
-	
-	CG_UpdateSoundTrackers();
-
-	//do we need this?
-	if (gCGHasFallVector) {
-		vec3_t lookAng;
-		//broken fix
-		cg.renderingThirdPerson = qtrue;
-
-		VectorSubtract(cg.snap->ps.origin, cg.refdef.vieworg, lookAng);
-		VectorNormalize(lookAng);
-		vectoangles(lookAng, lookAng);
-
-		VectorCopy(gCGFallVector, cg.refdef.vieworg);
-		AnglesToAxis(lookAng, cg.refdef.viewaxis);
-	}
-
-	if (frameSpeed > 5)
-		frameSpeed = 5;
-
-	trap_S_UpdatePitch( frameSpeed );
-	trap_S_Respatialize( cg.playerCent ? cg.playerCent->currentState.number : ENTITYNUM_NONE, 
-		cg.refdef.vieworg, cg.refdef.viewaxis, inwater);
-
-	CG_TileClear();
-	trap_R_RenderScene( &cg.refdef );
-
-	CG_DrawRect(0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
-	if ( demo.viewType == viewChase && cg.playerCent && ( cg.playerCent->currentState.number < MAX_CLIENTS ) )
-		CG_Draw2D();
-	else if ( cg_draw2D.integer && cg_drawFPS.integer ) {
-		CG_SaberClashFlare();
-		CG_DrawFPS(0.0f);
-	}
-
-	CG_UpdateFallVector();
-
-	//those looping sounds in intermission are annoying
-	if (cg.predictedPlayerState.pm_type == PM_INTERMISSION && !intermission) {
-		int i;
-		for (i = 0; i < MAX_GENTITIES; i++)
-			trap_S_StopLoopingSound(i);
-		intermission = qtrue;
-	}
-	if (cg.predictedPlayerState.pm_type != PM_INTERMISSION) {
-		intermission = qfalse;
-	}
-
-	if (captureFrame) {
-		char fileName[MAX_OSPATH];
-		Com_sprintf( fileName, sizeof( fileName ), "capture/%s/%s", mme_demoFileName.string, mov_captureName.string );
-		if (stereo == 0) {
-			trap_MME_Capture( fileName, captureFPS, demo.viewFocus );
-		} else {
-/*			if (stereo < 0)
-				trap_MME_Capture( fileName, captureFPS, demo.viewFocus );
-			else if (stereo > 0)
-				trap_MME_CaptureStereo( fileName, captureFPS, demo.viewFocus );
+	cg.stereoCapture = qfalse;
+	//i == 0 - left frame(or center)
+	//i == 1 - right frame
+//	while (i < renderScenes) {
+		if (i) {
+			trap_MME_EndFrame();
 			stereo = -stereo;
-			trap_Cvar_Set("r_stereoSeparation", va( "%f", stereo ));*/
-			//we can capture stereo 3d only through cl_main <- lie, we can capture here now, but with bugs :c
-			//the main bug is captured sound
-			//just don't call S_MMEUpdate when we do trap_MME_CaptureStereo - should work
-			trap_Cvar_Set("cl_mme_name", fileName);
-			trap_Cvar_Set("cl_mme_fps", va( "%f", captureFPS ));
-			trap_Cvar_Set("cl_mme_focus", va( "%f", demo.viewFocus ));
-			trap_Cvar_Set("mme_name", fileName);
-			trap_Cvar_Set("mme_fps", va( "%f", captureFPS ));
-			trap_Cvar_Set("mme_focus", va( "%f", demo.viewFocus ));
-			trap_Cvar_Set("cl_mme_capture", "1");
+			trap_Cvar_Set("r_stereoSeparation", va( "%f", stereo ));
+			trap_MME_BeginFrame(STEREO_RIGHT);
+			cg.stereoCapture = qtrue;
 		}
-	} else {
-		if (demo.capture.active)
-			trap_Cvar_Set("cl_mme_capture", "0");
-		hudDraw();
-	}
+		trap_R_ClearScene();
+		/* Update demo related information */
+		if (cg.snap && cg.snap->ps.saberLockTime > cg.time) {
+			trap_SetUserCmdValue( cg.weaponSelect, 0.01, cg.forceSelect, cg.itemSelect );
+		} else if (cg.snap && cg.snap->ps.usingATST) {
+			trap_SetUserCmdValue( cg.weaponSelect, 0.2, cg.forceSelect, cg.itemSelect );
+		} else {
+			trap_SetUserCmdValue( cg.weaponSelect, cg.zoomSensitivity, cg.forceSelect, cg.itemSelect );
+		}
+		demoProcessSnapShots( hadSkip );
+		trap_ROFF_UpdateEntities();
+		if ( !cg.snap ) {
+			CG_DrawInformation();
+			return;
+		}
+
+		CG_PreparePacketEntities( );
+		CG_DemosUpdatePlayer( );
+		chaseUpdate( demo.play.time, demo.play.fraction );
+		cameraUpdate( demo.play.time, demo.play.fraction );
+		cg.clientFrame++;
+		// update cg.predictedPlayerState
+		CG_InterpolatePlayerState( qfalse );
+		cg.predictedPlayerEntity.ghoul2 = cg_entities[ cg.snap->ps.clientNum].ghoul2;
+		CG_CheckPlayerG2Weapons( &cg.predictedPlayerState, &cg.predictedPlayerEntity );
+		BG_PlayerStateToEntityState( &cg.predictedPlayerState, &cg.predictedPlayerEntity.currentState, qfalse );
+		cg.predictedPlayerEntity.currentValid = qtrue;
+		VectorCopy( cg.predictedPlayerEntity.currentState.pos.trBase, cg.predictedPlayerEntity.lerpOrigin );
+		VectorCopy( cg.predictedPlayerEntity.currentState.apos.trBase, cg.predictedPlayerEntity.lerpAngles );
+
+		inwater = demoSetupView();
+
+		CG_CalcScreenEffects();
+		
+		CG_AddPacketEntities();			// adter calcViewValues, so predicted player state is correct
+		CG_AddMarks();
+		CG_AddParticles ();
+		CG_AddLocalEntities();
+
+		if ( cg.playerCent == &cg.predictedPlayerEntity ) {
+			// warning sounds when powerup is wearing off
+			if (!i)
+				CG_PowerupTimerSounds();
+			CG_AddViewWeapon( &cg.predictedPlayerState  );
+		} else if ( cg.playerCent && cg.playerCent->currentState.number < MAX_CLIENTS )  {
+			CG_AddViewWeaponDirect( cg.playerCent );
+		}
+		if (!i) {
+			trap_S_UpdateEntityPosition(ENTITYNUM_NONE, cg.refdef.vieworg);
+			CG_PlayBufferedSounds();
+			CG_PlayBufferedVoiceChats();
+		}
+
+		trap_FX_AddScheduledEffects();
+
+		cg.refdef.time = cg.time;
+		cg.refdef.timeFraction = cg.timeFraction;
+		memcpy( cg.refdef.areamask, cg.snap->areamask, sizeof( cg.refdef.areamask ) );
+		/* Render some extra demo related stuff */
+		if (!captureFrame) {
+			switch (demo.editType) {
+			case editCamera:
+				cameraDraw( demo.play.time, demo.play.fraction );
+				break;
+			case editChase:
+				chaseDraw( demo.play.time, demo.play.fraction );
+				break;
+			}
+			/* Add bounding boxes for easy aiming */
+			if (demo.editType && (demo.cmd.buttons & BUTTON_ATTACK) && (demo.cmd.buttons & BUTTON_ALT_ATTACK)) {
+				int i;
+				centity_t *targetCent;
+				for (i = 0;i<MAX_GENTITIES;i++) {
+					targetCent = demoTargetEntity( i );
+					if (targetCent) {
+						vec3_t container, traceStart, traceImpact, forward;
+						const float *color;
+
+						demoCentityBoxSize( targetCent, container );
+						VectorSubtract( demo.viewOrigin, targetCent->lerpOrigin, traceStart );
+						AngleVectors( demo.viewAngles, forward, 0, 0 );
+						if (BoxTraceImpact( traceStart, forward, container, traceImpact )) {
+							color = colorRed;
+						} else {
+							color = colorYellow;
+						}
+						demoDrawBox( targetCent->lerpOrigin, container, color );
+					}
+				}
+
+			}
+		}
+	
+		CG_UpdateSoundTrackers();
+
+		if (gCGHasFallVector) {
+			vec3_t lookAng;
+			//broken fix
+			cg.renderingThirdPerson = qtrue;
+
+			VectorSubtract(cg.snap->ps.origin, cg.refdef.vieworg, lookAng);
+			VectorNormalize(lookAng);
+			vectoangles(lookAng, lookAng);
+
+			VectorCopy(gCGFallVector, cg.refdef.vieworg);
+			AnglesToAxis(lookAng, cg.refdef.viewaxis);
+		}
+
+		if (frameSpeed > 5)
+			frameSpeed = 5;
+
+		trap_S_UpdatePitch( frameSpeed );
+		trap_S_Respatialize( cg.playerCent ? cg.playerCent->currentState.number : ENTITYNUM_NONE, 
+			cg.refdef.vieworg, cg.refdef.viewaxis, inwater);
+
+		CG_TileClear();
+//		if (captureFrame && stereo != 0)
+//			memcpy( &cg.refdefStereo, &cg.refdef, sizeof( cg.refdefStereo ) );
+		trap_R_RenderScene( &cg.refdef );
+
+		CG_DrawRect(0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+		if ( demo.viewType == viewChase && cg.playerCent && ( cg.playerCent->currentState.number < MAX_CLIENTS ) )
+			CG_Draw2D();
+		else if ( cg_draw2D.integer && cg_drawFPS.integer ) {
+			CG_SaberClashFlare();
+			CG_DrawFPS(0.0f);
+		}
+		CG_UpdateFallVector();
+
+		//those looping sounds in intermission are annoying
+		if (cg.predictedPlayerState.pm_type == PM_INTERMISSION && !intermission) {
+			int i;
+			for (i = 0; i < MAX_GENTITIES; i++)
+				trap_S_StopLoopingSound(i);
+			intermission = qtrue;
+		}
+		if (cg.predictedPlayerState.pm_type != PM_INTERMISSION) {
+			intermission = qfalse;
+		}
+		
+		if (captureFrame) {
+			char fileName[MAX_OSPATH];
+			Com_sprintf( fileName, sizeof( fileName ), "capture/%s/%s", mme_demoFileName.string, mov_captureName.string );
+			if (/*!i*/stereo == 0) {
+				trap_MME_Capture( fileName, captureFPS, demo.viewFocus );
+			} else if (/*i*/stereo != 0) {
+/*				trap_MME_CaptureStereo( fileName, captureFPS, demo.viewFocus );
+				stereo = -stereo;
+				trap_Cvar_Set("r_stereoSeparation", va( "%f", stereo ));*/
+				//we can capture stereo 3d only through cl_main <- lie, we can capture here now, but with bugs :c
+				//the main bug is captured sound
+				//just don't call S_MMEUpdate when we do trap_MME_CaptureStereo - should work
+				trap_Cvar_Set("cl_mme_name", fileName);
+				trap_Cvar_Set("cl_mme_fps", va( "%f", captureFPS ));
+				trap_Cvar_Set("cl_mme_focus", va( "%f", demo.viewFocus ));
+				trap_Cvar_Set("cl_mme_capture", "1");
+				trap_Cvar_Set("mme_name", fileName);
+				trap_Cvar_Set("mme_fps", va( "%f", captureFPS ));
+				trap_Cvar_Set("mme_focus", va( "%f", demo.viewFocus ));
+				trap_Cvar_Set("mme_capture", "1");
+			}
+		} else {
+			if (demo.capture.active)
+				trap_Cvar_Set("cl_mme_capture", "0");
+			hudDraw();
+		}
+//		i++;
+//	}
+	cg.stereoCapture = qfalse;
 
 	if ( demo.capture.active && demo.capture.locked && demo.play.time > demo.capture.end  ) {
 		Com_Printf( "Capturing ended\n" );
 		trap_Cvar_Set("cl_mme_capture", "0");
+		trap_Cvar_Set("mme_capture", "0");
 		if (demo.autoLoad) {
 			trap_SendConsoleCommand( "disconnect\n" );
 		} 
