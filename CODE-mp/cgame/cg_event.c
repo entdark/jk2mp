@@ -445,7 +445,6 @@ CG_UseItem
 static void CG_UseItem( centity_t *cent ) {
 	clientInfo_t *ci;
 	int			itemNum, clientNum;
-	gitem_t		*item;
 	entityState_t *es;
 
 	es = &cent->currentState;
@@ -456,12 +455,8 @@ static void CG_UseItem( centity_t *cent ) {
 	}
 
 	// print a message if the local player
-	if ( es->number == cg.snap->ps.clientNum ) {
-		if ( !itemNum ) {
-			//CG_CenterPrint( "No item to use", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
-		} else {
-			item = BG_FindItemForHoldable( itemNum );
-		}
+	if ( es->number == cg.snap->ps.clientNum && !itemNum ) {
+		//CG_CenterPrint( "No item to use", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
 	}
 
 	switch ( itemNum ) {
@@ -1077,7 +1072,6 @@ static float CG_EventCoeff (int weapon, qboolean alt) {
 		default: return 0;
 		}
 	}
-	return 0;
 }
 
 static void CG_GetEventStuff(const float coeff, const int time, const float radius) {
@@ -2248,11 +2242,11 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	case EV_GLOBAL_SOUND:	// play from the player's head so it never diminishes
 		DEBUGNAME("EV_GLOBAL_SOUND");
-		if ( cgs.gameSounds[ es->eventParm ] ) {
-			trap_S_StartSound (NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.gameSounds[ es->eventParm ] );
+		if (cgs.gameSounds[es->eventParm]) {
+			trap_S_StartLocalSound(cgs.gameSounds[es->eventParm], CHAN_AUTO);
 		} else {
-			s = CG_ConfigString( CS_SOUNDS + es->eventParm );
-			trap_S_StartSound (NULL, cg.snap->ps.clientNum, CHAN_AUTO, CG_CustomSound( es->number, s ) );
+			s = CG_ConfigString(CS_SOUNDS + es->eventParm);
+			trap_S_StartLocalSound(CG_CustomSound(es->number, s), CHAN_AUTO);
 		}
 		break;
 
@@ -2382,11 +2376,8 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		// local player sounds are triggered in CG_CheckLocalSounds,
 		// so ignore events on the player
 		DEBUGNAME("EV_PAIN");
-
-		if ( (!demo15detected && !cg_oldPainSounds.integer) || (cent->currentState.number != cg.snap->ps.clientNum) )
-		{
+		if ((!demo15detected && !cg_oldPainSounds.integer) || (cent->currentState.number != cg.snap->ps.clientNum))
 			CG_PainEvent( cent, es->eventParm );
-		}
 		break;
 
 	case EV_DEATH1:

@@ -1184,7 +1184,7 @@ const void	*RB_DrawSurfs( const void *data ) {
 	if ( !backEnd.viewParms.isPortal
 		&& !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)
 		&& r_stereoSeparation->value == 0) {
-		int i;
+//		int i;
 		float x, y;
 		if ( R_MME_JitterOrigin( &x, &y ) ) {
 			orientationr_t* or = &backEnd.viewParms.ori;
@@ -1198,17 +1198,17 @@ const void	*RB_DrawSurfs( const void *data ) {
 //			or->origin[2] += 4000;
 //			or->origin[2] += 0.1 * x;
 			R_RotateForWorld( or, world );
-			for ( i = 0; i < 16; i++ ) {
-				int r = (rand() & 0xffff ) - 0x4000;
-				//world->modelMatrix[i] *= (0.9 + r * 0.0001);
-				//or->modelMatrix[i] *= (0.9 + r * 0.0001);
-			}
-		} else { 	
-			for ( i = 0; i < 16; i++ ) {
+//			for ( i = 0; i < 16; i++ ) {
+//				int r = (rand() & 0xffff ) - 0x4000;
+//				world->modelMatrix[i] *= (0.9 + r * 0.0001);
+//				or->modelMatrix[i] *= (0.9 + r * 0.0001);
+//			}
+		}// else { 	
+//			for ( i = 0; i < 16; i++ ) {
 //				int r = (rand() & 0xffff ) - 0x4000;
 //				backEnd.viewParms.world.modelMatrix[i] *= (0.9 + r * 0.0001);
-			}
-		}
+//			}
+//		}
 	}
 	RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
 

@@ -786,8 +786,7 @@ static void CG_General( centity_t *cent ) {
 	}
 
 	if (cent->currentState.number >= MAX_CLIENTS &&
-		cent->currentState.activeForcePass == NUM_FORCE_POWERS+1)
-	{
+		cent->currentState.activeForcePass == NUM_FORCE_POWERS + 1) {
 		centity_t			*empOwn;
 		vec3_t				empAngles, empOrg, anglesToOwner;
 		float				angle_ideal, angle_current, angle_dif;
@@ -796,131 +795,87 @@ static void CG_General( centity_t *cent ) {
 
 		empOwn = &cg_entities[cent->currentState.emplacedOwner];
 
-		if (empOwn)
-		{
-		
-			if (cg.playerCent == empOwn &&
-				!cg.renderingThirdPerson)
-			{
+		if (empOwn) {		
+			if (cg.playerCent && cg.playerCent->currentState.number == empOwn->currentState.number
+				&& !cg.renderingThirdPerson) {
 				VectorCopy(cg.refdefViewAngles, empAngles);
 				VectorCopy(cg.refdef.vieworg, empOrg);
-			}
-			else
-			{
+			} else {
 				VectorCopy(empOwn->lerpAngles, empAngles);
 				VectorCopy(empOwn->lerpOrigin, empOrg);
 			}
-
 			VectorSubtract(cent->lerpOrigin, empOrg, anglesToOwner);
-
 			vectoangles(anglesToOwner, anglesToOwner);
 
-			if (empAngles[PITCH] > 40)
-			{
+			if (empAngles[PITCH] > 40) {
 				empAngles[PITCH] = 40;
 			}
 
 			angle_ideal = empAngles[YAW];
 			angle_current = anglesToOwner[YAW];
 
-			if (angle_current < 0)
-			{
+			if (angle_current < 0) {
 				angle_current += 360;
-			}
-			if (angle_current > 360)
-			{
+			} else if (angle_current > 360) {
 				angle_current -= 360;
 			}
-			if (angle_ideal < 0)
-			{
+			if (angle_ideal < 0) {
 				angle_ideal += 360;
-			}
-			if (angle_ideal > 360)
-			{
+			} else if (angle_ideal > 360) {
 				angle_ideal -= 360;
 			}
 
-			if (angle_ideal <= angle_current)
-			{
+			if (angle_ideal <= angle_current) {
 				degrees_negative = (angle_current - angle_ideal);
-
 				degrees_positive = (360 - angle_current) + angle_ideal;
-			}
-			else
-			{
+			} else {
 				degrees_negative = angle_current + (360 - angle_ideal);
-
 				degrees_positive = (angle_ideal - angle_current);
 			}
 
-			if (degrees_negative < degrees_positive)
-			{
+			if (degrees_negative < degrees_positive) {
 				angle_dif = degrees_negative;
-			}
-			else
-			{
+			} else {
 				angle_dif = degrees_positive;
 			}
 
-			if (cg.snap->ps.clientNum == empOwn->currentState.number)
-			{
+			if (cg.playerCent && cg.playerCent->currentState.number == empOwn->currentState.number) {
 				cg.constrictValue = anglesToOwner[YAW];
-
 				cg.doConstrict = cg.time + 50;
 			}
 
-			if (angle_dif > 90)
-			{
-				overturn = 1;
-
-				if (angle_dif == degrees_negative)
-				{
+			if (angle_dif > 90) {
+				overturn = 1; 
+				if (angle_dif == degrees_negative) {
 					empAngles[YAW] += (angle_dif - 90);
-				}
-				else
-				{
+				} else {
 					empAngles[YAW] -= (angle_dif - 90);
 				}
-			}
-			else if (angle_dif > 80)
-			{
+			} else if (angle_dif > 80) {
 				overturn = 2;
 			}
 
-			if (!overturn && cg.snap->ps.clientNum == empOwn->currentState.number)
-			{
+			if (!overturn && cg.playerCent && cg.playerCent->currentState.number == empOwn->currentState.number) {
 				float plusExt = anglesToOwner[YAW]+70;
 				float minusExt = anglesToOwner[YAW]-70;
 
-				if (plusExt > 360)
-				{
+				if (plusExt > 360) {
 					plusExt -= 360;
-				}
-				if (minusExt < 0)
-				{
+				} else if (minusExt < 0) {
 					minusExt += 360;
 				}
-
 				trap_SetClientTurnExtent(minusExt, plusExt, cg.time+5000);
-
 				VectorCopy(empAngles, cent->turAngles);
-			}
-			else if (cg.snap->ps.clientNum == empOwn->currentState.number)
-			{
+			} else if (cg.playerCent && cg.playerCent->currentState.number == empOwn->currentState.number) {
 				trap_SetClientForceAngle(cg.time+5000, cent->turAngles);
 			}
-
 		//	empAngles[PITCH] -= 160;
-
-			if (empAngles[PITCH] < 0)
-			{
+			if (empAngles[PITCH] < 0) {
 				empAngles[PITCH] += 360;
 			}
-			if (empAngles[YAW] < 0)
-			{
+			if (empAngles[YAW] < 0) {
 				empAngles[YAW] += 360;
 			}
-
 			empAngles[YAW] -= cent->currentState.angles[YAW]; //slight hack so that upper rotated half looks right on angled turrets
 
 			//AngleVectors(empAngles, NULL, NULL, up);
@@ -953,8 +908,7 @@ static void CG_General( centity_t *cent ) {
 Ghoul2 Insert Start
 */
 	// if set to invisible, skip
-	if ((!s1->modelindex) && !(trap_G2_HaveWeGhoul2Models(cent->ghoul2))) 
-	{
+	if ((!s1->modelindex) && !(trap_G2_HaveWeGhoul2Models(cent->ghoul2))) {
 		return;
 	}
 /*
@@ -980,36 +934,28 @@ Ghoul2 Insert End
 	VectorCopy( cent->lerpOrigin, ent.origin);
 	VectorCopy( cent->lerpOrigin, ent.oldorigin);
 
-	if (cent->currentState.modelGhoul2)
-	{ //If the game says this guy uses a ghoul2 model and the g2 instance handle is null, then initialize it
-		if (!cent->ghoul2 && !cent->currentState.bolt1)
-		{
+	if (cent->currentState.modelGhoul2) {
+	//If the game says this guy uses a ghoul2 model and the g2 instance handle is null, then initialize it
+		if (!cent->ghoul2 && !cent->currentState.bolt1) {
 			trap_G2API_InitGhoul2Model(&cent->ghoul2, CG_ConfigString( CS_MODELS+cent->currentState.modelindex ), 0, 0, 0, 0, 0);
-		}
-		else if (cent->currentState.bolt1)
-		{
+		} else if (cent->currentState.bolt1) {
 			TurretClientRun(cent);
 		}
-
-		if (cent->ghoul2)
-		{ //give us a proper radius
+		if (cent->ghoul2) {
+		//give us a proper radius
 			ent.radius = cent->currentState.g2radius;
 		}
 	}
 
-	if (s1->eType == ET_BODY)
-	{ //bodies should have a radius as well
+	if (s1->eType == ET_BODY) {
+	//bodies should have a radius as well
 		ent.radius = cent->currentState.g2radius;
-
-		if (cent->ghoul2)
-		{ //all bodies should already have a ghoul2 instance. Use it to set the torso/head angles to 0.
-			if (cent->isATST)
-			{
+		if (cent->ghoul2) {
+		//all bodies should already have a ghoul2 instance. Use it to set the torso/head angles to 0.
+			if (cent->isATST) {
 				trap_G2API_SetBoneAngles(cent->ghoul2, 0, "pelvis", vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, cgs.gameModels, 100, cg.time);
 				ent.radius = 250;
-			}
-			else
-			{
+			} else {
 				cent->lerpAngles[PITCH] = 0;
 				cent->lerpAngles[ROLL] = 0;
 				trap_G2API_SetBoneAngles(cent->ghoul2, 0, "pelvis", vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, cgs.gameModels, 0, cg.time); 
@@ -1021,17 +967,14 @@ Ghoul2 Insert End
 		}
 	}
 
-	if (s1->eType == ET_HOLOCRON && s1->modelindex < -100)
-	{ //special render, it's a holocron
-		//Using actual models now:
+	if (s1->eType == ET_HOLOCRON && s1->modelindex < -100) {
+	//special render, it's a holocron
+	//Using actual models now:
 		ent.hModel = trap_R_RegisterModel(forceHolocronModels[s1->modelindex+128]);
-
 		//Rotate them
 		VectorCopy( cg.autoAngles, cent->lerpAngles );
 		AxisCopy( cg.autoAxis, ent.axis );
-	}
-	else if (!doNotSetModel || demo15detected)
-	{
+	} else if (!doNotSetModel || demo15detected) {
 		ent.hModel = cgs.gameModels[s1->modelindex];
 	}
 
@@ -1043,8 +986,7 @@ Ghoul2 Insert End
 	// convert angles to axis
 	AnglesToAxis( cent->lerpAngles, ent.axis );
 
-	if ( cent->currentState.time > cg.time && cent->currentState.weapon == WP_EMPLACED_GUN )
-	{
+	if (cent->currentState.time > cg.time && cent->currentState.weapon == WP_EMPLACED_GUN) {
 		// make the gun pulse red to warn about it exploding
 		val = (1.0f - ((cent->currentState.time - cg.time) - cg.timeFraction) / 3200.0f ) * 0.3f;
 
@@ -1055,9 +997,7 @@ Ghoul2 Insert End
 		ent.shaderRGBA[3] = 100;
 		trap_R_AddRefEntityToScene( &ent );
 		ent.customShader = 0;
-	}
-	else if ( cent->currentState.time == -1 && cent->currentState.weapon == WP_EMPLACED_GUN)
-	{
+	} else if (cent->currentState.time == -1 && cent->currentState.weapon == WP_EMPLACED_GUN) {
 		ent.customShader = trap_R_RegisterShader( "models/map_objects/imp_mine/turret_chair_dmg.tga" );
 		//trap_R_AddRefEntityToScene( &ent );
 	}
@@ -1071,7 +1011,6 @@ Ghoul2 Insert End
 		}
 
 		VectorCopy(cent->currentState.origin2, hitLoc);
-
 		VectorSubtract( hitLoc, ent.origin, ent.oldorigin );
 		
 		tempLength = VectorNormalize( ent.oldorigin );
@@ -1106,8 +1045,8 @@ Ghoul2 Insert End
 	// add to refresh list
 	trap_R_AddRefEntityToScene (&ent);
 
-	if (cent->bolt3 == 999)
-	{ //this is an in-flight saber being rendered manually
+	if (cent->bolt3 == 999) {
+	//this is an in-flight saber being rendered manually
 		vec3_t org;
 		float wv;
 		int i;
@@ -1123,8 +1062,7 @@ Ghoul2 Insert End
 		ent.shaderRGBA[2] = wv * 0;
 		trap_R_AddRefEntityToScene (&ent);
 
-		for ( i = -4; i < 10; i += 1 )
-		{
+		for (i = -4; i < 10; i += 1) {
 			VectorMA( ent.origin, -i, ent.axis[2], org );
 
 			VectorCopy(org, fxSArgs.origin);
@@ -1143,9 +1081,8 @@ Ghoul2 Insert End
 			//trap_FX_AddSprite( org, NULL, NULL, 5.5f, 5.5f, wv, wv, 0.0f, 0.0f, 1.0f, cgs.media.yellowSaberGlowShader, 0x08000000 );
 			trap_FX_AddSprite(&fxSArgs);
 		}
-	}
-	else if (cent->currentState.trickedentindex3)
-	{ //holocron special effects
+	} else if (cent->currentState.trickedentindex3) {
+	//holocron special effects
 		vec3_t org;
 		float wv;
 		addspriteArgStruct_t fxSArgs;
@@ -1156,30 +1093,23 @@ Ghoul2 Insert End
 		ent.renderfx = RF_RGB_TINT;
 		wv = sin(cg.time * 0.005 + cg.timeFraction * 0.005) * 0.08f + 0.1f; //* 0.08f + 0.1f;
 
-		if (cent->currentState.trickedentindex3 == 1)
-		{ //dark
+		if (cent->currentState.trickedentindex3 == 1) { //dark
 			ent.shaderRGBA[0] = wv*255;
 			ent.shaderRGBA[1] = 0;
 			ent.shaderRGBA[2] = 0;
-		}
-		else if (cent->currentState.trickedentindex3 == 2)
-		{ //light
+		} else if (cent->currentState.trickedentindex3 == 2) { //light
 			ent.shaderRGBA[0] = wv*255;
 			ent.shaderRGBA[1] = wv*255;
 			ent.shaderRGBA[2] = wv*255;
-		}
-		else
-		{ //neutral
+		} else { //neutral
 			if ((s1->modelindex+128) == FP_SABERATTACK ||
 				(s1->modelindex+128) == FP_SABERDEFEND ||
-				(s1->modelindex+128) == FP_SABERTHROW)
-			{ //saber power
+				(s1->modelindex+128) == FP_SABERTHROW) {
+			//saber power
 				ent.shaderRGBA[0] = 0;
 				ent.shaderRGBA[1] = wv*255;
 				ent.shaderRGBA[2] = 0;
-			}
-			else
-			{
+			} else {
 				ent.shaderRGBA[0] = 0;
 				ent.shaderRGBA[1] = wv*255;
 				ent.shaderRGBA[2] = wv*255;
@@ -1214,15 +1144,12 @@ Ghoul2 Insert End
 
 		fxSArgs.flags = 0x08000000|0x00000001;
 
-		if (cent->currentState.trickedentindex3 == 1)
-		{ //dark
+		if (cent->currentState.trickedentindex3 == 1) { //dark
 			fxSArgs.sAlpha *= 3;
 			fxSArgs.eAlpha *= 3;
 			fxSArgs.shader = cgs.media.redSaberGlowShader;
 			trap_FX_AddSprite(&fxSArgs);
-		}
-		else if (cent->currentState.trickedentindex3 == 2)
-		{ //light
+		} else if (cent->currentState.trickedentindex3 == 2) { //light
 			fxSArgs.sAlpha *= 1.5;
 			fxSArgs.eAlpha *= 1.5;
 			fxSArgs.shader = cgs.media.redSaberGlowShader;
@@ -1231,20 +1158,16 @@ Ghoul2 Insert End
 			trap_FX_AddSprite(&fxSArgs);
 			fxSArgs.shader = cgs.media.blueSaberGlowShader;
 			trap_FX_AddSprite(&fxSArgs);
-		}
-		else
-		{ //neutral
+		} else { //neutral
 			if ((s1->modelindex+128) == FP_SABERATTACK ||
 				(s1->modelindex+128) == FP_SABERDEFEND ||
-				(s1->modelindex+128) == FP_SABERTHROW)
-			{ //saber power
+				(s1->modelindex+128) == FP_SABERTHROW) {
+			//saber power
 				fxSArgs.sAlpha *= 1.5;
 				fxSArgs.eAlpha *= 1.5;
 				fxSArgs.shader = cgs.media.greenSaberGlowShader;
 				trap_FX_AddSprite(&fxSArgs);
-			}
-			else
-			{
+			} else {
 				fxSArgs.sAlpha *= 0.5;
 				fxSArgs.eAlpha *= 0.5;
 				fxSArgs.shader = cgs.media.greenSaberGlowShader;
@@ -1255,8 +1178,8 @@ Ghoul2 Insert End
 		}
 	}
 
-	if ( cent->currentState.time == -1 && cent->currentState.weapon == WP_TRIP_MINE && (cent->currentState.eFlags & EF_FIRING) )
-	{ //if force sight is active, render the laser multiple times up to the force sight level to increase visibility
+	if (cent->currentState.time == -1 && cent->currentState.weapon == WP_TRIP_MINE && (cent->currentState.eFlags & EF_FIRING)) {
+	//if force sight is active, render the laser multiple times up to the force sight level to increase visibility
 		int i = 0;
 		vec3_t beamDirection;
 
@@ -1281,8 +1204,7 @@ Ghoul2 Insert End
 Ghoul2 Insert Start
 */
 
-	if (cg_debugBB.integer)
-	{
+	if (cg_debugBB.integer) {
 		CG_CreateBBRefEnts(s1, cent->lerpOrigin);
 	}
 /*
@@ -1829,7 +1751,7 @@ static void CG_Missile( centity_t *cent ) {
 	{
 		if (!cent->ghoul2 && !(s1->eFlags & EF_NODRAW))
 		{
-			const char *saberModel = &cgs.clientinfo[cent->currentState.number];
+			const char *saberModel = cgs.clientinfo[cent->currentState.number].saberModel;
 			if (saberModel && saberModel[0])
 				trap_G2API_InitGhoul2Model(&cent->ghoul2, va("models/weapons2/%s/saber_w.glm", saberModel), 0, 0, 0, 0, 0);
 			else
@@ -2455,8 +2377,7 @@ void CG_AddPacketEntities( void ) {
 	}
 }
 
-void CG_ROFF_NotetrackCallback( centity_t *cent, const char *notetrack)
-{
+void CG_ROFF_NotetrackCallback( centity_t *cent, const char *notetrack) {
 	int i = 0, r = 0, objectID = 0, anglesGathered = 0, posoffsetGathered = 0;
 	char type[256];
 	char argument[512];

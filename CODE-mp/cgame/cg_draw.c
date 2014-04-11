@@ -1596,8 +1596,7 @@ CG_DrawStats
 
 ================
 */
-static void CG_DrawStats( void ) 
-{
+static void CG_DrawStats( void ) {
 	centity_t		*cent;
 /*	playerState_t	*ps;
 	vec3_t			angles;
@@ -1754,7 +1753,7 @@ static float CG_DrawEnemyInfo ( float y )
 		if (cg.playerPredicted)
 			clientNum = cg.snap->ps.duelIndex;
 		else
-			clientNum = cg.snap->ps.clientNum;
+			clientNum = (cg.playerCent->currentState.number == cg.snap->ps.duelIndex) ? cg.snap->ps.clientNum : cg.snap->ps.duelIndex;
 	} else if (cgs.gametype == GT_TOURNAMENT && cgs.clientinfo[cg.playerCent->currentState.number].team != TEAM_SPECTATOR) {
 //		title = "Dueling";
 		title = CG_GetStripEdString("INGAMETEXT", "DUELING");
@@ -2862,9 +2861,8 @@ void CG_SaberClashFlare( void ) {
 }
 
 //--------------------------------------------------------------
-static void CG_DrawHolocronIcons(void)
+static void CG_DrawHolocronIcons(void) {
 //--------------------------------------------------------------
-{
 	int icon_size = 40;
 	int i = 0;
 	int startx = 10;
@@ -2873,35 +2871,28 @@ static void CG_DrawHolocronIcons(void)
 	int endx = icon_size;
 	int endy = icon_size;
 
-	if (cg.snap->ps.zoomMode)
-	{ //don't display over zoom mask
+	if (cg.snap->ps.zoomMode) {
+	//don't display over zoom mask
+		return;
+	}
+	if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR) {
 		return;
 	}
 
-	if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR)
-	{
-		return;
-	}
-
-	while (i < NUM_FORCE_POWERS)
-	{
-		if (cg.snap->ps.holocronBits & (1 << forcePowerSorted[i]))
-		{
+	while (i < NUM_FORCE_POWERS) {
+		if (cg.snap->ps.holocronBits & (1 << forcePowerSorted[i])) {
 			CG_DrawPic( startx, starty, endx*cgs.widthRatioCoef, endy, cgs.media.forcePowerIcons[forcePowerSorted[i]]);
 			starty += (icon_size+2)*cgs.widthRatioCoef; //+2 for spacing
-			if ((starty+icon_size*cgs.widthRatioCoef) >= SCREEN_HEIGHT-80)
-			{
+			if ((starty+icon_size*cgs.widthRatioCoef) >= SCREEN_HEIGHT-80) {
 				starty = 10;//SCREEN_HEIGHT - icon_size*3;
 				startx += (icon_size+2);
 			}
 		}
-
 		i++;
 	}
 }
 
-static qboolean CG_IsDurationPower(int power)
-{
+static qboolean CG_IsDurationPower(int power) {
 	if (power == FP_HEAL ||
 		power == FP_SPEED ||
 		power == FP_TELEPATHY ||
@@ -2912,14 +2903,12 @@ static qboolean CG_IsDurationPower(int power)
 	{
 		return qtrue;
 	}
-
 	return qfalse;
 }
 
 //--------------------------------------------------------------
-static void CG_DrawActivePowers(void)
+static void CG_DrawActivePowers(void) {
 //--------------------------------------------------------------
-{
 	int icon_size = 40;
 	int i = 0;
 	int startx = icon_size*2+16;
@@ -2942,20 +2931,16 @@ static void CG_DrawActivePowers(void)
 	if (cgs.clientinfo[cg.playerCent->currentState.number].team == TEAM_SPECTATOR)
 		return;
 
-	while (i < NUM_FORCE_POWERS)
-	{
+	while (i < NUM_FORCE_POWERS) {
 		if ((cg.playerCent->currentState.forcePowersActive & (1 << forcePowerSorted[i])) &&
-			CG_IsDurationPower(forcePowerSorted[i]))
-		{
+			CG_IsDurationPower(forcePowerSorted[i])) {
 			CG_DrawPic( startx, starty, endx*cgs.widthRatioCoef, endy, cgs.media.forcePowerIcons[forcePowerSorted[i]]);
 			startx += (icon_size+2)*cgs.widthRatioCoef; //+2 for spacing
-			if ((startx+icon_size*cgs.widthRatioCoef) >= SCREEN_WIDTH-80)
-			{
+			if ((startx+icon_size*cgs.widthRatioCoef) >= SCREEN_WIDTH-80) {
 				startx = icon_size*2+16;
 				starty += (icon_size+2);
 			}
 		}
-
 		i++;
 	}
 
@@ -2976,105 +2961,78 @@ static void CG_DrawRocketLocking( int lockEntNum, int lockTime )
 	int dif = ( cg.time - cg.snap->ps.rocketLockTime ) / ( 1200.0f / /*8.0f*/16.0f );
 	int i;
 
-	if (!cg.snap->ps.rocketLockTime)
-	{
+	if (!cg.snap->ps.rocketLockTime) {
 		return;
 	}
-
-	if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR)
-	{
+	if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR) {
 		return;
 	}
 
 	//We can't check to see in pmove if players are on the same team, so we resort
 	//to just not drawing the lock if a teammate is the locked on ent
 	if (cg.snap->ps.rocketLockIndex >= 0 &&
-		cg.snap->ps.rocketLockIndex < MAX_CLIENTS)
-	{
-		if (cgs.clientinfo[cg.snap->ps.rocketLockIndex].team == cgs.clientinfo[cg.snap->ps.clientNum].team)
-		{
-			if (cgs.gametype >= GT_TEAM)
-			{
+		cg.snap->ps.rocketLockIndex < MAX_CLIENTS) {
+		if (cgs.clientinfo[cg.snap->ps.rocketLockIndex].team == cgs.clientinfo[cg.snap->ps.clientNum].team) {
+			if (cgs.gametype >= GT_TEAM) {
 				return;
 			}
 		}
 	}
 
-	if (cg.snap->ps.rocketLockTime != -1)
-	{
+	if (cg.snap->ps.rocketLockTime != -1) {
 		lastvalidlockdif = dif;
-	}
-	else
-	{
+	} else {
 		dif = lastvalidlockdif;
 	}
 
-	if ( !cent )
-	{
+	if (!cent) {
 		return;
 	}
 
-	VectorCopy( cent->lerpOrigin, org );
+	VectorCopy(cent->lerpOrigin, org);
 
-	if ( CG_WorldCoordToScreenCoord( org, &cx, &cy ))
-	{
+	if (CG_WorldCoordToScreenCoord(org, &cx, &cy)) {
 		// we care about distance from enemy to eye, so this is good enough
-		float sz = Distance( cent->lerpOrigin, cg.refdef.vieworg ) / 1024.0f; 
-		
-		if ( sz > 1.0f )
-		{
+		float sz = Distance( cent->lerpOrigin, cg.refdef.vieworg ) / 1024.0f; 		
+		if (sz > 1.0f) {
 			sz = 1.0f;
-		}
-		else if ( sz < 0.0f )
-		{
+		} else if (sz < 0.0f) {
 			sz = 0.0f;
 		}
-
 		sz = (1.0f - sz) * (1.0f - sz) * 32 + 6;
-
-		cy += sz * 0.5f;
+		cy += sz * 0.5f;		
 		
-		if ( dif < 0 )
-		{
+		if (dif < 0) {
 			oldDif = 0;
 			return;
-		}
-		else if ( dif > 8 )
-		{
+		} else if ( dif > 8 ) {
 			dif = 8;
 		}
 
 		// do sounds
-		if ( oldDif != dif )
-		{
-			if ( dif == 8 )
-			{
+		if (oldDif != dif) {
+			if (dif == 8) {
 				trap_S_StartSound( org, 0, CHAN_AUTO, trap_S_RegisterSound( "sound/weapons/rocket/lock.wav" ));
-			}
-			else
-			{
+			} else {
 				trap_S_StartSound( org, 0, CHAN_AUTO, trap_S_RegisterSound( "sound/weapons/rocket/tick.wav" ));
 			}
 		}
 
 		oldDif = dif;
 
-		for ( i = 0; i < dif; i++ )
-		{
+		for (i = 0; i < dif; i++) {
 			color[0] = 1.0f;
 			color[1] = 0.0f;
 			color[2] = 0.0f;
 			color[3] = 0.1f * i + 0.2f;
 
 			trap_R_SetColor( color );
-
 			// our slices are offset by about 45 degrees.
 			CG_DrawRotatePic( cx - sz, cy - sz, sz, sz, i * 45.0f, trap_R_RegisterShaderNoMip( "gfx/2d/wedge" ));
 		}
 
 		// we are locked and loaded baby
-		if ( dif == 8 )
-		{
+		if (dif == 8) {
 			//since we have hardcoded rotated pic with ratio fix above,
 			//we want undepended (on mov_ratioFix) hardcoded coef here too
 			float ratioFix = (640.0*cgs.glconfig.vidHeight) / (480.0*cgs.glconfig.vidWidth);
@@ -3082,7 +3040,6 @@ static void CG_DrawRocketLocking( int lockEntNum, int lockTime )
 			color[3] = 1.0f; // this art is additive, so the alpha value does nothing
 
 			trap_R_SetColor( color );
-
 			CG_DrawPic( cx - sz * ratioFix, cy - sz * 2, sz * 2 * ratioFix, sz * 2, trap_R_RegisterShaderNoMip( "gfx/2d/lock" ));
 		}
 	}
@@ -3211,7 +3168,7 @@ static void CG_ScanForCrosshairEntity( void ) {
 	}
 
 	CG_Trace( &trace, start, vec3_origin, vec3_origin, end, 
-		cg.snap->ps.clientNum, CONTENTS_SOLID|CONTENTS_BODY );
+		cg.playerCent->currentState.number, CONTENTS_SOLID|CONTENTS_BODY );
 
 	if (trace.entityNum < MAX_CLIENTS)
 	{
@@ -4063,7 +4020,7 @@ qboolean gCGHasFallVector = qfalse;
 vec3_t gCGFallVector;
 
 static void CG_Draw2DScreenTints(void) {
-	float			fallTime, rageTime, rageRecTime, absorbTime, protectTime, ysalTime;
+	float			rageTime, rageRecTime, absorbTime, protectTime, ysalTime;
 	vec4_t			hcolor;
 	if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
 		if (cg.snap->ps.fd.forcePowersActive & (1 << FP_RAGE)) {

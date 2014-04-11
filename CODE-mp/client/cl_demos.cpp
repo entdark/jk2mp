@@ -280,9 +280,6 @@ void demoConvert( const char *oldName, const char *newBaseName, qboolean smoothe
 	clSnapshot_t	*newSnap;
 	int				levelCount = 0;
 	char			newName[MAX_OSPATH];
-	short			flatDataSize = 0;
-	short			automapCount = 0;
-	int				i = 0;
 
 	oldSize = FS_FOpenFileRead( oldName, &oldHandle, qtrue );
 	if (!oldHandle) {

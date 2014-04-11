@@ -1221,62 +1221,46 @@ Q_StripColorNew
 Strips coloured strings in-place: "fgs^^^223fds" -> "fgs^^23fds"
 ==================
 */
-void Q_StripColorNewNT(char *text)
-{
-	qboolean doPass = qtrue;
+void Q_StripColorNewNT(char *text) {
 	char *read;
 	char *write;
 
 	read = write = text;
-	while ( *read )
-	{
-		if ( Q_IsColorStringNT(read) )
-		{
+	while ( *read ) {
+		if ( Q_IsColorStringNT(read) ) {
 			read += 2;
-		}
-		else
-		{
+		} else {
 			// Avoid writing the same data over itself
-			if (write != read)
-			{
+			if (write != read) {
 				*write = *read;
 			}
 			write++;
 			read++;
 		}
 	}
-	if ( write < read )
-	{
+	if ( write < read ) {
 		// Add trailing NUL byte if string has shortened
 		*write = '\0';
 	}
 }
-void Q_StripColorNew(char *text)
-{
-	qboolean doPass = qtrue;
+void Q_StripColorNew(char *text) {
 	char *read;
 	char *write;
 
 	read = write = text;
-	while ( *read )
-	{
-		if ( Q_IsColorStringExt(read) )
-		{
+	while ( *read ) {
+		if ( Q_IsColorStringExt(read) ) {
 			read += 2;
-		}
-		else
-		{
+		} else {
 			// Avoid writing the same data over itself
-			if (write != read)
-			{
+			if (write != read) {
 				*write = *read;
 			}
 			write++;
 			read++;
 		}
 	}
-	if ( write < read )
-	{
+	if ( write < read ) {
 		// Add trailing NUL byte if string has shortened
 		*write = '\0';
 	}

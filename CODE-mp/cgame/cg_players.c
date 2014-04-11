@@ -997,7 +997,6 @@ CG_NewClientInfo
 void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 	clientInfo_t *ci;
 	clientInfo_t newInfo;
-	const char	*configstring;
 	const char	*v;
 	char		*slash;
 	void *oldGhoul2;
@@ -3179,15 +3178,16 @@ static void CG_G2PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t legsAngle
 							duelClient = cgs.duelist1;
 						}
 					}
-				}
-				else if (cg.snap && cg.snap->ps.duelInProgress)
-				{
-					if (cent->currentState.number == cg.snap->ps.duelIndex)
-					{
+				} else if (cg.playerPredicted && cg.snap && cg.snap->ps.duelInProgress) {
+					if (cent->currentState.number == cg.snap->ps.duelIndex) {
 						duelClient = cg.snap->ps.clientNum;
+					} else if (cent->currentState.number == cg.snap->ps.clientNum) {
+						duelClient = cg.snap->ps.duelIndex;
 					}
-					else if (cent->currentState.number == cg.snap->ps.clientNum)
-					{
+				} else if (!cg.playerPredicted && cg.playerCent && cg.snap->ps.duelInProgress) {
+					if (cent->currentState.number == cg.snap->ps.duelIndex) {
+						duelClient = (cg.playerCent->currentState.number == cg.snap->ps.duelIndex) ? cg.snap->ps.clientNum : cg.snap->ps.duelIndex;
+					} else if (cent->currentState.number == cg.snap->ps.clientNum) {
 						duelClient = cg.snap->ps.duelIndex;
 					}
 				}
@@ -4626,8 +4626,7 @@ void CG_AddSaberBlade( centity_t *cent, centity_t *scent, refEntity_t *saber, in
 
 	saberEnt = &cg_entities[cent->currentState.saberEntityNum];
 
-	if (/*cg.snap->ps.clientNum == cent->currentState.number && */
-		cgs.clientinfo[ cent->currentState.clientNum ].team != TEAM_SPECTATOR &&
+	if (cgs.clientinfo[ cent->currentState.clientNum ].team != TEAM_SPECTATOR &&
 		!(cg.snap->ps.pm_flags & PMF_FOLLOW)) {
 		if (cent->saberLength < 1) {
 			cent->saberLength = 1;

@@ -980,7 +980,6 @@ static void demoFindCommand_f(void) {
 
 void demoPlaybackInit(void) {
 	char projectFile[MAX_OSPATH];
-	int i;
 
 	demo.initDone = qtrue;
 	demo.autoLoad = qfalse;

@@ -42,7 +42,7 @@ static void CG_TransitionEntity( centity_t *cent ) {
 	// reset if the entity wasn't in the last frame or was teleported
 	if ( !cent->interpolate ) {
 		CG_ResetEntity( cent );
-	} else {	//mme
+	} else { //mme
 		int newHeight;
 		int maxs = ((cent->currentState.solid >> 16) & 255) - 32;
 		if ( maxs > 16 )

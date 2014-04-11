@@ -2478,7 +2478,6 @@ static void Com_SetProcessCoresAffinity() {
 	DWORD	processMask;
 	DWORD	systemMask;
 	int		dev = Cvar_VariableValue("developer");
-	int		i;
 
 	// get current affinity for
 	if (!GetProcessAffinityMask(GetCurrentProcess(), &processMask, &systemMask)) {

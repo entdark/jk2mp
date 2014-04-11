@@ -1713,8 +1713,7 @@ continuous looping sounds are added each frame
 void S_StopLoopingSound(const void *parent) {
 #ifdef SND_MME
 	loopQueue_t *lq;
-	int queueLeft, loopLeft;
-	int loopFirst = 0;
+	int queueLeft;
 
 	for (queueLeft = s_loopQueueCount, lq = s_loopQueue;queueLeft > 0;queueLeft--, lq++ ) {
 		/* Found the same parent */
