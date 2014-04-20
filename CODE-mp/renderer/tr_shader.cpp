@@ -761,6 +761,10 @@ static void ParseSurfaceSprites( const char *_text, shaderStage_t *stage )
 	{
 		sstype = SURFSPRITE_EFFECT;
 	}
+	else if (!Q_stricmp(token, "flattened"))
+	{
+		sstype = SURFSPRITE_FLATTENED;
+	}
 	else
 	{
 		ri.Printf( PRINT_WARNING, "WARNING: invalid type in shader '%s'\n", shader.name );

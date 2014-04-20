@@ -309,6 +309,7 @@ typedef struct {
 #define SURFSPRITE_ORIENTED		2
 #define SURFSPRITE_EFFECT		3
 #define SURFSPRITE_WEATHERFX	4
+#define SURFSPRITE_FLATTENED	5
 
 #define SURFSPRITE_FACING_NORMAL	0
 #define SURFSPRITE_FACING_UP		1
@@ -1318,6 +1319,7 @@ extern cvar_t	*mme_blurOverlap;
 extern cvar_t	*mme_blurGamma;
 extern cvar_t	*mme_dofFrames;
 extern cvar_t	*mme_cpuSSE2;
+extern cvar_t	*mme_cpuPBO;
 extern cvar_t	*mme_workMegs;
 extern cvar_t	*mme_depthRange;
 extern cvar_t	*mme_depthFocus;
