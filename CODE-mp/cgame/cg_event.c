@@ -1940,7 +1940,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			CG_Trace(&tr, position, playerMins, playerMaxs, dpos, es->number, MASK_SOLID);
 			VectorCopy(tr.endpos, pos);
 			
-			trap_S_StopSound(es->clientNum, CHAN_VOICE, CG_CustomSound(es->clientNum, "*falling1.wav"));
+			trap_S_StopSound(es->clientNum, CHAN_VOICE, -1);
 
 			trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleInSound );
 
