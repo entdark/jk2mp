@@ -1518,7 +1518,7 @@ void CG_DrawInvenSelect( void )
 				NUM_FONT_SMALL,qfalse);
 				*/
 
-			holdX -= (smallIconSize+pad);
+			holdX -= (smallIconSize+pad)*cgs.widthRatioCoef;
 		}
 	}
 
