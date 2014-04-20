@@ -3500,9 +3500,12 @@ CG_PlayerFloatSprite
 Float a sprite over the player's head
 ===============
 */
-static void CG_PlayerFloatSprite( centity_t *cent, qhandle_t shader ) {
+static qboolean CG_PlayerFloatSprite( centity_t *cent, qhandle_t shader ) {
 	int				rf;
 	refEntity_t		ent;
+
+	if (!shader)
+		return qfalse;
 
 	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number
 		&& !cg.renderingThirdPerson ) {
@@ -3523,6 +3526,7 @@ static void CG_PlayerFloatSprite( centity_t *cent, qhandle_t shader ) {
 	ent.shaderRGBA[2] = 255;
 	ent.shaderRGBA[3] = 255;
 	trap_R_AddRefEntityToScene( &ent );
+	return qtrue;
 }
 
 
@@ -3568,13 +3572,13 @@ CG_PlayerSprites
 Float sprites over the player's head
 ===============
 */
-static void CG_PlayerSprites( centity_t *cent ) {
+static qboolean CG_PlayerSprites( centity_t *cent ) {
 //	int		team;
 
 	//mme
 	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number
 		&& !cg.renderingThirdPerson) 
-		return;
+		return qfalse;
 
 	if (cg.playerCent &&
 		CG_IsMindTricked(cent->currentState.trickedentindex,
@@ -3583,49 +3587,41 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		cent->currentState.trickedentindex4,
 		cg.playerCent->currentState.number))
 	{
-		return; //this entity is mind-tricking the current client, so don't render it
+		return qfalse; //this entity is mind-tricking the current client, so don't render it
 	}
 
 	if ( cent->currentState.eFlags & EF_CONNECTION ) {
-		CG_PlayerFloatSprite( cent, cgs.media.connectionShader );
-		return;
+		return CG_PlayerFloatSprite( cent, cgs.media.connectionShader );
 	}
 
 	if ( cent->currentState.eFlags & EF_TALK ) {
-		CG_PlayerFloatSprite( cent, cgs.media.balloonShader );
-		return;
+		return CG_PlayerFloatSprite( cent, cgs.media.balloonShader );
 	}
 
 #ifdef JK2AWARDS
 	if (cg_drawRewards.integer) {
 		if ( cent->currentState.eFlags & EF_AWARD_IMPRESSIVE ) {
-			CG_PlayerFloatSprite( cent, cgs.media.medalImpressive );
-			return;
+			return CG_PlayerFloatSprite( cent, cgs.media.medalImpressive );
 		}
 
 		if ( cent->currentState.eFlags & EF_AWARD_EXCELLENT ) {
-			CG_PlayerFloatSprite( cent, cgs.media.medalExcellent );
-			return;
+			return CG_PlayerFloatSprite( cent, cgs.media.medalExcellent );
 		}
 
 		if ( cent->currentState.eFlags & EF_AWARD_GAUNTLET ) {
-			CG_PlayerFloatSprite( cent, cgs.media.medalGauntlet );
-			return;
+			return CG_PlayerFloatSprite( cent, cgs.media.medalGauntlet );
 		}
 
 		if ( cent->currentState.eFlags & EF_AWARD_DEFEND ) {
-			CG_PlayerFloatSprite( cent, cgs.media.medalDefend );
-			return;
+			return CG_PlayerFloatSprite( cent, cgs.media.medalDefend );
 		}
 
 		if ( cent->currentState.eFlags & EF_AWARD_ASSIST ) {
-			CG_PlayerFloatSprite( cent, cgs.media.medalAssist );
-			return;
+			return CG_PlayerFloatSprite( cent, cgs.media.medalAssist );
 		}
 
 		if ( cent->currentState.eFlags & EF_AWARD_CAP ) {
-			CG_PlayerFloatSprite( cent, cgs.media.medalCapture );
-			return;
+			return CG_PlayerFloatSprite( cent, cgs.media.medalCapture );
 		}
 	}
 #endif
@@ -3640,6 +3636,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		return;
 	}
 */
+	return qfalse;
 }
 
 /*
@@ -3924,7 +3921,7 @@ Adds a piece with modifications or duplications for powerups
 Also called by CG_Missile for quad rockets, but nobody can tell...
 ===============
 */
-void CG_AddRefEntityWithPowerups( refEntity_t *ent, entityState_t *state, int team ) {
+void CG_AddRefEntityWithPowerups(refEntity_t *ent, entityState_t *state, int team) {
 
 	if (cg.playerCent && CG_IsMindTricked(state->trickedentindex,
 		state->trickedentindex2,
@@ -3936,17 +3933,16 @@ void CG_AddRefEntityWithPowerups( refEntity_t *ent, entityState_t *state, int te
 
 	trap_R_AddRefEntityToScene( ent );
 
-	if ( state->powerups & ( 1 << PW_QUAD ) )
-	{
+	if (state->powerups & (1 << PW_QUAD)) {
 		if (team == TEAM_RED)
 			ent->customShader = cgs.media.redQuadShader;
 		else
 			ent->customShader = cgs.media.quadShader;
-		trap_R_AddRefEntityToScene( ent );
+		trap_R_AddRefEntityToScene(ent);
 	}
-	if ( state->powerups & ( 1 << PW_BATTLESUIT ) ) {
+	if (state->powerups & (1 << PW_BATTLESUIT)) {
 		ent->customShader = cgs.media.battleSuitShader;
-		trap_R_AddRefEntityToScene( ent );
+		trap_R_AddRefEntityToScene(ent);
 	}
 }
 
@@ -3983,23 +3979,21 @@ void CG_PlayerShieldHit(int entitynum, vec3_t dir, int amount) {
 }
 
 
-void CG_DrawPlayerShield(centity_t *cent, vec3_t origin)
-{
+void CG_DrawPlayerShield(centity_t *cent, vec3_t origin) {
 	refEntity_t ent;
 	float		alpha;
 	float		scale;
 	
 	// Don't draw the shield when the player is dead.
-	if (cent->currentState.eFlags & EF_DEAD)
-	{
+	if (cent->currentState.eFlags & EF_DEAD) {
 		return;
 	}
 
-	memset( &ent, 0, sizeof( ent ) );
+	memset(&ent, 0, sizeof(ent));
 
-	VectorCopy( origin, ent.origin );
+	VectorCopy(origin, ent.origin);
 	ent.origin[2] += 10.0;
-	AnglesToAxis( cent->damageAngles, ent.axis );
+	AnglesToAxis(cent->damageAngles, ent.axis);
 
 	alpha = 255.0f * (((cent->damageTime - cg.time) - cg.timeFraction) / MIN_SHIELD_TIME) + random()*16;
 	if (alpha>255)
@@ -4007,9 +4001,9 @@ void CG_DrawPlayerShield(centity_t *cent, vec3_t origin)
 
 	// Make it bigger, but tighter if more solid
 	scale = 1.4 - (alpha*(0.4/255.0));		// Range from 1.0 to 1.4
-	VectorScale( ent.axis[0], scale, ent.axis[0] );
-	VectorScale( ent.axis[1], scale, ent.axis[1] );
-	VectorScale( ent.axis[2], scale, ent.axis[2] );
+	VectorScale(ent.axis[0], scale, ent.axis[0]);
+	VectorScale(ent.axis[1], scale, ent.axis[1]);
+	VectorScale(ent.axis[2], scale, ent.axis[2]);
 
 	ent.hModel = cgs.media.halfShieldModel;
 	ent.customShader = cgs.media.halfShieldShader;
@@ -4017,7 +4011,7 @@ void CG_DrawPlayerShield(centity_t *cent, vec3_t origin)
 	ent.shaderRGBA[1] = alpha;
 	ent.shaderRGBA[2] = alpha;
 	ent.shaderRGBA[3] = 255;
-	trap_R_AddRefEntityToScene( &ent );
+	trap_R_AddRefEntityToScene(&ent);
 }
 
 
@@ -4794,7 +4788,10 @@ Ghoul2 Insert Start
 					if ( cg.time - client->saberHitWallSoundDebounceTime >= 100 )
 					{//ugh, need to have a real sound debouncer... or do this game-side
 						client->saberHitWallSoundDebounceTime = cg.time;
-						trap_S_StartSound ( trace.endpos, -1, CHAN_WEAPON, trap_S_RegisterSound( va("sound/weapons/saber/saberhitwall%i", Q_irand(1, 3)) ) );
+						if (cg.frametime > 0
+							&& ((cg.frametime < 50 && cg.time % 50 <= cg.frametime)
+							|| cg.frametime >= 50))
+							trap_S_StartSound ( trace.endpos, -1, CHAN_WEAPON, trap_S_RegisterSound( va("sound/weapons/saber/saberhitwall%i", (random() * 2 + 1)) ) );
 					}
 				}
 			}
@@ -6348,6 +6345,7 @@ void CG_Player( centity_t *cent ) {
 	int				effectTimeLayer = 0;
 	qboolean		gotLHandMatrix = qfalse;
 	qboolean		g2HasWeapon = qfalse;
+	qboolean		spriteDrawn = qfalse;
 
 	if (cgQueueLoad)
 	{
@@ -6591,7 +6589,12 @@ skipEffectOverride:
 
 	team = ci->team;
 
-	if (cgs.gametype >= GT_TEAM && cg_drawFriend.integer &&
+	// add the talk baloon, disconnect icon or rewards
+	if (!demo15detected)
+		spriteDrawn = CG_PlayerSprites( cent );
+
+	// don't draw if we already drawn one icon
+	if (cgs.gametype >= GT_TEAM && cg_drawFriend.integer && !spriteDrawn &&
 		cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number) // Don't show a sprite above a player's own head in 3rd person.
 	{	// If the view is either a spectator or on the same team as this character, show a symbol above their head.
 		if (((cg.playerPredicted
@@ -6601,16 +6604,16 @@ skipEffectOverride:
 		{
 			if (team == TEAM_RED)
 			{
-				CG_PlayerFloatSprite( cent, cgs.media.teamRedShader);
+				CG_PlayerFloatSprite(cent, cgs.media.teamRedShader);
 			}
 			else	// if (team == TEAM_BLUE)
 			{
-				CG_PlayerFloatSprite( cent, cgs.media.teamBlueShader);
+				CG_PlayerFloatSprite(cent, cgs.media.teamBlueShader);
 			}
 		}
 	}
 
-	if (cgs.gametype == GT_JEDIMASTER && cg_drawFriend.integer &&
+	if (cgs.gametype == GT_JEDIMASTER && cg_drawFriend.integer && !spriteDrawn &&
 		cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number) // Don't show a sprite above a player's own head in 3rd person.
 	{	// If the view is either a spectator or on the same team as this character, show a symbol above their head.
 		if (((cg.playerPredicted
@@ -6624,7 +6627,7 @@ skipEffectOverride:
 				{
 					if (!cent->currentState.isJediMaster)
 					{
-						CG_PlayerFloatSprite( cent, cgs.media.teamRedShader);
+						CG_PlayerFloatSprite(cent, cgs.media.teamRedShader);
 					}
 				}
 			}
@@ -6690,8 +6693,6 @@ skipEffectOverride:
 		{
 			angles[0] = sin(((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * ((double)M_PI * 2.0) / 255.0) * 30.0f;
 			angles[1] = ((((double)cg.time / 12.0 + (double)cg.timeFraction / 12.0) * (2.0) / 255.0) * 180.0) + 90.0f;
-			/*if (angles[1] > 360)
-				angles[1] -= 360;*/
 			AngleNormalize360(angles[1]);
 			angles[2] = 0;
 		}
@@ -6894,10 +6895,6 @@ doEssentialTwo:
 		cg_entities[cent->currentState.number].pe.torso.frame = cent->pe.torso.frame;
 		cg_entities[cent->currentState.number].pe.legs.frame = cent->pe.legs.frame;
 	}
-
-	// add the talk baloon or disconnect icon
-	if (!demo15detected)
-		CG_PlayerSprites( cent );
 
 	if (cent->currentState.eFlags & EF_DEAD)
 	{ //keep track of death anim frame for when we copy off the bodyqueue
