@@ -455,9 +455,6 @@ static int G2_GetBonePoolIndex(	const mdxaHeader_t *pMDXAHeader, int iFrame, int
 
 #define DEBUG_G2_TIMING (0)
 
-static int incomingTimeLast = 0;
-static float incomingTimeFractionLast = 0.0f;
-
 // transform each individual bone's information - making sure to use any override information provided, both for angles and for animations, as
 // well as multiplying each bone's matrix by it's parents matrix 
 void G2_TransformBone (CTransformBone &TB)

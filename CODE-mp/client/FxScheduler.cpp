@@ -1302,7 +1302,7 @@ void CFxScheduler::PlayEffect( int id, CFxBoltInterface *obj )
 // Return:
 //	none
 //------------------------------------------------------
-void CFxScheduler::CreateEffect( CPrimitiveTemplate *fx, CFxBoltInterface *obj, int delay, CCloud *effectCloud)
+void CFxScheduler::CreateEffect( CPrimitiveTemplate *fx, CFxBoltInterface *obj, float delay, CCloud *effectCloud)
 {
 	vec3_t	org, temp, vel,
 				accel, sRGB,
@@ -1843,13 +1843,13 @@ void CFxScheduler::AddScheduledEffects( void )
 
 					CreateEffect( (*itr)->mpTemplate, 
 								lerpOrigin, (*itr)->mAxis, 
-								theFxHelper.mTime - (*itr)->mStartTime, (*itr)->mParent );
+								(theFxHelper.mTime - (*itr)->mStartTime) + theFxHelper.mTimeFraction, (*itr)->mParent );
 				}
 				else
 				{
 					CreateEffect( (*itr)->mpTemplate, 
 								(*itr)->mOrigin, (*itr)->mAxis, 
-								theFxHelper.mTime - (*itr)->mStartTime, (*itr)->mParent );
+								(theFxHelper.mTime - (*itr)->mStartTime) + theFxHelper.mTimeFraction, (*itr)->mParent );
 				}
 				// Get 'em out of there.
 				if ((*itr)->mParent&&OutstandClouds.find((*itr)->mParent)!=OutstandClouds.end())
@@ -2030,7 +2030,7 @@ void CFxScheduler::AddScheduledEffects( void )
 // Return:
 //	none
 //------------------------------------------------------
-void CFxScheduler::CreateEffect( CPrimitiveTemplate *fx, vec3_t origin, vec3_t axis[3], int lateTime, CCloud *effectCloud )
+void CFxScheduler::CreateEffect( CPrimitiveTemplate *fx, vec3_t origin, vec3_t axis[3], float lateTime, CCloud *effectCloud )
 {
 	vec3_t	org, org2, temp,
 				vel, accel,

@@ -458,12 +458,12 @@ private:
 	void	AddPrimitiveToEffect( SEffectTemplate *fx, CPrimitiveTemplate *prim );
 	int		ParseEffect( const char *file, CGPGroup *base );
 
-	void	CreateEffect( CPrimitiveTemplate *fx, vec3_t origin, vec3_t axis[3], int lateTime, CCloud *effectCloud);
+	void	CreateEffect( CPrimitiveTemplate *fx, vec3_t origin, vec3_t axis[3], float lateTime, CCloud *effectCloud);
 
 #ifndef EFFECTSED
 #ifndef CHC // Sof2 only
 #endif
-	void	CreateEffect( CPrimitiveTemplate *fx, CFxBoltInterface *obj, int lateTime, CCloud *effectCloud);
+	void	CreateEffect( CPrimitiveTemplate *fx, CFxBoltInterface *obj, float lateTime, CCloud *effectCloud);
 #endif
 
 public:

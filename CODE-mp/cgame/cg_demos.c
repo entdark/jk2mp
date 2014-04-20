@@ -341,6 +341,11 @@ void demoProcessSnapShots(qboolean hadSkip) {
 		if (!snap)
 			return;
 		cg.snap = snap;
+		if ((cg_entities[snap->ps.clientNum].ghoul2 == NULL)
+			&& trap_G2_HaveWeGhoul2Models(cgs.clientinfo[snap->ps.clientNum].ghoul2Model)) {
+			trap_G2API_DuplicateGhoul2Instance(cgs.clientinfo[snap->ps.clientNum].ghoul2Model, &cg_entities[snap->ps.clientNum].ghoul2);
+			CG_CopyG2WeaponInstance(&cg_entities[snap->ps.clientNum], FIRST_WEAPON, cg_entities[snap->ps.clientNum].ghoul2);
+		}
 		BG_PlayerStateToEntityState( &snap->ps, &cg_entities[ snap->ps.clientNum ].currentState, qfalse );
 		CG_BuildSolidList();
 		CG_ExecuteNewServerCommands( snap->serverCommandSequence );
