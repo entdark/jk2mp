@@ -455,8 +455,9 @@ static	mixSound_t		*mixSounds[SFX_SOUNDS];
 static  mixSound_t		*mixAllocSounds = 0;
 static  mixSound_t		mixEmptySound;
 
-cvar_t	*s_mixSame;
-cvar_t	*s_effects;
+static cvar_t	*s_mixSame;
+static cvar_t	*s_mixSameTime;
+cvar_t			*s_effects;
 
 #define		SOUND_FULLVOLUME	256//80
 #define		SOUND_ATTENUATE		0.0008f
@@ -727,7 +728,7 @@ void S_MixChannels( mixChannel_t *ch, int channels, int speed, int count, int *o
 			if ( q->handle != scanChan->handle )
 				continue;
 			/* Reasonably same start ? */
-			if ( scanChan->index > (MIX_SPEED * 50 / 1000))
+			if ( scanChan->index > (MIX_SPEED * s_mixSameTime->value))
 				continue;
 			if ( q->hasOrigin ) {
 				vec3_t dist;
@@ -1044,6 +1045,7 @@ void S_MixInit( void ) {
 	}
 	/* How many similar sounding close to eachother sound effects */
 	s_mixSame = Cvar_Get( "s_mixSame", "2", CVAR_ARCHIVE );
+	s_mixSameTime = Cvar_Get( "s_mixSameTime", "0.05", CVAR_ARCHIVE );
 
 	s_effects = Cvar_Get( "s_effects", "1", CVAR_ARCHIVE );
 	S_EffectInit();
