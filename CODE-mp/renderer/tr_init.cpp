@@ -267,6 +267,12 @@ PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC qglGetProgramLocalParameterfvARB = NULL;
 PFNGLGETPROGRAMIVARBPROC qglGetProgramivARB = NULL;
 PFNGLGETPROGRAMSTRINGARBPROC qglGetProgramStringARB = NULL;
 PFNGLISPROGRAMARBPROC qglIsProgramARB = NULL;
+//teh's PBO
+PFNGLGENBUFFERSARBPROC qglGenBuffersARB = NULL;
+PFNGLBINDBUFFERARBPROC qglBindBufferARB = NULL;
+PFNGLBUFFERDATAARBPROC qglBufferDataARB = NULL;
+PFNGLMAPBUFFERARBPROC qglMapBufferARB = NULL;
+PFNGLUNMAPBUFFERARBPROC qglUnmapBufferARB = NULL;
 #endif
 
 
@@ -1181,6 +1187,7 @@ extern qboolean Sys_LowPhysicalMemory();
 #define G2_VERT_SPACE_SERVER_SIZE 256
 #endif
 
+GLuint pboIds[2];
 /*
 ===============
 R_Init
@@ -1293,6 +1300,20 @@ void R_Init( void ) {
 	if ( err != GL_NO_ERROR )
 		ri.Printf (PRINT_ALL, "glGetError() = 0x%x\n", err);
 #endif
+	{
+		// create 2 pixel buffer objects, you need to delete them when program exits.
+		// glBufferDataARB with NULL pointer reserves only memory space.
+		int width = glConfig.vidWidth, height = glConfig.vidHeight;
+		#define MAX_PACK_LEN 16
+		int dataSize = (width * 4 + MAX_PACK_LEN - 1) * height + MAX_PACK_LEN - 1;
+		qglGenBuffersARB(2, pboIds);
+		qglBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pboIds[0]);
+		qglBufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, dataSize, 0, GL_STREAM_READ_ARB);
+		qglBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pboIds[1]);
+		qglBufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, dataSize, 0, GL_STREAM_READ_ARB);
+
+		qglBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
+	}
 	ri.Printf( PRINT_ALL, "----- finished R_Init -----\n" );
 }
 
