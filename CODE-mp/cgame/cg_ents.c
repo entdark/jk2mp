@@ -2245,6 +2245,16 @@ static void CG_AddCEntity( centity_t *cent ) {
 		return;
 	}
 
+	//don't render anything then
+	if (cg.predictedPlayerState.pm_type == PM_INTERMISSION) {
+		if (cent->currentState.eType == ET_GENERAL ||
+			cent->currentState.eType == ET_PLAYER ||
+			cent->currentState.eType == ET_INVISIBLE) {
+//			CG_SetEntitySoundPosition( cent );
+			return;
+		}
+	}
+
 	// calculate the current origin
 	CG_CalcEntityLerpPositions( cent );
 
