@@ -1602,6 +1602,7 @@ CG_DrawActiveFrame
 Generates and draws a game scene and status information at the given time.
 =================
 */
+extern void trap_S_UpdatePitch( float pitch );
 extern void CG_UpdateFallVector (void);
 void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback ) {
 	int		inwater;
@@ -1752,6 +1753,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		AnglesToAxis(lookAng, cg.refdef.viewaxis);
 	}
 
+	trap_S_UpdatePitch( 1.0f );
 	// update audio positions
 	trap_S_Respatialize( cg.snap->ps.clientNum, cg.refdef.vieworg, cg.refdef.viewaxis, inwater );
 
