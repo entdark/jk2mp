@@ -762,7 +762,6 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		if ( demo.viewType == viewChase && cg.playerCent && ( cg.playerCent->currentState.number < MAX_CLIENTS ) )
 			CG_Draw2D();
 		else if ( cg_draw2D.integer && cg_drawFPS.integer ) {
-			CG_SaberClashFlare();
 			CG_DrawFPS(0.0f);
 		}
 		CG_UpdateFallVector();
