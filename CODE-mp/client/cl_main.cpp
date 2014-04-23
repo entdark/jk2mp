@@ -1330,21 +1330,11 @@ The cgame and game must also be forced to restart because
 handles will be invalid
 =================
 */
-extern void S_UnCacheDynamicMusic( void );
 void CL_Snd_Restart_f( void ) {
 	S_Shutdown();
 	S_Init();
 
-	S_FreeAllSFXMem();
-	S_UnCacheDynamicMusic();
-
 //	CL_Vid_Restart_f();
-
-	extern qboolean	s_soundMuted;
-	s_soundMuted = qfalse;		// we can play again
-
-	extern void S_RestartMusic( void );
-	S_RestartMusic();
 }
 
 

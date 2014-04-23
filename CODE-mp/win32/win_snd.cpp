@@ -8,8 +8,6 @@ HRESULT (WINAPI *pDirectSoundCreate)(GUID FAR *lpGUID, LPDIRECTSOUND FAR *lplpDS
 
 #define SECONDARY_BUFFER_SIZE	0x10000
 
-extern int s_UseOpenAL;
-
 static qboolean	dsound_init;
 static int		sample16;
 static DWORD	gSndBufSize;
@@ -262,26 +260,6 @@ how many sample are required to fill it up.
 ===============
 */
 int SNDDMA_GetDMAPos( void ) {
-#ifndef SND_MME
-	MMTIME	mmtime;
-	int		s;
-	DWORD	dwWrite;
-
-	if ( !dsound_init ) {
-		return 0;
-	}
-
-	mmtime.wType = TIME_SAMPLES;
-	pDSBuf->GetCurrentPosition(&mmtime.u.sample, &dwWrite);
-
-	s = mmtime.u.sample;
-
-	s >>= sample16;
-
-	s &= (dma.samples-1);
-
-	return s;
-#else
 	DWORD	dwRead, dwWrite;
 
 	if ( !dsound_init ) {
@@ -296,7 +274,6 @@ int SNDDMA_GetDMAPos( void ) {
 	dwRead &= (dma.samples-1);
 
 	return dwRead;
-#endif
 }
 
 /*
@@ -376,13 +353,7 @@ SNDDMA_Activate
 When we change windows we need to do this
 =================
 */
-void SNDDMA_Activate( qboolean bAppActive )
-{
-	if (s_UseOpenAL)
-	{
-		S_MuteAllSounds(!bAppActive);
-	}
-
+void SNDDMA_Activate( void ) {
 	if ( !pDS ) {
 		return;
 	}

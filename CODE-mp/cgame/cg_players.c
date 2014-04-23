@@ -6790,9 +6790,13 @@ doEssentialOne:
 //		}
 //	}
 	if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number &&
-		cg_fpls.integer && cent->currentState.weapon == WP_SABER) {
+		cg_fpls.integer && cent->currentState.weapon == WP_SABER && !cg.renderingThirdPerson) {
 		CG_ForceFPLSPlayerModel(cent, ci);
+		cgFPLSState = 1;
 		return;
+	} else if (cgFPLSState == 1) {
+		CG_NewClientInfo(cent->currentState.clientNum, qtrue);
+		cgFPLSState = 0;
 	}
 
 	if (cent->currentState.eFlags & EF_DEAD)

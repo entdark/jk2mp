@@ -23,7 +23,6 @@ void S_StopAllSounds( void );
 // all continuous looping sounds must be added before calling S_Update
 void S_ClearLoopingSounds( qboolean killall );
 void S_AddLoopingSound( const void *parent, int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfxHandle, int volume );
-void S_AddRealLoopingSound( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
 void S_StopLoopingSound(const void *parent );
 
 // recompute the reletive volumes for all running sounds
@@ -44,11 +43,9 @@ void S_BeginRegistration( void );
 // checks for missing files
 sfxHandle_t	S_RegisterSound( const char *name );
 
-void S_DisplayFreeMemory(void);
-
 void S_ClearSoundBuffer( void );
 
-void SNDDMA_Activate( qboolean bAppActive );
+void SNDDMA_Activate( void );
 
 // MME
 void S_MMERecord( const char *baseName, float deltaTime );

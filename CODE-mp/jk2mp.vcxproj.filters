@@ -42,18 +42,6 @@
     <Filter Include="Sound">
       <UniqueIdentifier>{a7378b7d-5407-4c86-9198-f5e0e929f7a7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Sound\EAX">
-      <UniqueIdentifier>{f2674213-ce16-46fe-b749-f96f5fed6a75}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound\MP3">
-      <UniqueIdentifier>{382dbf5c-cc00-4208-ab8d-11557e8e8f81}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound\MP3\MP3 Headers">
-      <UniqueIdentifier>{90d1132c-e196-4b43-9598-74df53f97294}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound\OpenAL">
-      <UniqueIdentifier>{fc4c572c-5e60-48ae-ad56-57c7c0c2b66d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="strings">
       <UniqueIdentifier>{108724dd-3714-438f-b317-3de1ebd4b4ce}</UniqueIdentifier>
     </Filter>
@@ -461,72 +449,6 @@
     <ClCompile Include="client\snd_mix.cpp">
       <Filter>Sound</Filter>
     </ClCompile>
-    <ClCompile Include="client\snd_mp3.cpp">
-      <Filter>Sound</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\cdct.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\csbt.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\csbtb.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\csbtL3.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\cup.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\cupini.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\cupL1.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\cupl3.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\cwin.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\cwinb.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\cwinm.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\hwin.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\l3dq.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\l3init.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\mdct.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\mhead.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\msis.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\towave.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\uph.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\upsf.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
-    <ClCompile Include="mp3code\wavep.c">
-      <Filter>Sound\MP3</Filter>
-    </ClCompile>
     <ClCompile Include="win32\win_input.cpp">
       <Filter>Win32</Filter>
     </ClCompile>
@@ -671,9 +593,6 @@
     <ClCompile Include="client\cl_mme.cpp">
       <Filter>Client</Filter>
     </ClCompile>
-    <ClCompile Include="client\snd_demos.cpp">
-      <Filter>Sound</Filter>
-    </ClCompile>
     <ClCompile Include="client\snd_mme.cpp">
       <Filter>Sound</Filter>
     </ClCompile>
@@ -742,6 +661,9 @@
     </ClCompile>
     <ClCompile Include="png\rpng.cpp">
       <Filter>Renderer\png</Filter>
+    </ClCompile>
+    <ClCompile Include="client\snd_main.cpp">
+      <Filter>Sound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -949,65 +871,8 @@
     <ClInclude Include="client\snd_local.h">
       <Filter>Sound</Filter>
     </ClInclude>
-    <ClInclude Include="client\snd_mp3.h">
-      <Filter>Sound</Filter>
-    </ClInclude>
     <ClInclude Include="client\snd_public.h">
       <Filter>Sound</Filter>
-    </ClInclude>
-    <ClInclude Include="client\eax\eax.h">
-      <Filter>Sound\EAX</Filter>
-    </ClInclude>
-    <ClInclude Include="client\eax\EaxMan.h">
-      <Filter>Sound\EAX</Filter>
-    </ClInclude>
-    <ClInclude Include="client\OpenAL\al.h">
-      <Filter>Sound\OpenAL</Filter>
-    </ClInclude>
-    <ClInclude Include="client\OpenAL\alc.h">
-      <Filter>Sound\OpenAL</Filter>
-    </ClInclude>
-    <ClInclude Include="client\OpenAL\alctypes.h">
-      <Filter>Sound\OpenAL</Filter>
-    </ClInclude>
-    <ClInclude Include="client\OpenAL\altypes.h">
-      <Filter>Sound\OpenAL</Filter>
-    </ClInclude>
-    <ClInclude Include="client\OpenAL\alu.h">
-      <Filter>Sound\OpenAL</Filter>
-    </ClInclude>
-    <ClInclude Include="client\OpenAL\alut.h">
-      <Filter>Sound\OpenAL</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\config.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\copyright.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\htable.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\jdw.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\L3.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\mhead.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\mp3struct.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\port.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\small_header.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="mp3code\tableawd.h">
-      <Filter>Sound\MP3\MP3 Headers</Filter>
     </ClInclude>
     <ClInclude Include="strings\con_text.h">
       <Filter>strings</Filter>

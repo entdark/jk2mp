@@ -68,7 +68,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libmad.lib;openal32.lib;winmm.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmad.lib;winmm.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(IntDir)$(ProjectName).map</MapFileName>
       <StackReserveSize>8388608</StackReserveSize>
@@ -100,7 +100,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libmad.lib;OpenAL32.lib;ALut.lib;ALut.lib;winmm.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libmad.lib;winmm.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(IntDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(IntDir)$(ProjectName).map</MapFileName>
@@ -159,13 +159,12 @@
     <ClCompile Include="client\FxSystem.cpp" />
     <ClCompile Include="client\FxTemplate.cpp" />
     <ClCompile Include="client\FxUtil.cpp" />
-    <ClCompile Include="client\snd_demos.cpp" />
     <ClCompile Include="client\snd_dma.cpp" />
     <ClCompile Include="client\snd_effects.cpp" />
+    <ClCompile Include="client\snd_main.cpp" />
     <ClCompile Include="client\snd_mem.cpp" />
     <ClCompile Include="client\snd_mix.cpp" />
     <ClCompile Include="client\snd_mme.cpp" />
-    <ClCompile Include="client\snd_mp3.cpp" />
     <ClCompile Include="encryption\buffer.cpp" />
     <ClCompile Include="encryption\cpp_interface.cpp" />
     <ClCompile Include="encryption\sockets.cpp" />
@@ -225,27 +224,6 @@
     <ClCompile Include="libpng\pngwrite.c" />
     <ClCompile Include="libpng\pngwtran.c" />
     <ClCompile Include="libpng\pngwutil.c" />
-    <ClCompile Include="mp3code\cdct.c" />
-    <ClCompile Include="mp3code\csbt.c" />
-    <ClCompile Include="mp3code\csbtb.c" />
-    <ClCompile Include="mp3code\csbtL3.c" />
-    <ClCompile Include="mp3code\cup.c" />
-    <ClCompile Include="mp3code\cupini.c" />
-    <ClCompile Include="mp3code\cupL1.c" />
-    <ClCompile Include="mp3code\cupl3.c" />
-    <ClCompile Include="mp3code\cwin.c" />
-    <ClCompile Include="mp3code\cwinb.c" />
-    <ClCompile Include="mp3code\cwinm.c" />
-    <ClCompile Include="mp3code\hwin.c" />
-    <ClCompile Include="mp3code\l3dq.c" />
-    <ClCompile Include="mp3code\l3init.c" />
-    <ClCompile Include="mp3code\mdct.c" />
-    <ClCompile Include="mp3code\mhead.c" />
-    <ClCompile Include="mp3code\msis.c" />
-    <ClCompile Include="mp3code\towave.c" />
-    <ClCompile Include="mp3code\uph.c" />
-    <ClCompile Include="mp3code\upsf.c" />
-    <ClCompile Include="mp3code\wavep.c" />
     <ClCompile Include="png\rpng.cpp" />
     <ClCompile Include="qcommon\cmd.cpp" />
     <ClCompile Include="qcommon\cm_load.cpp" />
@@ -365,23 +343,14 @@
     <ClInclude Include="cgame\tr_types.h" />
     <ClInclude Include="client\client.h" />
     <ClInclude Include="client\cl_demos.h" />
-    <ClInclude Include="client\eax\eax.h" />
-    <ClInclude Include="client\eax\EaxMan.h" />
     <ClInclude Include="client\FXExport.h" />
     <ClInclude Include="client\FxPrimitives.h" />
     <ClInclude Include="client\FxScheduler.h" />
     <ClInclude Include="client\FxSystem.h" />
     <ClInclude Include="client\FxUtil.h" />
     <ClInclude Include="client\keys.h" />
-    <ClInclude Include="client\OpenAL\al.h" />
-    <ClInclude Include="client\OpenAL\alc.h" />
-    <ClInclude Include="client\OpenAL\alctypes.h" />
-    <ClInclude Include="client\OpenAL\altypes.h" />
-    <ClInclude Include="client\OpenAL\alu.h" />
-    <ClInclude Include="client\OpenAL\alut.h" />
     <ClInclude Include="client\snd_local.h" />
     <ClInclude Include="client\snd_mix.h" />
-    <ClInclude Include="client\snd_mp3.h" />
     <ClInclude Include="client\snd_public.h" />
     <ClInclude Include="encryption\buffer.h" />
     <ClInclude Include="encryption\cpp_interface.h" />
@@ -421,16 +390,6 @@
     <ClInclude Include="libpng\pnglibconf.h" />
     <ClInclude Include="libpng\pngpriv.h" />
     <ClInclude Include="libpng\pngstruct.h" />
-    <ClInclude Include="mp3code\config.h" />
-    <ClInclude Include="mp3code\copyright.h" />
-    <ClInclude Include="mp3code\htable.h" />
-    <ClInclude Include="mp3code\jdw.h" />
-    <ClInclude Include="mp3code\L3.h" />
-    <ClInclude Include="mp3code\mhead.h" />
-    <ClInclude Include="mp3code\mp3struct.h" />
-    <ClInclude Include="mp3code\port.h" />
-    <ClInclude Include="mp3code\small_header.h" />
-    <ClInclude Include="mp3code\tableawd.h" />
     <ClInclude Include="png\rpng.h" />
     <ClInclude Include="qcommon\chash.h" />
     <ClInclude Include="qcommon\cm_local.h" />
@@ -480,12 +439,6 @@
     <ClInclude Include="zlib\zconf.h" />
     <ClInclude Include="zlib\zlib.h" />
     <ClInclude Include="zlib\zutil.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="ALut.lib">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </Library>
-    <Library Include="OpenAL32.lib" />
   </ItemGroup>
   <ItemGroup>
     <None Include="win32\qe3.ico" />

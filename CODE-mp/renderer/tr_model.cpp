@@ -508,16 +508,11 @@ int RE_RegisterMedia_GetLevel(void)
 
 // this is now only called by the client, so should be ok to dump media...
 //
-extern qboolean SND_RegisterAudio_LevelLoadEnd(qboolean bDeleteEverythingNotUsedThisLevel /* 99% qfalse */);
-extern void S_RestartMusic(void);
-void RE_RegisterMedia_LevelLoadEnd(void)
-{
+void RE_RegisterMedia_LevelLoadEnd(void) {
 	RE_RegisterModels_LevelLoadEnd(qfalse);
 #ifndef DEDICATED
 	RE_RegisterImages_LevelLoadEnd();
-	SND_RegisterAudio_LevelLoadEnd(qfalse);
 //	RE_InitDissolve();
-	S_RestartMusic();
 #endif
 }
 
