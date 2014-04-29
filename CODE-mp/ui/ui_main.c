@@ -3805,7 +3805,7 @@ static int UI_GetDemos( char *folder, char *demolist, int demolistSize, char *de
 }
 
 static int ui_demo_protocols[] =
-{ 15, 16 };
+{ 15, 16, NULL };
 static void UI_LoadDemos( void ) {
 	int d = 0;
 	char demolist[4096*20];
@@ -3816,7 +3816,7 @@ static void UI_LoadDemos( void ) {
 	int bottom = 0, top = 0;
 
 	uiInfo.demoCount = 0;
-	while(d < 2) {
+	while(ui_demo_protocols[d]) {
 		trap_Cvar_VariableStringBuffer("fs_game",game,sizeof(game));
 
 		if (!strcmp(game, ""))

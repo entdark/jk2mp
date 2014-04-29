@@ -524,14 +524,13 @@ demo <demoname>
 ====================
 */
 void CL_PlayDemo_f( void ) {
-	char		name[MAX_OSPATH], testName[MAX_OSPATH];//name[MAX_OSPATH], extension[32];
+	char		name[MAX_OSPATH], testName[MAX_OSPATH];
 	char		*ext;
-//	char		*arg;
 	qboolean	haveConvert;
 	cvar_t		*fs_game;
 
 	if (Cmd_Argc() != 2) {
-		Com_Printf ("playdemo <demoname>\n");
+		Com_Printf ("demo <demoname>\n");
 		return;
 	}
 
@@ -544,30 +543,10 @@ void CL_PlayDemo_f( void ) {
 	CL_Disconnect( qtrue );
 
 	// open the demo file
-/*	arg = Cmd_Argv(1);
-	Com_sprintf(extension, sizeof(extension), ".dm_%d", PROTOCOL_VERSION);
-	if ( !Q_stricmp( arg + strlen(arg) - strlen(extension), extension ) ) {
-		Com_sprintf (name, sizeof(name), "demos/%s", arg);
-	} else {
-		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", arg, PROTOCOL_VERSION);
-	}
-	
-	FS_FOpenFileRead( name, &clc.demofile, qtrue );
-	if (!clc.demofile) {
-		if (!Q_stricmp(arg, "(null)"))
-		{
-			Com_Error( ERR_DROP, SP_GetStringTextString("CON_TEXT_NO_DEMO_SELECTED") );
-		}
-		else
-		{
-			Com_Error( ERR_DROP, "couldn't open %s", name);
-		}
-		return;
-	}*/
 	Q_strncpyz( testName, Cmd_Argv(1), sizeof( testName ) );
 	// check for an extension .dm_?? (?? is protocol)
 	ext = testName + strlen(testName) - 6;
-	if ((strlen(name) > 6) && (ext[0] == '.') && ((ext[1] == 'd') || (ext[1] == 'D')) && ((ext[2] == 'm') || (ext[2] == 'M')) && (ext[3] == '_'))
+	if ((strlen(testName) > 6) && (ext[0] == '.') && ((ext[1] == 'd') || (ext[1] == 'D')) && ((ext[2] == 'm') || (ext[2] == 'M')) && (ext[3] == '_'))
 	{
 		ext[0] = 0;	
 	}
@@ -2181,60 +2160,26 @@ void CL_Frame ( int msec ) {
 	// if recording an avi, lock to a fixed fps
 	if (cl_avidemo->integer > 0 && msec) {
 		// save the current screen
-		if ( cls.state == CA_ACTIVE || cl_forceavidemo->integer) {
-			if (cl_avidemo->integer > 0) {
-				//3d went to cl_mme_capture->integer
-/*				float stereoSep;
-				stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
-				if (stereoSep != 0) {
-					float camOffset;
-
-					// we need camOffset to change focus if we have problems with r_zproj
-					camOffset = Cvar_VariableValue( "cg_stereoSeparation");
-
-					// camOffset has to be positive and stereoSep has to be negative
-					if (camOffset < 0)
-						camOffset = -camOffset;
-					if (stereoSep > 0)
-						stereoSep = -stereoSep;
-
-					Cvar_SetValue("r_stereoSeparation", stereoSep);
-					Cvar_SetValue("cg_stereoSeparation", camOffset);
-					SCR_UpdateScreen();
-					Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme left\n" );
-
-					stereoSep = -stereoSep;
-					camOffset = -camOffset;
-
-					Cvar_SetValue("r_stereoSeparation", stereoSep);
-					Cvar_SetValue("cg_stereoSeparation", camOffset);
-					SCR_UpdateScreen();
-					Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme right\n" );
-				} else {
-					Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme\n" );
-				}
-*/
-				Cbuf_ExecuteText( EXEC_NOW, "screenshot_tga silent\n" );
-			} else {
-				Cbuf_ExecuteText( EXEC_NOW, "screenshot_tga silent\n" );
-			}
+		if (cls.state == CA_ACTIVE || cl_forceavidemo->integer) {
 			float frameTime, fps;
+			int blurFrames = Cvar_VariableIntegerValue("mme_blurFrames");
 			char shotName[MAX_OSPATH];
-			Com_sprintf( shotName, sizeof( shotName ), "screenshots/%s", mme_demoFileName->string );
-
+			Com_sprintf( shotName, sizeof( shotName ), "capture/%s/%s", mme_demoFileName->string, Cvar_VariableString("mov_captureName") );
 			// fixed time for next frame'
-			fps = cl_avidemo->integer * com_timescale->value;
+			fps = cl_avidemo->integer * com_timescale->value * (blurFrames ? blurFrames : 1);
 			if ( fps > 1000.0f)
 				fps = 1000.0f;
 			frameTime = (1000.0f / fps);
 			if (frameTime < 1) {
 				frameTime = 1;
 			}
+			//TODO use mme_depthFocus
+			re.Capture( shotName, fps, 1000 );
 			frameTime += clc.aviDemoRemain;
 			msec = (int)frameTime;
 			clc.aviDemoRemain = frameTime - msec;
 
-			S_MMERecord( shotName, 1.0f / (cl_avidemo->value * com_timescale->value ));
+			S_MMERecord(shotName, 1.0f / fps);
 		}
 	}
 
