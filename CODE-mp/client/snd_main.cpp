@@ -43,12 +43,11 @@ backgroundSound_t s_background;
 channelQueue_t	s_channelQueue[MAX_SNDQUEUE];
 int				s_channelQueueCount;
 entitySound_t	s_entitySounds[MAX_GENTITIES];
-
 loopQueue_t		s_loopQueue[MAX_LOOPQUEUE];
 int				s_loopQueueCount;
 
-static		int	s_soundStarted;
-static		qboolean	s_soundMuted;
+static int	s_soundStarted;
+static qboolean s_soundMuted;
 int			s_listenNumber;
 vec3_t		s_listenOrigin;
 vec3_t		s_listenVelocity;
@@ -58,8 +57,8 @@ qboolean	s_hadSpatialize;
 qboolean	s_underWater;
 
 cvar_t		*s_volume;
-cvar_t		*s_musicVolume;
 cvar_t		*s_volumeVoice;
+cvar_t		*s_musicVolume;
 cvar_t		*s_language;
 
 cvar_t		*s_doppler;

@@ -9,8 +9,6 @@
 #include "../qcommon/qcommon.h"
 #include "snd_public.h"
 
-#define SND_MME
-
 #define		SFX_SOUNDS		10000
 
 typedef struct sfxEntry_s {
@@ -127,7 +125,6 @@ extern cvar_t	*s_doppler;
 extern cvar_t	*s_dopplerSpeed;
 extern cvar_t	*s_dopplerFactor;
 
-extern cvar_t	*s_forceScale;
 extern cvar_t	*s_attenuate;
 
 extern int		s_listenNumber;
