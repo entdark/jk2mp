@@ -2286,7 +2286,7 @@ void CG_AddLagometerSnapshotInfo( snapshot_t *snap ) {
 		return;
 	}
 	if (cg.demoPlayback) {
-		snap->ping = (snap->serverTime - snap->ps.commandTime) - 50;
+		snap->ping = (snap->serverTime - snap->ps.commandTime) - cg.frametime;
 	}
 	// add this snapshot's info
 	lagometer.snapshotSamples[ lagometer.snapshotCount & ( LAG_SAMPLES - 1) ] = snap->ping;
@@ -2752,8 +2752,7 @@ static void CG_DrawCrosshair( vec3_t worldPoint, int chEntValid ) {
 	trap_R_SetColor( NULL );
 }
 
-qboolean CG_WorldCoordToScreenCoordFloat(vec3_t worldCoord, float *x, float *y)
-{
+qboolean CG_WorldCoordToScreenCoordFloat(vec3_t worldCoord, float *x, float *y) {
 	int	xcenter, ycenter;
 	vec3_t	local, transformed;
 	vec3_t	vfwd;
@@ -2793,8 +2792,7 @@ qboolean CG_WorldCoordToScreenCoordFloat(vec3_t worldCoord, float *x, float *y)
 	return qtrue;
 }
 
-qboolean CG_WorldCoordToScreenCoord( vec3_t worldCoord, int *x, int *y )
-{
+qboolean CG_WorldCoordToScreenCoord( vec3_t worldCoord, int *x, int *y ) {
 	float	xF, yF;
 	qboolean retVal = CG_WorldCoordToScreenCoordFloat( worldCoord, &xF, &yF );
 	*x = (int)xF;
@@ -2810,47 +2808,40 @@ CG_SaberClashFlare
 int g_saberFlashTime = 0;
 vec3_t g_saberFlashPos = {0, 0, 0};
 void CG_SaberClashFlare( void ) {
-	int maxTime = 150;
+	float maxTime = 150.0f;
 	float t;
 	vec3_t dif;
 	vec3_t color;
-	int x,y;
+	float x,y;
 	float v, len;
 	trace_t tr;
 
 	t = (cg.time - g_saberFlashTime) + cg.timeFraction;
-
-	if ( t <= 0 || t >= maxTime ) 
-	{
+	if ( t <= 0 || t >= maxTime ) {
 		return;
 	}
 
 	// Don't do clashes for things that are behind us
 	VectorSubtract( g_saberFlashPos, cg.refdef.vieworg, dif );
-
-	if ( DotProduct( dif, cg.refdef.viewaxis[0] ) < 0.2 )
-	{
+	if ( DotProduct( dif, cg.refdef.viewaxis[0] ) < 0.2 ) {
 		return;
 	}
 
 	CG_Trace( &tr, cg.refdef.vieworg, NULL, NULL, g_saberFlashPos, -1, CONTENTS_SOLID );
-
-	if ( tr.fraction < 1.0f )
-	{
+	if ( tr.fraction < 1.0f ) {
 		return;
 	}
 
 	len = VectorNormalize( dif );
-
 	// clamp to a known range
-	if ( len > 800 )
-	{
+	if ( len > 800 ) {
 		len = 800;
 	}
 
-	v = ( 1.0f - ((float)t / maxTime )) * ((1.0f - ( len / 800.0f )) * 2.0f + 0.35f);
+	v = ( 1.0f - (t / maxTime )) * ((1.0f - ( len / 800.0f )) * 2.0f + 0.35f);
 
-	CG_WorldCoordToScreenCoord( g_saberFlashPos, &x, &y );
+	//CG_WorldCoordToScreenCoord( g_saberFlashPos, &x, &y );
+	CG_WorldCoordToScreenCoordFloat( g_saberFlashPos, &x, &y );
 
 	VectorSet( color, 0.8f, 0.8f, 0.8f );
 	trap_R_SetColor( color );
@@ -4335,6 +4326,7 @@ void CG_Draw2D( void ) {
 	}
 
 	if (mov_fragsOnly.integer != 0) {
+		CG_SaberClashFlare();
 		if(!cg.renderingThirdPerson && mov_fragsOnly.integer == 2)CG_DrawZoomMask();
 		if (cg.playerPredicted)
 			CG_DrawReward();
