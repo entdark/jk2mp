@@ -154,6 +154,7 @@ void CG_ParseServerinfo( void ) {
 	gamename = Info_ValueForKey(info, "gamename");
 	if (!Q_stricmp(gamename, "< NT XII >")
 		|| !Q_stricmp(gamename, "< NT XIII >")
+		|| !Q_stricmp(gamename, "< NT XIV >")
 		/* || !Q_stricmp(gamename, "JDFix.")*/) {
 		Com_Printf("\nNT mod detected\n\n");
 		trap_MME_NTDetection(qtrue);
