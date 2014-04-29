@@ -13,7 +13,7 @@ static cvar_t	*s_mixSame;
 static cvar_t	*s_mixSameTime;
 cvar_t			*s_effects;
 
-#define		SOUND_FULLVOLUME	256//80
+#define		SOUND_FULLVOLUME	256
 #define		SOUND_ATTENUATE		0.0008f
 
 static mixSound_t *S_MixAllocSound( int samples ) {
@@ -458,7 +458,7 @@ void S_MixBackground( mixBackground_t *background, int speed, int count, int *ou
 	int		volumeMul;
 	short	buf[2048][2];
 
-	speed = 1 << MIX_SHIFT;
+	speed = (MIX_SPEED << MIX_SHIFT) / dma.speed;
 	if ( s_background.playing ) {
 		/* Do we need a reload */
 		if ( s_background.reload ) {
