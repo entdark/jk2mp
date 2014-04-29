@@ -732,7 +732,7 @@ Ghoul2 Insert End
 	{ &mov_deltaYaw,		"mov_deltaYaw",			"0",		CVAR_ARCHIVE	},
 	{ &mov_deltaPitch,		"mov_deltaPitch",		"0",		CVAR_ARCHIVE	},
 	{ &mov_deltaRoll,		"mov_deltaRoll",		"0",		CVAR_ARCHIVE	},
-	{ &mov_captureName,		"mov_captureName",		"",			CVAR_TEMP		},
+	{ &mov_captureName,		"mov_captureName",		"",			CVAR_ARCHIVE	},
 	{ &mov_captureFPS,		"mov_captureFPS",		"25",		CVAR_ARCHIVE	},
 	{ &mov_musicFile,		"mov_musicFile",		"",			CVAR_TEMP		},
 	{ &mov_musicStart,		"mov_musicStart",		"0",		CVAR_TEMP		},

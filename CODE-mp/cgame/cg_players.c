@@ -691,36 +691,26 @@ void CG_LoadClientInfo( clientInfo_t *ci ) {
 
 	soundpath[0] = 0;
 
-	if (f)
-	{
-		i = 0;
-
+	if (f) {
 		trap_FS_Read(soundpath, fLen, f);
-
 		i = fLen;
 
-		while (i >= 0 && soundpath[i] != '\n')
-		{
-			if (soundpath[i] == 'f')
-			{
+		while (i >= 0 && soundpath[i] != '\n') {
+			if (soundpath[i] == 'f') {
 				isFemale = qtrue;
 			}
-
 			i--;
 		}
-
 		soundpath[i-1] = '\0';
-
 		trap_FS_FCloseFile(f);
-	}
-
-	if (isFemale)
-	{
-		ci->gender = GENDER_FEMALE;
-	}
-	else
-	{
-		ci->gender = GENDER_MALE;
+		
+		if (isFemale) {
+			ci->gender = GENDER_FEMALE;
+		} else {
+			ci->gender = GENDER_MALE;
+		}
+	} else {
+		isFemale = ci->gender == GENDER_FEMALE;
 	}
 
 	for ( i = 0 ; i < MAX_CUSTOM_SOUNDS ; i++ ) {
