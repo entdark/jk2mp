@@ -263,6 +263,7 @@ static int demoSetupView( void) {
 			FX_VibrateView( 1.0f, demo.viewOrigin, demo.viewAngles );
 	}
 	VectorCopy( demo.viewOrigin, cg.refdef.vieworg );
+	VectorCopy( demo.viewAngles, cg.refdefViewAngles );
 	AnglesToAxis( demo.viewAngles, cg.refdef.viewaxis );
 
 	if ( demo.viewTarget >= 0 ) {
@@ -758,11 +759,13 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 //			memcpy( &cg.refdefStereo, &cg.refdef, sizeof( cg.refdefStereo ) );
 		trap_R_RenderScene( &cg.refdef );
 
-		CG_DrawRect(0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
-		if ( demo.viewType == viewChase && cg.playerCent && ( cg.playerCent->currentState.number < MAX_CLIENTS ) )
+		CG_FillRect(0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
+		if (demo.viewType == viewChase && cg.playerCent && (cg.playerCent->currentState.number < MAX_CLIENTS))
 			CG_Draw2D();
-		else if ( cg_draw2D.integer && cg_drawFPS.integer ) {
-			CG_DrawFPS(0.0f);
+		else if (cg_draw2D.integer) {
+			CG_SaberClashFlare();
+			if (cg_drawFPS.integer)
+				CG_DrawFPS(0.0f);
 		}
 		CG_UpdateFallVector();
 
@@ -1052,7 +1055,7 @@ void demoPlaybackInit(void) {
 	demo.media.switchOff = trap_R_RegisterShaderNoMip( "mme_message_off" );
 
 	trap_SendConsoleCommand("exec mmedemos.cfg\n");
-	trap_Cvar_Set( "mov_captureName", "" );
+//	trap_Cvar_Set( "mov_captureName", "" );
 	trap_Cvar_VariableStringBuffer( "mme_demoStartProject", projectFile, sizeof( projectFile ));
 	if (projectFile[0]) {
 		trap_Cvar_Set( "mme_demoStartProject", "" );
