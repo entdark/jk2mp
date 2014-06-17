@@ -2195,12 +2195,9 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			CG_GetEventStuff(CG_EventCoeff(WP_DET_PACK, qtrue), cg.time, Distance(position, cg.refdef.vieworg));
 			break;
 		case EFFECT_EXPLOSION_FLECHETTE:
-			{qboolean alt = qfalse;
-			if (cent->currentState.eFlags & EF_ALT_FIRING)
-				alt = qtrue;
 			eID = trap_FX_RegisterEffect("flechette/alt_blow.efx");
-			CG_GetEventStuff(CG_EventCoeff(WP_FLECHETTE, alt), cg.time, Distance(position, cg.refdef.vieworg));
-			}break;
+			CG_GetEventStuff(CG_EventCoeff(WP_FLECHETTE, qtrue), cg.time, Distance(position, cg.refdef.vieworg));
+			break;
 		case EFFECT_STUNHIT:
 			eID = trap_FX_RegisterEffect("stunBaton/flesh_impact.efx");
 			break;
