@@ -632,7 +632,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	int				i;
 	drawSurf_t		*drawSurf;
 	uint64_t		oldSort;
-	float			originalTime;
+	double			originalTime;
 #ifdef JEDIACADEMY_GLOW
 	bool			didShadowPass = false;
 #endif
@@ -871,7 +871,7 @@ void	RB_SetGL2D (void) {
 
 	// set time for 2D shaders
 	backEnd.refdef.time = ri.Milliseconds();
-	backEnd.refdef.floatTime = backEnd.refdef.time * 0.001f;
+	backEnd.refdef.floatTime = backEnd.refdef.time * 0.001;
 }
 
 

@@ -205,7 +205,7 @@ R_BindAnimatedImage
 */
 // de-static'd because tr_quicksprite wants it
 void R_BindAnimatedImage( textureBundle_t *bundle ) {
-	int		index;
+	uint64_t index;
 
 	if ( bundle->isVideoMap ) {
 		ri.CIN_RunCinematic(bundle->videoMapHandle);
@@ -213,8 +213,7 @@ void R_BindAnimatedImage( textureBundle_t *bundle ) {
 		return;
 	}
 
-	if ((r_fullbright->value /*|| tr.refdef.doFullbright */) && bundle->isLightmap)
-	{
+	if ((r_fullbright->value /*|| tr.refdef.doFullbright */) && bundle->isLightmap) {
 		GL_Bind( tr.whiteImage );
 		return;
 	}
@@ -226,27 +225,24 @@ void R_BindAnimatedImage( textureBundle_t *bundle ) {
 
 	// it is necessary to do this messy calc to make sure animations line up
 	// exactly with waveforms of the same frequency
-	index = myftol( tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE );
-	index >>= FUNCTABLE_SIZE2;
+//	index = myftol( tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE );
+//	index >>= FUNCTABLE_SIZE2;
+	index = (uint64_t)(tess.shaderTime * (double)bundle->imageAnimationSpeed * (double)FUNCTABLE_SIZE / 1024.0);
 
 	if ( index < 0 ) {
 		index = 0;	// may happen with shader time offsets
 	}
-	if ( bundle->oneShotAnimMap )
-	{
-		if ( index >= bundle->numImageAnimations )
-		{
+	if ( bundle->oneShotAnimMap ) {
+		if ( index >= bundle->numImageAnimations ) {
 			// stick on last frame
 			index = bundle->numImageAnimations - 1;
 		}
-	}
-	else
-	{
+	} else {
 		// loop
 		index %= bundle->numImageAnimations;
 	}
 
-	GL_Bind( bundle->image[ index ] );
+	GL_Bind( bundle->image[ (int)index ] );
 }
 
 /*
