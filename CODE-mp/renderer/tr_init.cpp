@@ -391,8 +391,7 @@ typedef struct vidmode_s
 	float		pixelAspect;		// pixel width / height
 } vidmode_t;
 
-vidmode_t r_vidModes[] =
-{
+vidmode_t r_vidModes[] = {
     { "Mode  0: 320x240",		320,	240,	1 },
     { "Mode  1: 400x300",		400,	300,	1 },
     { "Mode  2: 512x384",		512,	384,	1 },
@@ -437,13 +436,10 @@ qboolean R_GetModeInfo( int *width, int *height, float *windowAspect, int mode )
 /*
 ** R_ModeList_f
 */
-static void R_ModeList_f( void )
-{
+static void R_ModeList_f( void ) {
 	int i;
-
 	ri.Printf( PRINT_ALL, "\n" );
-	for ( i = 0; i < s_numVidModes; i++ )
-	{
+	for ( i = 0; i < s_numVidModes; i++ ) {
 		ri.Printf( PRINT_ALL, "%s\n", r_vidModes[i].description );
 	}
 	ri.Printf( PRINT_ALL, "\n" );
@@ -458,146 +454,45 @@ static void R_ModeList_f( void )
 ============================================================================== 
 */ 
 #ifndef DEDICATED
-/* 
-================== 
-R_TakeScreenshot
-================== 
-*/  
-void R_TakeScreenshot( int x, int y, int width, int height, char *fileName ) {
-	byte		*buffer;
-	int			i, c, temp;
-
-	buffer = (unsigned char *)ri.Hunk_AllocateTempMemory(glConfig.vidWidth*glConfig.vidHeight*3+18);
-
-	Com_Memset (buffer, 0, 18);
-	buffer[2] = 2;		// uncompressed type
-	buffer[12] = width & 255;
-	buffer[13] = width >> 8;
-	buffer[14] = height & 255;
-	buffer[15] = height >> 8;
-	buffer[16] = 24;	// pixel size
-
-	qglReadPixels( x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer+18 ); 
-
-	// swap rgb to bgr
-	c = 18 + width * height * 3;
-	for (i=18 ; i<c ; i+=3) {
-		temp = buffer[i];
-		buffer[i] = buffer[i+2];
-		buffer[i+2] = temp;
-	}
-
-	// gamma correct
-	if ( ( tr.overbrightBits > 0 ) && glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect( buffer + 18, glConfig.vidWidth * glConfig.vidHeight * 3 );
-	}
-
-	ri.FS_WriteFile( fileName, buffer, c );
-
-	ri.Hunk_FreeTempMemory( buffer );
-}
-
 /*
 ==================
-
-RB_ReadPixels
-
-Reads an image but takes care of alignment issues for reading RGB images.
-
-Reads a minimum offset for where the RGB data starts in the image from
-integer stored at pointer offset. When the function has returned the actual
-offset was written back to address offset. This address will always have an
-alignment of packAlign to ensure efficient copying.
-
-Stores the length of padding after a line of pixels to address padlen
-
-Return value must be freed with Hunk_FreeTempMemory()
+RB_TakeScreenshotCmd
 ==================
 */
+const void *RB_ScreenShotCmd( const void *data ) {
+	const screenShotCommand_t *cmd = (const screenShotCommand_t *)data;
+	byte *inBuf, *outBuf;
+	int w, h, outSize;
 
-byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
-{
-	byte *buffer, *bufstart;
-	int padwidth, linelen;
-	GLint packAlign;
+	w = glConfig.vidWidth;
+	h = glConfig.vidHeight;
+	outSize = w * h * 4;
+	inBuf = (byte *)ri.Hunk_AllocateTempMemory( outSize * 2 );
+	outBuf = inBuf + outSize;
 
-	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
-
-	linelen = width * 3;
-	padwidth = PAD(linelen, packAlign);
-
-	// Allocate a few more bytes so that we can choose an alignment we like
-	buffer = (byte *)Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
-
-	bufstart = (byte *)PADP((intptr_t) buffer + *offset, packAlign);
-	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
-
-	*offset = bufstart - buffer;
-	*padlen = padwidth - linelen;
-
-	return buffer;
-}
-
-/* 
-================== 
-R_TakeScreenshot
-================== 
-*/  
-void R_TakeScreenshotJPEG( int x, int y, int width, int height, char *fileName ) {
-/*	byte		*buffer;
-
-	buffer = (unsigned char *)ri.Hunk_AllocateTempMemory(glConfig.vidWidth*glConfig.vidHeight*4);
-
-	qglReadPixels( x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer ); 
-
-	// gamma correct
-	if ( ( tr.overbrightBits > 0 ) && glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect( buffer, glConfig.vidWidth * glConfig.vidHeight * 4 );
+	qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, inBuf ); 
+	if ( ( mme_screenShotGamma->integer || (tr.overbrightBits > 0) ) && (glConfig.deviceSupportsGamma ) ) {
+		R_GammaCorrect( inBuf, outSize );
 	}
-
-	ri.FS_WriteFile( fileName, buffer, 1 );		// create path
-	SaveJPG( fileName, 95, glConfig.vidWidth, glConfig.vidHeight, buffer);
-
-	ri.Hunk_FreeTempMemory( buffer );*/
-	byte *buffer;
-	size_t offset = 0, memcount;
-	int padlen;
-
-	buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
-	memcount = (width * 3 + padlen) * height;
-
-	// gamma correct
-	if(glConfig.deviceSupportsGamma)
-		R_GammaCorrect(buffer + offset, memcount);
-
-	RE_SaveJPG(fileName, mme_jpegQuality->integer, width, height, buffer + offset, padlen);
-	ri.Hunk_FreeTempMemory(buffer);
-}
-
-/* 
-================== 
-R_ScreenshotFilename
-================== 
-*/  
-void R_ScreenshotFilename( int lastNumber, char *fileName, const char *psExt ) {
-	int		a,b,c,d;
-
-	if ( lastNumber < 0 || lastNumber > 9999 ) {
-		Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot9999%s",psExt );
-		return;
+	switch ( cmd->format ) {
+	case mmeShotFormatJPG:
+		outSize = SaveJPG( mme_jpegQuality->integer, w, h, mmeShotTypeRGB, inBuf, outBuf, outSize );
+		break;
+	case mmeShotFormatTGA:
+		outSize = SaveTGA( mme_tgaCompression->integer, w, h, mmeShotTypeRGB, inBuf, outBuf, outSize );
+		break;
+	case mmeShotFormatPNG:
+		outSize = SavePNG( mme_pngCompression->integer, w, h, mmeShotTypeRGB, inBuf, outBuf, outSize );
+		break;
+	default:
+		outSize = 0;
 	}
-
-	a = lastNumber / 1000;
-	lastNumber -= a*1000;
-	b = lastNumber / 100;
-	lastNumber -= b*100;
-	c = lastNumber / 10;
-	lastNumber -= c*10;
-	d = lastNumber;
-
-	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i%s"
-		, a, b, c, d, psExt );
+	if (outSize)
+		ri.FS_WriteFile( cmd->name, outBuf, outSize );
+	ri.Hunk_FreeTempMemory( inBuf );
+	return (const void *)(cmd + 1);	
 }
+
 
 /*
 ====================
@@ -655,7 +550,7 @@ static void R_LevelShot( void ) {
 	}
 
 	// gamma correct
-	if ( ( tr.overbrightBits > 0 ) && glConfig.deviceSupportsGamma ) {
+	if ( (mme_screenShotGamma->integer || ( tr.overbrightBits > 0 )) && glConfig.deviceSupportsGamma ) {
 		R_GammaCorrect( buffer + 18, LEVELSHOTSIZE * LEVELSHOTSIZE * 3 );
 	}
 
@@ -666,6 +561,22 @@ static void R_LevelShot( void ) {
 
 	ri.Printf( PRINT_ALL, "Wrote %s\n", checkname );
 }
+
+void R_ScreenShot( const char *shotName, mmeShotFormat_t shotFormat ) {
+	screenShotCommand_t *cmd;
+	
+	if ( !tr.registered ) {
+		return;
+	}
+	cmd = (screenShotCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+	if ( !cmd ) {
+		return;
+	}
+	cmd->commandId = RC_SCREENSHOT;
+	Q_strncpyz( cmd->name, shotName, sizeof( cmd->name ));
+	cmd->format = shotFormat;
+}
+
 
 /* 
 ================== 
@@ -679,112 +590,50 @@ screenshot [filename]
 Doesn't print the pacifier message if there is a second arg
 ================== 
 */  
-void R_ScreenShotTGA_f (void) {
-	char		checkname[MAX_OSPATH];
-	static	int	lastNumber = -1;
-	qboolean	silent;
 
-	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) ) {
+static qboolean R_ScreenShotName( const char *start, const char *ext, char *fileName) {
+	int i;
+	for (i=0;i<1000;i++) {
+		Com_sprintf( fileName, MAX_OSPATH, "screenshots/%s.%04d.%s", 
+			start, i, ext );
+		if (!ri.FS_FileExists( fileName))
+			return qtrue;
+	}
+	Com_Printf("Screenshot limit reached\n");
+	return qtrue;
+}
+
+static void R_ScreenShot_f (const char *ext, mmeShotFormat_t shotFormat) {
+	char	fileName[MAX_OSPATH];
+	const char	*cmd = ri.Cmd_Argv(1);
+	qboolean silent = qfalse;
+
+	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) && shotFormat != mmeShotFormatPNG ) {
 		R_LevelShot();
 		return;
 	}
-
-	if ( !strcmp( ri.Cmd_Argv(1), "silent" ) ) {
+	if (!strcmp( cmd, "silent" ) )
 		silent = qtrue;
-	} else {
-		silent = qfalse;
-	}
-
-	if ( ri.Cmd_Argc() == 2 && !silent ) {
-		// explicit filename
-		Com_sprintf( checkname, MAX_OSPATH, "screenshots/%s.tga", ri.Cmd_Argv( 1 ) );
-	} else {
-		// scan for a free filename
-
-		// if we have saved a previous screenshot, don't scan
-		// again, because recording demo avis can involve
-		// thousands of shots
-		if ( lastNumber == -1 ) {
-			lastNumber = 0;
-		}
-		// scan for a free number
-		for ( ; lastNumber <= 9999 ; lastNumber++ ) {
-			R_ScreenshotFilename( lastNumber, checkname, ".tga" );
-
-			if (!ri.FS_FileExists( checkname ))
-			{
-				break; // file doesn't exist
-			}
-		}
-
-		if ( lastNumber >= 9999 ) {
-			ri.Printf (PRINT_ALL, "ScreenShot: Couldn't create a file\n"); 
-			return;
- 		}
-
-		lastNumber++;
-	}
-
-
-	R_TakeScreenshot( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname );
-
-	if ( !silent ) {
-		ri.Printf (PRINT_ALL, "Wrote %s\n", checkname);
+	if (!cmd[0] || silent)
+		cmd = "shot";	
+		
+	if (R_ScreenShotName( cmd, ext, fileName)) {
+		if (!silent)
+			ri.Printf( PRINT_ALL, "Saving shot %s\n", fileName );
+		R_ScreenShot( fileName, shotFormat );
 	}
 } 
 
-//jpeg  vession
-void R_ScreenShot_f (void) {
-	char		checkname[MAX_OSPATH];
-	static	int	lastNumber = -1;
-	qboolean	silent;
+static void R_ScreenShotTGA_f (void) {
+	R_ScreenShot_f("tga", mmeShotFormatTGA );
+} 
 
-	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) ) {
-		R_LevelShot();
-		return;
-	}
-	if ( !strcmp( ri.Cmd_Argv(1), "silent" ) ) {
-		silent = qtrue;
-	} else {
-		silent = qfalse;
-	}
+static void R_ScreenShotJPEG_f (void) {
+	R_ScreenShot_f("jpg", mmeShotFormatJPG );
+} 
 
-	if ( ri.Cmd_Argc() == 2 && !silent ) {
-		// explicit filename
-		Com_sprintf( checkname, MAX_OSPATH, "screenshots/%s.jpg", ri.Cmd_Argv( 1 ) );
-	} else {
-		// scan for a free filename
-
-		// if we have saved a previous screenshot, don't scan
-		// again, because recording demo avis can involve
-		// thousands of shots
-		if ( lastNumber == -1 ) {
-			lastNumber = 0;
-		}
-		// scan for a free number
-		for ( ; lastNumber <= 9999 ; lastNumber++ ) {
-			R_ScreenshotFilename( lastNumber, checkname, ".jpg" );
-
-			if (!ri.FS_FileExists( checkname ))
-			{
-				break; // file doesn't exist
-			}
-		}
-
-		if ( lastNumber == 10000 ) {
-			ri.Printf (PRINT_ALL, "ScreenShot: Couldn't create a file\n"); 
-			return;
- 		}
-
-		lastNumber++;
-	}
-
-
-	R_TakeScreenshotJPEG( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname );
-
-	if ( !silent ) {
-		ri.Printf (PRINT_ALL, "Wrote %s\n", checkname);
-	}
+static void R_ScreenShotPNG_f (void) {
+	R_ScreenShot_f("png", mmeShotFormatPNG );
 } 
 
 //============================================================================
@@ -792,8 +641,7 @@ void R_ScreenShot_f (void) {
 /*
 ** GL_SetDefaultState
 */
-void GL_SetDefaultState( void )
-{
+void GL_SetDefaultState( void ) {
 	qglClearDepth( 1.0f );
 
 	qglCullFace(GL_FRONT);
@@ -1159,8 +1007,7 @@ Ghoul2 Insert End
 */
 extern qboolean Sys_LowPhysicalMemory();
 	r_modelpoolmegs = Cvar_Get("r_modelpoolmegs", "10", CVAR_ARCHIVE);
-	if (Sys_LowPhysicalMemory() )
-	{
+	if (Sys_LowPhysicalMemory() ) {
 		Cvar_Set("r_modelpoolmegs", "0");
 	}
 
@@ -1170,8 +1017,10 @@ extern qboolean Sys_LowPhysicalMemory();
 	ri.Cmd_AddCommand( "imagelist", R_ImageList_f );
 	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
-	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
-	ri.Cmd_AddCommand( "screenshot_tga", R_ScreenShotTGA_f );
+	ri.Cmd_AddCommand( "screenshot", R_ScreenShotTGA_f );
+	ri.Cmd_AddCommand( "screenshotTGA", R_ScreenShotTGA_f );
+	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
+	ri.Cmd_AddCommand( "screenshotPNG", R_ScreenShotPNG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
 	ri.Cmd_AddCommand( "r_atihack", R_AtiHackToggle_f );
 	ri.Cmd_AddCommand("r_we", R_WorldEffect_f);
@@ -1329,8 +1178,10 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
 
 	ri.Cmd_RemoveCommand ("modellist");
-	ri.Cmd_RemoveCommand ("screenshotJPEG");
 	ri.Cmd_RemoveCommand ("screenshot");
+	ri.Cmd_RemoveCommand ("screenshotTGA");
+	ri.Cmd_RemoveCommand ("screenshotJPEG");
+	ri.Cmd_RemoveCommand ("screenshotPNG");
 	ri.Cmd_RemoveCommand ("imagelist");
 	ri.Cmd_RemoveCommand ("shaderlist");
 	ri.Cmd_RemoveCommand ("skinlist");

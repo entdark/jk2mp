@@ -1514,6 +1514,9 @@ again:
 			if ( (int)data == NULL)
 				goto again;
 			break;
+		case RC_SCREENSHOT:
+			data = RB_ScreenShotCmd( data );
+			break;
 		case RC_CAPTURE:
 			data = R_MME_CaptureShotCmd( data );
 			break;
