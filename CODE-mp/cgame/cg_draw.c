@@ -2599,7 +2599,7 @@ static void CG_DrawCrosshair( vec3_t worldPoint, int chEntValid ) {
 	if (!cg_drawCrosshair.integer)
 		return;
 
-	if (cg.playerPredicted && cg.snap->ps.fallingToDeath)
+	if (cg.fallingToDeath)
 		return;
 
 	//not while scoped
@@ -4253,6 +4253,43 @@ static void CG_Draw2DScreenTints(void) {
 	}
 }
 
+static void CG_UpdateFallVector (void) {
+	if (!cg.playerCent)
+		goto clearFallVector;
+
+	if (cg.fallingToDeath) {
+		float	fallTime; 
+		vec4_t	hcolor;
+
+		fallTime = (cg.time - cg.fallingToDeath) + cg.timeFraction;
+
+		fallTime /= (float)(FALL_FADE_TIME/2.0f);
+
+		if (fallTime < 0)
+			fallTime = 0;
+		else if (fallTime > 1)
+			fallTime = 1;
+
+		hcolor[3] = fallTime;
+		hcolor[0] = 0;
+		hcolor[1] = 0;
+		hcolor[2] = 0;
+
+		CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+
+		if (!gCGHasFallVector) {
+			VectorCopy(cg.playerCent->lerpOrigin, gCGFallVector);
+			gCGHasFallVector = qtrue;
+		}
+	} else {
+		if (gCGHasFallVector) {
+clearFallVector:
+			gCGHasFallVector = qfalse;
+			VectorClear(gCGFallVector);
+		}
+	}
+}
+
 /*
 =================
 CG_Draw2D
@@ -4295,6 +4332,7 @@ void CG_Draw2D( void ) {
 	}
 
 	if ( cg_draw2D.integer == 0 ) {
+		CG_UpdateFallVector();
 		return;
 	}
 
@@ -4305,6 +4343,7 @@ void CG_Draw2D( void ) {
 		if (cg.playerPredicted)
 			CG_DrawReward();
 		CG_DrawCenterString();
+		CG_UpdateFallVector();
 		return;
 	}
 
@@ -4324,6 +4363,7 @@ void CG_Draw2D( void ) {
 		CG_SaberClashFlare();
 		if (cg_drawStatus.integer)
 			CG_DrawFlagStatus();
+		CG_UpdateFallVector();
 		CG_DrawVote();
 		CG_DrawUpperRight();
 		CG_DrawTeamVote();
@@ -4400,6 +4440,8 @@ void CG_Draw2D( void ) {
 		}
     
 	}
+	
+	CG_UpdateFallVector();
 
 	CG_DrawVote();
 	CG_DrawTeamVote();

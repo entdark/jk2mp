@@ -406,43 +406,6 @@ void demoProcessSnapShots(qboolean hadSkip) {
 	} while (1);
 }
 
-void CG_UpdateFallVector (void) {
-	if (!cg.playerPredicted || !cg.playerCent)
-		goto clearFallVector;
-
-	if (cg.snap->ps.fallingToDeath) {
-		float	fallTime; 
-		vec4_t	hcolor;
-
-		fallTime = (float)(cg.time - cg.snap->ps.fallingToDeath) + cg.timeFraction;
-
-		fallTime /= (float)(FALL_FADE_TIME/2.0f);
-
-		if (fallTime < 0)
-			fallTime = 0;
-		else if (fallTime > 1)
-			fallTime = 1;
-
-		hcolor[3] = fallTime;
-		hcolor[0] = 0;
-		hcolor[1] = 0;
-		hcolor[2] = 0;
-
-		CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
-
-		if (!gCGHasFallVector) {
-			VectorCopy(cg.snap->ps.origin, gCGFallVector);
-			gCGHasFallVector = qtrue;
-		}
-	} else {
-		if (gCGHasFallVector) {
-clearFallVector:
-			gCGHasFallVector = qfalse;
-			VectorClear(gCGFallVector);
-		}
-	}
-}
-
 void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	int deltaTime;
 	qboolean hadSkip;
@@ -618,6 +581,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		cg.headEndTime = 0;
 		cg.headStartTime = 0;
 		cg.v_dmg_time = 0;
+		cg.fallingToDeath = 0;
 		trap_S_ClearLoopingSounds(qtrue);
 	} else {
 		hadSkip = qfalse;

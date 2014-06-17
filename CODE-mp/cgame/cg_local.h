@@ -919,6 +919,8 @@ Ghoul2 Insert End
 	qboolean		charging;
 
 	qboolean		ntModDetected;
+
+	int				fallingToDeath;
 } cg_t;
 
 #define MAX_TICS	14

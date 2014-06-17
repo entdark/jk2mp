@@ -1939,11 +1939,11 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			trap_S_StopSound(es->clientNum, CHAN_VOICE, -1);
 
 			trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleInSound );
+			
+			cg.fallingToDeath = 0;
 
 			if (tr.fraction == 1)
-			{
 				break;
-			}
 			trap_FX_PlayEffectID(cgs.effects.mSpawn, pos, ang);
 		}
 		break;
@@ -1968,9 +1968,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleOutSound );
 
 			if (tr.fraction == 1)
-			{
 				break;
-			}
 			trap_FX_PlayEffectID(cgs.effects.mSpawn, pos, ang);
 		}
 		break;
@@ -2318,6 +2316,9 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			trap_S_StartSound (NULL, es->weapon, es->trickedentindex, cgs.gameSounds[ es->eventParm ] );
 		} else {
 			s = CG_ConfigString( CS_SOUNDS + es->eventParm );
+			if (!Q_stricmp(s, "*falling1.wav") && cg.playerCent
+				&& es->clientNum == cg.playerCent->currentState.number)
+				cg.fallingToDeath = cg.time;
 			trap_S_StartSound (NULL, es->weapon, es->trickedentindex, CG_CustomSound( es->weapon, s ) );
 		}
 		break;

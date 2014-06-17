@@ -1624,7 +1624,6 @@ Generates and draws a game scene and status information at the given time.
 */
 extern void CG_SetPredictedThirdPerson(void);
 extern void trap_S_UpdatePitch( float pitch );
-extern void CG_UpdateFallVector (void);
 void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback ) {
 	int		inwater;
 
@@ -1707,6 +1706,8 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	// build cg.refdef
 	inwater = CG_CalcViewValues();
+	
+	cg.fallingToDeath = cg.snap->ps.fallingToDeath;
 
 	CG_CalcScreenEffects();
 
@@ -1740,23 +1741,19 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		CG_AddTestModel();
 	}
 	cg.refdef.time = cg.time;
-	cg.refdef.timeFraction = cg.timeFraction;
+	cg.refdef.timeFraction = 0.0f;
 	memcpy( cg.refdef.areamask, cg.snap->areamask, sizeof( cg.refdef.areamask ) );
 
 	// warning sounds when powerup is wearing off
 	CG_PowerupTimerSounds();
-
 	// if there are any entities flagged as sound trackers and attached to other entities, update their sound pos
 	CG_UpdateSoundTrackers();
-
-	if (gCGHasFallVector)
-	{
+ 
+	if (gCGHasFallVector) {
 		vec3_t lookAng;
-
-		VectorSubtract(cg.snap->ps.origin, cg.refdef.vieworg, lookAng);
+		VectorSubtract(cg.playerCent->lerpOrigin, cg.refdef.vieworg, lookAng);
 		VectorNormalize(lookAng);
 		vectoangles(lookAng, lookAng);
-
 		VectorCopy(gCGFallVector, cg.refdef.vieworg);
 		AnglesToAxis(lookAng, cg.refdef.viewaxis);
 	}
