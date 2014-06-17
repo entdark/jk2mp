@@ -138,13 +138,13 @@ qboolean demoCentityBoxSize( const centity_t *cent, vec3_t container ) {
 		VectorSet( container, -5, 5, 5 );
 		break;
 	case ET_MOVER:
-		VectorSet( container, -10, 10, 10 );	//let's find out sizes for ET_SPECIAL, ET_HOLOCRON, ET_GENERAL, ET_MOVER
-		break;									//currently they have ET_PLAYER container
+		VectorSet( container, -10, 10, 10 );
+		break;
 	case ET_SPECIAL: //portable shield
 		VectorSet( container, 0, 20, 10 );
 		break;
 	case ET_HOLOCRON:
-		VectorSet( container, -24, 60, 20 );
+		VectorSet( container, 10, 30, 10 );
 		break;
 	case ET_GENERAL:
 		VectorSet( container, 0, 10, 10 );		//trip mine is ET_GENERAL, so we set same container size as for ET_ITEM
