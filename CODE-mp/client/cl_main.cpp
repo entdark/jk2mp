@@ -35,6 +35,8 @@ cvar_t	*cl_timeNudge;
 cvar_t	*cl_showTimeDelta;
 cvar_t	*cl_freezeDemo;
 
+cvar_t	*cl_drawRecording;
+
 cvar_t	*cl_shownet;
 cvar_t	*cl_showSend;
 cvar_t	*cl_timedemo;
@@ -2178,44 +2180,6 @@ void CL_Frame ( int msec ) {
 		}
 	}
 
-	if (cl_mme_capture->integer) {
-		float stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
-		float frameTime, fps;
-		
-		if (stereoSep != 0) {
-			if (stereoSep < 0)
-				stereoSep = -stereoSep; // we start always with positive for correct sync
-			Cvar_SetValue("r_stereoSeparation", stereoSep);
-			SCR_UpdateScreen();
-
-			re.Capture( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value );
-//			Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme left\n" );
-
-			stereoSep = -stereoSep;
-			Cvar_SetValue("r_stereoSeparation", stereoSep);
-			SCR_UpdateScreen();
-
-			re.CaptureStereo( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value  );
-//			Cbuf_ExecuteText( EXEC_NOW, "screenshot_mme right\n" );
-		} else {
-//			re.Capture( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value  );
-		}
-
-		// fixed time for next frame'
-		fps = cl_mme_fps->value * com_timescale->value;
-		if ( fps > 1000.0f)
-			fps = 1000.0f;
-		frameTime = (1000.0f / fps);
-		if (frameTime < 1) {
-			frameTime = 1;
-		}
-		frameTime += clc.aviDemoRemain;
-		msec = (int)frameTime;
-		clc.aviDemoRemain = frameTime - msec;
-
-		S_MMERecord( cl_mme_name->string, 1.0f / (cl_mme_fps->value * com_timescale->value ));
-	}
-
 	CL_MakeMonkeyDoLaundry();
 
 	// save the msec before checking pause
@@ -2223,12 +2187,10 @@ void CL_Frame ( int msec ) {
 
 	// decide the simulation time
 	cls.frametime = msec;
-	if(cl_framerate->integer)
-	{
+	if(cl_framerate->integer) {
 		avgFrametime+=msec;
 		char mess[256];
-		if(!(frameCount&0x1f))
-		{
+		if(!(frameCount&0x1f)) {
 			sprintf(mess,"Frame rate=%f\n\n",1000.0f*(1.0/(avgFrametime/32.0f)));
 	//		OutputDebugString(mess);
 			Com_Printf(mess);
@@ -2353,6 +2315,8 @@ void CL_InitRenderer( void ) {
 
 	cls.whiteShader = re.RegisterShader( "white" );
 	cls.consoleShader = re.RegisterShader( "console" );
+	cls.recordingShader = re.RegisterShaderNoMip("gfx/hud/message_on");
+	cls.ratioFix = (float)(SCREEN_WIDTH * cls.glconfig.vidHeight) / (float)(SCREEN_HEIGHT * cls.glconfig.vidWidth);
 	g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
 	kg.g_consoleField.widthInChars = g_console_field_width;
 }
@@ -2542,6 +2506,8 @@ void CL_Init( void ) {
 	cl_freezeDemo = Cvar_Get ("cl_freezeDemo", "0", CVAR_TEMP );
 	rcon_client_password = Cvar_Get ("rconPassword", "", CVAR_TEMP );
 	cl_activeAction = Cvar_Get( "activeAction", "", CVAR_TEMP );
+	
+	cl_drawRecording = Cvar_Get ("cl_drawRecording", "1", CVAR_ARCHIVE );
 
 	cl_timedemo = Cvar_Get ("timedemo", "0", 0);
 	cl_avidemo = Cvar_Get ("cl_avidemo", "0", 0);

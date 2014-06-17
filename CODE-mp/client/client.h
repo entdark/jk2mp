@@ -300,6 +300,9 @@ typedef struct {
 	qhandle_t	charSetShader;
 	qhandle_t	whiteShader;
 	qhandle_t	consoleShader;
+	qhandle_t	recordingShader;
+
+	float		ratioFix;
 } clientStatic_t;
 
 #define	CON_TEXTSIZE	32768
@@ -352,6 +355,8 @@ extern	cvar_t	*cl_showSend;
 extern	cvar_t	*cl_timeNudge;
 extern	cvar_t	*cl_showTimeDelta;
 extern	cvar_t	*cl_freezeDemo;
+
+extern	cvar_t	*cl_drawRecording;
 
 extern	cvar_t	*cl_yawspeed;
 extern	cvar_t	*cl_pitchspeed;
