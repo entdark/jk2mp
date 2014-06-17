@@ -610,9 +610,6 @@ void S_StartBackgroundTrack( const char *intro, const char *loop, qboolean bRetu
 	if ( !intro || !intro[0] )
 		return;
 
-	if ( !s_musicVolume->value )
-		return;
-
 	if ( !loop || !loop[0] ) 
 		loop = intro;
 
