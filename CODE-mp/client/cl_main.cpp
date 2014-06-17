@@ -147,39 +147,6 @@ void CL_AddReliableCommand( const char *cmd ) {
 }
 
 /*
-======================
-CL_ChangeReliableCommand
-======================
-*/
-void CL_ChangeReliableCommand( void ) {
-	int r, index, l;
-
-	r = clc.reliableSequence - ((int)(random()) * 5);
-	index = clc.reliableSequence & ( MAX_RELIABLE_COMMANDS - 1 );
-	l = strlen(clc.reliableCommands[ index ]);
-	if ( l >= MAX_STRING_CHARS - 1 ) {
-		l = MAX_STRING_CHARS - 2;
-	}
-	clc.reliableCommands[ index ][ l ] = '\n';
-	clc.reliableCommands[ index ][ l+1 ] = '\0';
-}
-
-/*
-======================
-CL_MakeMonkeyDoLaundry
-======================
-*/
-void CL_MakeMonkeyDoLaundry( void ) {
-	if ( Sys_MonkeyShouldBeSpanked() ) {
-		if ( !(cls.framecount & 255) ) {
-			if ( random() < 0.1 ) {
-				CL_ChangeReliableCommand();
-			}
-		}
-	}
-}
-
-/*
 =======================================================================
 
 CLIENT SIDE DEMO RECORDING
@@ -2179,8 +2146,6 @@ void CL_Frame ( int msec ) {
 			S_MMERecord(shotName, 1.0f / fps);
 		}
 	}
-
-	CL_MakeMonkeyDoLaundry();
 
 	// save the msec before checking pause
 	cls.realFrametime = msec;

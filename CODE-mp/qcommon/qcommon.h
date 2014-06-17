@@ -980,13 +980,8 @@ void	Sys_FreeFileList( char **list );
 void	Sys_BeginProfiling( void );
 void	Sys_EndProfiling( void );
 
-int Sys_FunctionCmp(void *f1, void *f2);
-int Sys_FunctionCheckSum(void *f1);
-
 qboolean Sys_LowPhysicalMemory();
 unsigned int Sys_ProcessorCount();
-
-int Sys_MonkeyShouldBeSpanked( void );
 
 /* This is based on the Adaptive Huffman algorithm described in Sayood's Data
  * Compression book.  The ranks are not actually stored, but implicitly defined
