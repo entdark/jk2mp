@@ -1682,6 +1682,8 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		trap_SetUserCmdValue( cg.weaponSelect, cg.zoomSensitivity, cg.forceSelect, cg.itemSelect );
 	}
 
+	CG_PreparePacketEntities( );
+
 	// this counter will be bumped for every valid scene we generate
 	cg.clientFrame++;
 	//mme
@@ -1725,8 +1727,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	}
 	CG_AddViewWeapon( &cg.predictedPlayerState );
 
-	if ( !cg.hyperspace) 
-	{
+	if ( !cg.hyperspace) {
 		trap_FX_AddScheduledEffects();
 	}
 
