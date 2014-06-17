@@ -4011,11 +4011,25 @@ float cgYsalFadeVal = 0;
 qboolean gCGHasFallVector = qfalse;
 vec3_t gCGFallVector;
 
+static qboolean CG_HasYsalamiri(int gametype, entityState_t *es) {
+	if (gametype == GT_CTY && ((es->powerups & (1 << PW_REDFLAG)) || (es->powerups & (1 << PW_BLUEFLAG)))) {
+		return qtrue;
+	}
+	if (es->powerups & (1 << PW_YSALAMIRI)) {
+		return qtrue;
+	}
+	return qfalse;
+}
+
 static void CG_Draw2DScreenTints(void) {
 	float			rageTime, rageRecTime, absorbTime, protectTime, ysalTime;
 	vec4_t			hcolor;
-	if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
-		if (cg.snap->ps.fd.forcePowersActive & (1 << FP_RAGE)) {
+	int		forcePowersActive = cg.playerPredicted ?
+								cg.snap->ps.fd.forcePowersActive :
+								cg.playerCent->currentState.forcePowersActive;
+
+	if (cgs.clientinfo[cg.playerCent->currentState.clientNum].team != TEAM_SPECTATOR) {
+		if (forcePowersActive & (1 << FP_RAGE)) {
 			if (!cgRageTime)
 				cgRageTime = cg.time;
 			
@@ -4052,7 +4066,7 @@ static void CG_Draw2DScreenTints(void) {
 			else if (rageTime > 0.15)
 				rageTime = 0.15;
 			
-			if (cg.snap->ps.fd.forceRageRecoveryTime > cg.time) {
+			if (cg.playerPredicted && cg.snap->ps.fd.forceRageRecoveryTime > cg.time) {
 				float checkRageRecTime = rageTime;
 				
 				if (checkRageRecTime < 0.15)
@@ -4074,7 +4088,7 @@ static void CG_Draw2DScreenTints(void) {
 			if (!cg.renderingThirdPerson && rageTime) {
 				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			} else {
-				if (cg.snap->ps.fd.forceRageRecoveryTime > cg.time) {
+				if (cg.playerPredicted && cg.snap->ps.fd.forceRageRecoveryTime > cg.time) {
 					hcolor[3] = 0.15;
 					hcolor[0] = 0.2;
 					hcolor[1] = 0.2;
@@ -4083,7 +4097,7 @@ static void CG_Draw2DScreenTints(void) {
 				}
 				cgRageTime = 0;
 			}
-		} else if (cg.snap->ps.fd.forceRageRecoveryTime > cg.time) {
+		} else if (cg.playerPredicted && cg.snap->ps.fd.forceRageRecoveryTime > cg.time) {
 			if (!cgRageRecTime)
 				cgRageRecTime = cg.time;
 			
@@ -4106,7 +4120,7 @@ static void CG_Draw2DScreenTints(void) {
 			
 			cgRageRecFadeTime = 0;
 			cgRageRecFadeVal = 0;
-		} else if (cgRageRecTime) {
+		} else if (cg.playerPredicted && cgRageRecTime) {
 			if (!cgRageRecFadeTime) {
 				cgRageRecFadeTime = cg.time;
 				cgRageRecFadeVal = 0.15;
@@ -4132,7 +4146,7 @@ static void CG_Draw2DScreenTints(void) {
 			}
 		}
 		
-		if (cg.snap->ps.fd.forcePowersActive & (1 << FP_ABSORB)) {
+		if (forcePowersActive & (1 << FP_ABSORB)) {
 			if (!cgAbsorbTime)
 				cgAbsorbTime = cg.time;
 			
@@ -4181,7 +4195,7 @@ static void CG_Draw2DScreenTints(void) {
 			}
 		}
 		
-		if (cg.snap->ps.fd.forcePowersActive & (1 << FP_PROTECT)) {
+		if (forcePowersActive & (1 << FP_PROTECT)) {
 			if (!cgProtectTime)
 				cgProtectTime = cg.time;
 			
@@ -4230,7 +4244,8 @@ static void CG_Draw2DScreenTints(void) {
 			}
 		}
 		
-		if (BG_HasYsalamiri(cgs.gametype, &cg.snap->ps)) {
+		if ((cg.playerPredicted && BG_HasYsalamiri(cgs.gametype, &cg.snap->ps))
+			|| (!cg.playerPredicted && CG_HasYsalamiri(cgs.gametype, &cg.playerCent->currentState))) {
 			if (!cgYsalTime)
 				cgYsalTime = cg.time;
 			
