@@ -6966,8 +6966,6 @@ void CG_Player( centity_t *cent ) {
 	centity_t		*enent;
 	mdxaBone_t 		boltMatrix, lHandMatrix;
 	vec3_t			efOrg;
-	vec3_t			tDir;
-	int				distVelBase;
 	int				doAlpha = 0;
 	int				effectTimeLayer = 0;
 	qboolean		gotLHandMatrix = qfalse;
@@ -7650,53 +7648,60 @@ SkipTrueView:
 		cent->frame_minus2_refreshed = 0;
 	}
 
-	VectorCopy(cent->currentState.pos.trDelta, tDir);
-
-	distVelBase = SPEED_TRAIL_DISTANCE*(VectorNormalize(tDir)*0.004);
-
-	if (cent->frame_minus1.ghoul2 && cent->frame_minus1_refreshed)
-	{
-		cent->frame_minus1.renderfx |= RF_FORCE_ENT_ALPHA;
-		cent->frame_minus1.shaderRGBA[3] = 100;
-
-		//rww - if the client gets a bad framerate we will only receive frame positions
-		//once per frame anyway, so we might end up with speed trails very spread out.
-		//in order to avoid that, we'll get the direction of the last trail from the player
-		//and place the trail refent a set distance from the player location this frame
-		if (!cg.demoPlayback)
-			VectorSubtract(cent->frame_minus1.origin, legs.origin, tDir);
-		else {
+	if (cent->frame_minus1_refreshed || cent->frame_minus2_refreshed) {
+		vec3_t			tDir, tDeltaAdd;
+		float			distVelBase;
+		qboolean		inverted = qfalse;
+		
+		if (!cg.demoPlayback || !cg.nextSnap) {
 			VectorCopy(cent->currentState.pos.trDelta, tDir);
-			VectorInverse(tDir);
+		} else {
+			VectorSubtract(cent->nextState.pos.trDelta, cent->currentState.pos.trDelta, tDeltaAdd);
+			VectorMA(cent->currentState.pos.trDelta, cg.frameInterpolation, tDeltaAdd, tDir);
 		}
-		VectorNormalize(tDir);
+		distVelBase = SPEED_TRAIL_DISTANCE*(VectorNormalize(tDir)*0.004);
 
-		cent->frame_minus1.origin[0] = legs.origin[0]+tDir[0]*distVelBase;
-		cent->frame_minus1.origin[1] = legs.origin[1]+tDir[1]*distVelBase;
-		cent->frame_minus1.origin[2] = legs.origin[2]+tDir[2]*distVelBase;
+		if (cent->frame_minus1.ghoul2 && cent->frame_minus1_refreshed) {
+			cent->frame_minus1.renderfx |= RF_FORCE_ENT_ALPHA;
+			cent->frame_minus1.shaderRGBA[3] = 100;
 
-		trap_R_AddRefEntityToScene(&cent->frame_minus1);
-	}
+			//rww - if the client gets a bad framerate we will only receive frame positions
+			//once per frame anyway, so we might end up with speed trails very spread out.
+			//in order to avoid that, we'll get the direction of the last trail from the player
+			//and place the trail refent a set distance from the player location this frame
+			if (!cg.demoPlayback) {
+				VectorSubtract(cent->frame_minus1.origin, legs.origin, tDir);
+			} else {
+				VectorInverse(tDir);
+				inverted = qtrue;
+			}
+			VectorNormalize(tDir);
 
-	if (cent->frame_minus2.ghoul2 && cent->frame_minus2_refreshed)
-	{
-		cent->frame_minus2.renderfx |= RF_FORCE_ENT_ALPHA;
-		cent->frame_minus2.shaderRGBA[3] = 50;
+			cent->frame_minus1.origin[0] = legs.origin[0]+tDir[0]*distVelBase;
+			cent->frame_minus1.origin[1] = legs.origin[1]+tDir[1]*distVelBase;
+			cent->frame_minus1.origin[2] = legs.origin[2]+tDir[2]*distVelBase;
 
-		//Same as above but do it between trail points instead of the player and first trail entry
-		if (!cg.demoPlayback)
-			VectorSubtract(cent->frame_minus2.origin, cent->frame_minus1.origin, tDir);
-		else {
-			VectorCopy(cent->currentState.pos.trDelta, tDir);
-			VectorInverse(tDir);
+			trap_R_AddRefEntityToScene(&cent->frame_minus1);
 		}
-		VectorNormalize(tDir);
 
-		cent->frame_minus2.origin[0] = cent->frame_minus1.origin[0]+tDir[0]*distVelBase;
-		cent->frame_minus2.origin[1] = cent->frame_minus1.origin[1]+tDir[1]*distVelBase;
-		cent->frame_minus2.origin[2] = cent->frame_minus1.origin[2]+tDir[2]*distVelBase;
+		if (cent->frame_minus2.ghoul2 && cent->frame_minus2_refreshed) {
+			cent->frame_minus2.renderfx |= RF_FORCE_ENT_ALPHA;
+			cent->frame_minus2.shaderRGBA[3] = 50;
 
-		trap_R_AddRefEntityToScene(&cent->frame_minus2);
+			//Same as above but do it between trail points instead of the player and first trail entry
+			if (!cg.demoPlayback) {
+				VectorSubtract(cent->frame_minus2.origin, cent->frame_minus1.origin, tDir);
+			} else if (!inverted) {
+				VectorInverse(tDir);
+			}
+			VectorNormalize(tDir);
+
+			cent->frame_minus2.origin[0] = cent->frame_minus1.origin[0]+tDir[0]*distVelBase;
+			cent->frame_minus2.origin[1] = cent->frame_minus1.origin[1]+tDir[1]*distVelBase;
+			cent->frame_minus2.origin[2] = cent->frame_minus1.origin[2]+tDir[2]*distVelBase;
+
+			trap_R_AddRefEntityToScene(&cent->frame_minus2);
+		}
 	}
 
 doEssentialTwo:
@@ -8951,7 +8956,7 @@ void CG_ResetPlayerEntity( centity_t *cent ) {
 	cent->pe.stepTime = 0;
 
 	maxs = ((cent->currentState.solid >> 16) & 255) - 32;
-	if ( maxs == 46 )
+	if ( maxs > 16 )
 		cent->pe.viewHeight = DEFAULT_VIEWHEIGHT;
 	else
 		cent->pe.viewHeight = CROUCH_VIEWHEIGHT;
