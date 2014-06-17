@@ -218,6 +218,11 @@ void demoSaveCommand_f( void );
 void demoSaveLine( fileHandle_t fileHandle, const char *fmt, ...);
 qboolean demoProjectLoad( const char *fileName );
 
+//DISMEMBERMENT
+void demoSaberDismember(centity_t *cent, vec3_t dir);
+void demoCheckDismember(vec3_t saberhitorg);
+void demoPlayerDismember(centity_t *cent);
+
 #define CAM_ORIGIN	0x001
 #define CAM_ANGLES	0x002
 #define CAM_FOV		0x004

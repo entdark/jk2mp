@@ -510,7 +510,8 @@ static void CG_General( centity_t *cent ) {
 	if (cent->currentState.modelGhoul2 >= G2_MODELPART_HEAD &&
 		cent->currentState.modelGhoul2 <= G2_MODELPART_RLEG &&
 		cent->currentState.modelindex < MAX_CLIENTS &&
-		cent->currentState.weapon == G2_MODEL_PART)
+		cent->currentState.weapon == G2_MODEL_PART &&
+		!mov_dismember.integer)
 	{ //special case for client limbs
 		centity_t *clEnt;
 		int dismember_settings = cg_dismember.integer;
@@ -1870,11 +1871,11 @@ Ghoul2 Insert End
 		{
 			if ( s1->eFlags & EF_MISSILE_STICK )
 			{
-				RotateAroundDirection(ent.axis, 0.5 * cg.timeFraction + ((cg.time / 2) % 360));//Did this so regular missiles don't get broken
+				RotateAroundDirection(ent.axis, 0.5f * cg.timeFraction + (float)((cg.time) % (360 * 2)) * 0.5f);//Did this so regular missiles don't get broken
 			}
 			else
 			{
-				RotateAroundDirection(ent.axis, 0.25 * cg.timeFraction + ((cg.time / 4) % 360));//JFM:FLOAT FIX
+				RotateAroundDirection(ent.axis, 0.25f * cg.timeFraction + (float)((cg.time) % (360 * 4)) * 0.25f);//JFM:FLOAT FIX
 			}
 		} 
 		else 
@@ -2239,6 +2240,7 @@ CG_AddCEntity
 
 ===============
 */
+extern void CG_DemoDismembermentPlayer( centity_t *cent );
 static void CG_AddCEntity( centity_t *cent ) {
 	// event-only entities will have been dealt with already
 	if ( cent->currentState.eType >= ET_EVENTS ) {
@@ -2286,6 +2288,7 @@ Ghoul2 Insert End
 		break;
 	case ET_PLAYER:
 		CG_Player( cent );
+		CG_DemoDismembermentPlayer( cent );
 		break;
 	case ET_ITEM:
 		CG_Item( cent );

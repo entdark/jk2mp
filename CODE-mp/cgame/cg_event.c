@@ -615,12 +615,56 @@ void CG_PainEvent( centity_t *cent, int health ) {
 	cent->pe.painDirection	^= 1;
 }
 
-void CG_ReattachLimb(centity_t *source)
-{
+void CG_ReattachLimb(centity_t *source) {
 	char *limbName;
 	char *stubCapName;
 
-	if (!demo15detected) {
+	if (mov_dismember.integer) {
+		int part;
+		for (part = 0; part < 8; part++) {
+			if (cg_entities[source->currentState.number].dism.cut[part] == qtrue) {
+				switch (part) {
+				case DISM_HEAD:
+					limbName = "head";
+					stubCapName = "torso_cap_head_off";
+					break;
+				case DISM_LHAND:
+					limbName = "l_hand";
+					stubCapName = "l_arm_cap_l_hand_off";
+					break;
+				case DISM_RHAND:
+					limbName = "r_hand";
+					stubCapName = "r_arm_cap_r_hand_off";
+					break;
+				case DISM_LARM:
+					limbName = "l_arm";
+					stubCapName = "torso_cap_l_arm_off";
+					break;
+				case DISM_RARM:
+					limbName = "r_arm";
+					stubCapName = "torso_cap_r_arm_off";
+					break;
+				case DISM_LLEG:
+					limbName = "l_leg";
+					stubCapName = "hips_cap_l_leg_off";
+					break;
+				case DISM_RLEG:
+					limbName = "r_leg";
+					stubCapName = "hips_cap_r_leg_off";
+					break;
+				case DISM_WAIST:
+					limbName = "torso";
+					stubCapName = "hips_cap_torso_off";
+					break;
+				default:
+					return;
+				}
+				trap_G2API_SetSurfaceOnOff(source->ghoul2, limbName, 0);
+				trap_G2API_SetSurfaceOnOff(source->ghoul2, stubCapName, 0x00000100);
+				cg_entities[source->currentState.number].dism.cut[part] = qfalse;
+			}
+		}
+	} else if (!demo15detected) {
 		switch (source->torsoBolt) {
 		case G2_MODELPART_HEAD:
 			limbName = "head";
@@ -687,10 +731,11 @@ void CG_ReattachLimb(centity_t *source)
 			break;
 		}
 	}
-
-	trap_G2API_SetSurfaceOnOff(source->ghoul2, limbName, 0);
-	trap_G2API_SetSurfaceOnOff(source->ghoul2, stubCapName, 0x00000100);
-
+	
+	if (!mov_dismember.integer) {
+		trap_G2API_SetSurfaceOnOff(source->ghoul2, limbName, 0);
+		trap_G2API_SetSurfaceOnOff(source->ghoul2, stubCapName, 0x00000100);
+	}
 	source->torsoBolt = 0;
 
 	source->ghoul2weapon = NULL;
@@ -787,7 +832,7 @@ static void CG_BodyQueueCopy(centity_t *cent, int clientNum, int knownWeapon)
 	}
 
 	//After we create the bodyqueue, regenerate any limbs on the real instance
-	if (source->torsoBolt) {
+	if (source->torsoBolt || mov_dismember.integer) {
 		CG_ReattachLimb(source);
 	}
 }
@@ -1092,6 +1137,7 @@ also called by CG_CheckPlayerstateEvents
 */
 #define	DEBUGNAME(x) if(cg_debugEvents.integer){CG_Printf(x"\n");}
 extern void CG_DemoEntityEvent( const centity_t *cent );
+extern void CG_DemoDismembermentEvent( centity_t *cent, vec3_t position );
 void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	entityState_t	*es;
 	int				event;
@@ -1118,6 +1164,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	}
 
 	CG_DemoEntityEvent( cent );
+	CG_DemoDismembermentEvent(cent,position);
 
 	clientNum = es->clientNum;
 	if ( clientNum < 0 || clientNum >= MAX_CLIENTS ) {
@@ -1941,6 +1988,8 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.teleInSound );
 			
 			cg.fallingToDeath = 0;
+			if (mov_dismember.integer)
+				CG_ReattachLimb(&cg_entities[es->number]);
 
 			if (tr.fraction == 1)
 				break;

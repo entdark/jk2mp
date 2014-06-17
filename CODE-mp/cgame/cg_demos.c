@@ -558,6 +558,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 
 	cg.frametime = (cg.time - cg.oldTime) + (cg.timeFraction - cg.oldTimeFraction);
 	if (cg.frametime < 0) {
+		int i;
 		cg.frametime = 0;
 		hadSkip = qtrue;
 		cg.oldTime = cg.time;
@@ -583,6 +584,9 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		cg.v_dmg_time = 0;
 		cg.fallingToDeath = 0;
 		trap_S_ClearLoopingSounds(qtrue);
+
+		for (i = 0; i < MAX_CLIENTS && mov_dismember.integer; i++)
+			CG_ReattachLimb(&cg_entities[i]);
 	} else {
 		hadSkip = qfalse;
 	}
@@ -1067,6 +1071,45 @@ void CG_DemoEntityEvent( const centity_t* cent ) {
 		}
 		break;
 	}
+}
+
+// Nerevar's way to produce dismemberment
+void CG_DemoDismembermentEvent( centity_t *cent, vec3_t position ) {
+	entityState_t *es = &cent->currentState;
+	if (!mov_dismember.integer)
+		return;
+	switch (es->event) {
+		case EV_OBITUARY:
+			{
+				vec3_t dir;
+				int target = es->otherEntityNum;
+				int attacker = es->otherEntityNum2;	
+				//int mod = es->eventParm;
+				centity_t *targetent = &cg_entities[target];
+				
+				cg_entities[target].dism.lastkiller = attacker;
+				cg_entities[target].dism.deathtime  = cg.time;
+						
+				VectorCopy(targetent->currentState.pos.trDelta,dir);
+			
+				dir[0] = dir[0]*(0.8 + random()*0.4);
+				dir[1] = dir[1]*(0.8 + random()*0.4);
+				dir[2] = dir[2]*(0.8 + random()*0.4);
+				demoSaberDismember(targetent,dir);		
+			}
+			break;
+		case EV_SABER_HIT:
+			if (es->eventParm) //Hit a person
+				demoCheckDismember(es->origin);
+			break;
+		default:
+			break;
+	}	
+	cg.dismemberTime = cg.time;
+}
+void CG_DemoDismembermentPlayer( centity_t *cent ) {
+	demoPlayerDismember(cent);
+	cg.dismemberTime = cg.time;
 }
 
 qboolean CG_DemosConsoleCommand( void ) {

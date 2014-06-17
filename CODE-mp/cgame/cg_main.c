@@ -541,6 +541,8 @@ vmCvar_t	mov_ratioFix;
 vmCvar_t	mov_saberTeamColour;
 vmCvar_t	mov_wallhack;
 
+vmCvar_t	mov_dismember;
+
 vmCvar_t	fx_Vibrate;
 vmCvar_t	fx_vfps;
 
@@ -739,6 +741,7 @@ Ghoul2 Insert End
 	{ &mov_ratioFix,		"mov_ratioFix",			"1",		CVAR_ARCHIVE	},
 	{ &mov_saberTeamColour,	"mov_saberTeamColour",	"1",		CVAR_ARCHIVE	},
 	{ &mov_wallhack,		"mov_wallhack",			"0",		CVAR_ARCHIVE	},
+	{ &mov_dismember,		"mov_dismember",		"0",		CVAR_ARCHIVE	},
 	{ &fx_Vibrate,			"fx_Vibrate",			"1",		CVAR_ARCHIVE	},
 	{ &fx_vfps,				"fx_vfps",				"1000",		CVAR_ARCHIVE	},
 	{ &fx_disruptTime,		"fx_disruptTime",		"150",		CVAR_ARCHIVE	},	//from smod
@@ -1145,8 +1148,7 @@ static void CG_RegisterSounds( void ) {
 	trap_S_RegisterSound("sound/weapons/force/pull.wav");
 	trap_S_RegisterSound("sound/weapons/force/push.wav");
 
-	if (cg_buildScript.integer)
-	{
+	if (cg_buildScript.integer) {
 		trap_S_RegisterSound("sound/chars/atst/ATSTcrash.wav");
 		trap_S_RegisterSound("sound/chars/atst/ATSTstart.wav");
 		trap_S_RegisterSound("sound/chars/atst/ATSTstep1.wav");
@@ -1158,8 +1160,7 @@ static void CG_RegisterSounds( void ) {
 		trap_S_RegisterSound("sound/weapons/atst/ATSTfire4.wav");
 	}
 
-	for (i=1 ; i<3 ; i++)
-	{
+	for (i=1 ; i<3 ; i++) {
 		trap_S_RegisterSound(va("sound/weapons/thermal/bounce%i.wav", i));
 	}
 

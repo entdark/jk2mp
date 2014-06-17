@@ -99,31 +99,68 @@ Leave expanding blood puffs behind gibs
 ================
 */
 void CG_BloodTrail( localEntity_t *le ) {
-	int		t;
-	int		t2;
-	int		step;
-	vec3_t	newOrigin;
-	localEntity_t	*blood;
+	if (!mov_dismember.integer) {
+		int		t;
+		int		t2;
+		int		step;
+		vec3_t	newOrigin;
+		localEntity_t	*blood;
 
-	step = 150;
-	t = step * ( (cg.time - cg.frametime + step ) / step );
-	t2 = step * ( cg.time / step );
+		step = 150;
+		t = step * ( (cg.time - cg.frametime + step ) / step );
+		t2 = step * ( cg.time / step );
 
-	for ( ; t <= t2; t += step ) {
-		BG_EvaluateTrajectory( &le->pos, t, newOrigin );
+		for ( ; t <= t2; t += step ) {
+			BG_EvaluateTrajectory( &le->pos, t, newOrigin );
 
-		blood = CG_SmokePuff( newOrigin, vec3_origin, 
-					  20,		// radius
-					  1, 1, 1, 1,	// color
-					  2000,		// trailTime
-					  t,		// startTime
-					  0,		// fadeInTime
-					  0,		// flags
-					  cgs.media.bloodTrailShader );
-		// use the optimized version
-		blood->leType = LE_FALL_SCALE_FADE;
-		// drop a total of 40 units over its lifetime
-		blood->pos.trDelta[2] = 40;
+			blood = CG_SmokePuff( newOrigin, vec3_origin, 
+						  20,		// radius
+						  1, 1, 1, 1,	// color
+						  2000,		// trailTime
+						  t,		// startTime
+						  0,		// fadeInTime
+						  0,		// flags
+						  cgs.media.bloodTrailShader );
+			// use the optimized version
+			blood->leType = LE_FALL_SCALE_FADE;
+			// drop a total of 40 units over its lifetime
+			blood->pos.trDelta[2] = 40;
+		}
+	} else {
+		int newBolt;
+		char *limbTagName;
+	
+		if (le->limbpart == DISM_HEAD) {
+			limbTagName = "*head_cap_torso";
+		} else if (le->limbpart == DISM_WAIST) {
+			limbTagName = "*torso_cap_hips";
+		} else if (le->limbpart == DISM_LARM) {
+			limbTagName = "*l_arm_cap_torso";
+		} else if (le->limbpart == DISM_RARM) {
+			limbTagName = "*r_arm_cap_torso";
+		} else if (le->limbpart == DISM_LHAND) {
+			limbTagName = "*l_hand_cap_l_arm";
+		} else if (le->limbpart == DISM_RHAND) {
+			limbTagName = "*r_hand_cap_r_arm";
+		} else if (le->limbpart == DISM_LLEG) {
+			limbTagName = "*l_leg_cap_hips";
+		}	else {
+			limbTagName = "*r_leg_cap_hips";
+		}	
+
+	
+		newBolt = trap_G2API_AddBolt( le->refEntity.ghoul2, 0, limbTagName );
+		if ( newBolt != -1 ) {
+			vec3_t boltOrg, boltAng;
+			mdxaBone_t			matrix;
+
+			trap_G2API_GetBoltMatrix(le->refEntity.ghoul2, 0, newBolt, &matrix, le->refEntity.angles, le->refEntity.origin, cg.time, cgs.gameModels, le->refEntity.modelScale);
+
+			trap_G2API_GiveMeVectorFromMatrix(&matrix, ORIGIN, boltOrg);
+			trap_G2API_GiveMeVectorFromMatrix(&matrix, NEGATIVE_Y, boltAng);
+
+			trap_FX_PlayEffectID(trap_FX_RegisterEffect("smoke_bolton"), boltOrg, boltAng);
+		}
 	}
 }
 
@@ -154,37 +191,77 @@ void CG_FragmentBounceMark( localEntity_t *le, trace_t *trace ) {
 	le->leMarkType = LEMT_NONE;
 }
 
+#define SABERBOUNCETIME 400   //time between LE bounce sounds 
+#define GIBBOUNCETIME 300
 /*
 ================
 CG_FragmentBounceSound
 ================
 */
 void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
-	if ( le->leBounceSoundType == LEBS_BLOOD ) {
-		// half the gibs will make splat sounds
-		/*
-		if ( rand() & 1 ) {
+	if (!mov_dismember.integer) {
+		if ( le->leBounceSoundType == LEBS_BLOOD ) {
+			// half the gibs will make splat sounds
+			/*
+			if ( rand() & 1 ) {
+				int r = rand()&3;
+				sfxHandle_t	s;
+
+				if ( r == 0 ) {
+					s = cgs.media.gibBounce1Sound;
+				} else if ( r == 1 ) {
+					s = cgs.media.gibBounce2Sound;
+				} else {
+					s = cgs.media.gibBounce3Sound;
+				}
+				trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
+			
+			}
+			*/
+		} else if ( le->leBounceSoundType == LEBS_BRASS ) {
+
+		}
+
+		// don't allow a fragment to make multiple bounce sounds,
+		// or it gets too noisy as they settle
+		le->leBounceSoundType = LEBS_NONE;
+	} else {
+		sfxHandle_t s = -1;
+	
+		if ( le->leFragmentType == LEFT_GIB) {
+			if (le->limbpart == DISM_WAIST) {   ///WAIST
+				int r = rand()&3;
+
+				if ( r == 0 ) {
+					s = trap_S_RegisterSound("sound/player/bodyfall_human1.wav");
+				} else if ( r == 1 ) {
+					s = trap_S_RegisterSound("sound/player/bodyfall_human2.wav");
+				} else {
+					s = trap_S_RegisterSound("sound/player/bodyfall_human3.wav");
+				}
+			
+			} else if (le->limbpart == DISM_RARM) { ///////ARM
+				s = trap_S_RegisterSound("sound/effects/desann_hand.wav");	
+			} else {
+				s = trap_S_RegisterSound("sound/movers/objects/objecthit.wav");
+			}
+		
+			le->bouncetime = cg.time + GIBBOUNCETIME;
+		} else if ( le->leFragmentType == LEFT_SABER ) {
 			int r = rand()&3;
-			sfxHandle_t	s;
 
 			if ( r == 0 ) {
-				s = cgs.media.gibBounce1Sound;
+				s = trap_S_RegisterSound("sound/weapons/saber/bounce1.wav");
 			} else if ( r == 1 ) {
-				s = cgs.media.gibBounce2Sound;
+				s = trap_S_RegisterSound("sound/weapons/saber/bounce2.wav");
 			} else {
-				s = cgs.media.gibBounce3Sound;
-			}
-			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
-			
+				s = trap_S_RegisterSound("sound/weapons/saber/bounce3.wav");
+			}		
+		
+			le->bouncetime = cg.time + SABERBOUNCETIME;
 		}
-		*/
-	} else if ( le->leBounceSoundType == LEBS_BRASS ) {
-
+		if (s != -1) trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_BODY, s );
 	}
-
-	// don't allow a fragment to make multiple bounce sounds,
-	// or it gets too noisy as they settle
-	le->leBounceSoundType = LEBS_NONE;
 }
 
 
@@ -214,6 +291,22 @@ void CG_ReflectVelocity( localEntity_t *le, trace_t *trace ) {
 		( trace->plane.normal[2] > 0 && 
 		( le->pos.trDelta[2] < 40 || le->pos.trDelta[2] < -cg.frametime * le->pos.trDelta[2] ) ) ) {
 		le->pos.trType = TR_STATIONARY;
+		
+		if (!mov_dismember.integer)
+			return;		
+		if (le->leFragmentType == LEFT_SABER) {
+			le->angles.trBase[0] = 90;
+		} else if (le->leFragmentType == LEFT_GIB) {
+			if (le->limbpart == DISM_WAIST) {
+				le->angles.trBase[0] = le->angles.trBase[2] = 0;
+			} else if (le->limbpart >= DISM_LHAND && le->limbpart <= DISM_RARM) {
+				le->angles.trBase[0] = 0;			
+			} else if (le->limbpart == DISM_LLEG || le->limbpart == DISM_RLEG) {
+				le->angles.trBase[0] = 0;
+				le->angles.trBase[2] = 0;		
+			}
+		}
+		AnglesToAxis(le->angles.trBase, le->refEntity.axis);
 	} else {
 
 	}
@@ -263,7 +356,10 @@ void CG_AddFragment( localEntity_t *le ) {
 
 		return;
 	}
-
+	
+	if (mov_dismember.integer && le->leFragmentType == LEFT_GIB)
+		CG_BloodTrail( le );
+	
 	// calculate new position
 	demoNowTrajectory( &le->pos, newOrigin );
 
@@ -283,7 +379,13 @@ void CG_AddFragment( localEntity_t *le ) {
 		trap_R_AddRefEntityToScene( &le->refEntity );
 
 		// add a blood trail
-		if ( le->leBounceSoundType == LEBS_BLOOD ) {
+		if ( mov_dismember.integer && le->leFragmentType == LEFT_GIB ) {
+			le->refEntity.origin[2] += 8;
+			trap_R_AddRefEntityToScene( &le->refEntity );
+		} else if ( mov_dismember.integer && le->leFragmentType == LEFT_SABER ) {
+			le->refEntity.origin[2] += 1;
+			trap_R_AddRefEntityToScene( &le->refEntity );
+		} else if ( le->leBounceSoundType == LEBS_BLOOD ) {
 			CG_BloodTrail( le );
 		}
 
@@ -298,16 +400,59 @@ void CG_AddFragment( localEntity_t *le ) {
 		return;
 	}
 
-	if (!trace.startsolid)
-	{
-		// leave a mark
-		CG_FragmentBounceMark( le, &trace );
+	if (!trace.startsolid) {
+		if (!mov_dismember.integer) {
+			// leave a mark
+			CG_FragmentBounceMark( le, &trace );
+			// do a bouncy sound
+			CG_FragmentBounceSound( le, &trace );
+		} else {
+			le->angles.trDelta[1] /= (1+random()*0.2);
+			le->angles.trDelta[2] /= (1+random()*0.2);
+		
+			if (le->leFragmentType == LEFT_SABER) {
+				le->angles.trBase[0] = ((le->angles.trBase[0]-90)/2)+90;
+				le->angles.trDelta[0] /= 2;
+			} else {
+				if (le->limbpart == DISM_WAIST) {
+					le->angles.trBase[0] /= 5;
+					le->angles.trDelta[0] /= 5;
+					le->angles.trBase[1] /= 2;
+					le->angles.trDelta[1] /= 2;
+					le->angles.trBase[2] /= 5;
+					le->angles.trDelta[2] /= 5;
+				} else if (le->limbpart >= DISM_LHAND && le->limbpart <= DISM_RARM) {
+					le->angles.trBase[0] /= 5;
+					le->angles.trDelta[0] /= 5;	
+					le->angles.trBase[1] /= 2;
+					le->angles.trDelta[1] /= 2;
+					le->angles.trBase[2] /= 2;
+					le->angles.trDelta[2] /= 2;	
+				} else if (le->limbpart == DISM_LLEG || le->limbpart == DISM_RLEG) {
+					le->angles.trBase[0] /= 5;
+					le->angles.trDelta[0] /= 5;	
+					le->angles.trBase[1] /= 2;
+					le->angles.trDelta[1] /= 2;
+					le->angles.trBase[2] = ((le->angles.trBase[2]-90)/5)+90;
+					le->angles.trDelta[2] /= 5;
+				}	else {
+					le->angles.trBase[0] /= 2;
+					le->angles.trDelta[0] /= 2;	
+					le->angles.trBase[1] /= 2;
+					le->angles.trDelta[1] /= 2;
+					le->angles.trBase[2] /= 2;
+					le->angles.trDelta[2] /= 2;				
+				}
 
-		// do a bouncy sound
-		CG_FragmentBounceSound( le, &trace );
+			}			
+			AnglesToAxis(le->angles.trBase, le->refEntity.axis);
+			// do a bouncy sound
+			if (le->bouncetime < cg.time) {
+				CG_FragmentBounceSound( le, &trace );
+			}
+		}
 
-		if (le->bounceSound)
-		{ //specified bounce sound (debris)
+		if (le->bounceSound) { //specified bounce sound (debris)
 			trap_S_StartSound(le->pos.trBase, ENTITYNUM_WORLD, CHAN_AUTO, le->bounceSound);
 		}
 

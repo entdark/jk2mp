@@ -170,6 +170,19 @@ typedef struct {
 //=================================================
 
 
+typedef enum {
+	DISM_HEAD = 0,
+	DISM_LHAND,
+	DISM_RHAND,
+	DISM_LARM,
+	DISM_RARM,
+	DISM_LLEG,
+	DISM_RLEG,
+	DISM_WAIST,
+	DISM_SABER,
+	DISM_TOTAL
+} dismpart_t;
+
 void demoNowTrajectory( const trajectory_t *tr, vec3_t result );
 // centity_t have a direct corespondence with gentity_t in the game, but
 // only the entityState_t is directly communicated to the cgame
@@ -257,6 +270,12 @@ typedef struct centity_s {
 
 	int				teamPowerEffectTime;
 	qboolean		teamPowerType; //0 regen, 1 heal, 2 drain, 3 absorb
+
+	struct {
+		qboolean cut[DISM_TOTAL];  //limbs cut off //DISM_*
+		int deathtime;    //timepoint of death
+		int lastkiller;	
+	} dism;
 } centity_t;
 
 
@@ -312,6 +331,12 @@ typedef enum {
 	LEBS_BRASS
 } leBounceSoundType_t;	// fragment local entities can make sounds on impacts
 
+typedef enum {
+	LEFT_NONE,
+	LEFT_GIB,
+	LEFT_SABER
+} leFragmentType_t;			// fragment type
+
 typedef struct localEntity_s {
 	struct localEntity_s	*prev, *next;
 	leType_t		leType;
@@ -343,6 +368,10 @@ typedef struct localEntity_s {
 
 	leMarkType_t		leMarkType;		// mark to leave on fragment impact
 	leBounceSoundType_t	leBounceSoundType;
+	
+	leFragmentType_t	leFragmentType;
+	int bouncetime;
+	int limbpart;
 
 	union {
 		struct {
@@ -920,6 +949,7 @@ Ghoul2 Insert End
 
 	qboolean		ntModDetected;
 
+	int				dismemberTime;
 	int				fallingToDeath;
 } cg_t;
 
@@ -1679,6 +1709,8 @@ extern	vmCvar_t	mov_captureCvars;
 extern	vmCvar_t	mov_ratioFix;
 extern	vmCvar_t	mov_saberTeamColour;
 extern	vmCvar_t	mov_wallhack;
+
+extern	vmCvar_t	mov_dismember;
 
 extern	vmCvar_t	fx_Vibrate;
 extern	vmCvar_t	fx_vfps;
