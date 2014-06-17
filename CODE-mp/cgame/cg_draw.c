@@ -3743,8 +3743,35 @@ void CG_DrawTimedMenus() {
 	}
 }
 
-void CG_DrawFlagStatus()
-{
+static qboolean CG_YourFlagDropped(void) {
+	if (cgs.gametype == GT_CTF || cgs.gametype == GT_CTY) {
+		int team = cgs.clientinfo[cg.playerCent->currentState.clientNum].team;
+		if (team == TEAM_RED && cgs.redflag == FLAG_DROPPED) {
+			return qtrue;
+		} else if (team == TEAM_BLUE && cgs.blueflag == FLAG_DROPPED) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+	return qfalse;
+}
+
+static qboolean CG_OtherFlagDropped(void) {
+	if (cgs.gametype == GT_CTF || cgs.gametype == GT_CTY) {
+		int team = cgs.clientinfo[cg.playerCent->currentState.number].team;
+		if (team == TEAM_RED && cgs.blueflag == FLAG_DROPPED) {
+			return qtrue;
+		} else if (team == TEAM_BLUE && cgs.redflag == FLAG_DROPPED) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+	return qfalse;
+}
+
+void CG_DrawFlagStatus() {
 	int myFlagTakenShader = 0;
 	int theirFlagShader = 0;
 	int team = 0;
@@ -3758,43 +3785,44 @@ void CG_DrawFlagStatus()
 		return;
 
 	team = cgs.clientinfo[cg.playerCent->currentState.number].team;
-
-	if (cgs.gametype == GT_CTY)
-	{
-		if (team == TEAM_RED)
-		{
+	if (cgs.gametype == GT_CTY) {
+		if (team == TEAM_RED) {
 			myFlagTakenShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_rflag_x" );
 			theirFlagShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_bflag_ys" );
-		}
-		else
-		{
+		} else {
 			myFlagTakenShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_bflag_x" );
 			theirFlagShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_rflag_ys" );
 		}
-	}
-	else
-	{
-		if (team == TEAM_RED)
-		{
+	} else {
+		if (team == TEAM_RED) {
 			myFlagTakenShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_rflag_x" );
 			theirFlagShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_bflag" );
-		}
-		else
-		{
+		} else {
 			myFlagTakenShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_bflag_x" );
 			theirFlagShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_rflag" );
 		}
 	}
+	
+	trap_R_SetColor( NULL );
 
-	if (CG_YourTeamHasFlag())
-	{
+	if (CG_YourTeamHasFlag()) {
 		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, theirFlagShader );
 		startDrawPos += ico_size+2;
+	} else if (CG_OtherFlagDropped()) {
+		vec4_t c = {1.0f, 1.0f, 1.0f, 0.5f};
+		trap_R_SetColor(c);
+		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, theirFlagShader );
+		startDrawPos += ico_size+2;
+		trap_R_SetColor( NULL );
 	}
 
-	if (CG_OtherTeamHasFlag())
-	{
+	if (CG_OtherTeamHasFlag()) {
 		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, myFlagTakenShader );
+	} else if (CG_YourFlagDropped()) {
+		vec4_t c = {1.0f, 1.0f, 1.0f, 0.5f};
+		trap_R_SetColor(c);
+		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, myFlagTakenShader );
+		trap_R_SetColor( NULL );
 	}
 }
 

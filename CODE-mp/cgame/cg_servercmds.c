@@ -199,6 +199,16 @@ static void CG_ParseWarmup( void ) {
 	cg.warmup = warmup;
 }
 
+//ent: Raz: This is a reverse map of flag statuses as seen in g_team.c
+//static char ctfFlagStatusRemap[] = { '0', '1', '*', '*', '2' };
+static char ctfFlagStatusRemap[] = { 	
+	FLAG_ATBASE,
+	FLAG_TAKEN,			// CTF
+	// server doesn't use FLAG_TAKEN_RED or FLAG_TAKEN_BLUE
+	// which was originally for 1-flag CTF.
+	FLAG_DROPPED
+};
+
 /*
 ================
 CG_SetConfigValues
@@ -206,8 +216,7 @@ CG_SetConfigValues
 Called on load to set the initial values from configure strings
 ================
 */
-void CG_SetConfigValues( void ) 
-{
+void CG_SetConfigValues( void ) {
 	const char *s;
 	const char *str;
 
@@ -215,9 +224,15 @@ void CG_SetConfigValues( void )
 	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
 	cgs.levelStartTime = atoi( CG_ConfigString( CS_LEVEL_START_TIME ) );
 	if( cgs.gametype == GT_CTF || cgs.gametype == GT_CTY ) {
+		int redflagId = 0, blueflagId = 0;
 		s = CG_ConfigString( CS_FLAGSTATUS );
-		cgs.redflag = s[0] - '0';
-		cgs.blueflag = s[1] - '0';
+		redflagId = s[0] - '0';
+		blueflagId = s[1] - '0';
+		// fix: proper flag statuses mapping for dropped flag
+		if ( redflagId >= 0 && redflagId < ARRAY_LEN( ctfFlagStatusRemap ) ) 
+			cgs.redflag = ctfFlagStatusRemap[redflagId];
+		if ( blueflagId >= 0 && blueflagId < ARRAY_LEN( ctfFlagStatusRemap ) ) 
+			cgs.blueflag = ctfFlagStatusRemap[blueflagId];
 	}
 	cg.warmup = atoi( CG_ConfigString( CS_WARMUP ) );
 
@@ -403,8 +418,12 @@ static void CG_ConfigStringModified( void ) {
 	} else if ( num == CS_FLAGSTATUS ) {
 		if( cgs.gametype == GT_CTF || cgs.gametype == GT_CTY ) {
 			// format is rb where its red/blue, 0 is at base, 1 is taken, 2 is dropped
-			cgs.redflag = str[0] - '0';
-			cgs.blueflag = str[1] - '0';
+			int redflagId = str[0] - '0', blueflagId = str[1] - '0';
+			//Raz: improved flag status remapping
+			if ( redflagId >= 0 && redflagId < ARRAY_LEN( ctfFlagStatusRemap ) ) 
+				cgs.redflag = ctfFlagStatusRemap[redflagId];
+			if ( blueflagId >= 0 && blueflagId < ARRAY_LEN( ctfFlagStatusRemap ) )  
+				cgs.blueflag = ctfFlagStatusRemap[blueflagId];
 		}
 	}
 	else if ( num == CS_SHADERSTATE ) {
