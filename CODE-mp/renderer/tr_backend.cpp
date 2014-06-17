@@ -539,7 +539,11 @@ void RB_BeginDrawingView (void) {
 	{
 		clearBits |= GL_STENCIL_BUFFER_BIT;
 	}
-	if (!(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) && !g_bRenderGlowingObjects) {
+	if (!(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)
+#ifdef JEDIACADEMY_GLOW
+		&& !g_bRenderGlowingObjects
+#endif
+		) {
 		if (mme_skykey->string[0] != '0') {
 			vec3_t skyColor;
 			clearBits |= GL_COLOR_BUFFER_BIT;

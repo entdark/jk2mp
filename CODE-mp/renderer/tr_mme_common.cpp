@@ -1,7 +1,10 @@
 #include "tr_mme.h"
 
+#ifdef JEDIACADEMY_GLOW
 extern GLuint pboIds[2];
+#endif
 void R_MME_GetShot( void* output ) {
+#ifdef JEDIACADEMY_GLOW
 	if (!mme_pbo->integer || r_stereoSeparation->value != 0) {
 		qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGB, GL_UNSIGNED_BYTE, output ); 
 	} else {
@@ -20,6 +23,9 @@ void R_MME_GetShot( void* output ) {
 		// back to conventional pixel operation
 		qglBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
 	}
+#else
+	qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGB, GL_UNSIGNED_BYTE, output ); 
+#endif
 }
 
 void R_MME_GetDepth( byte *output ) {

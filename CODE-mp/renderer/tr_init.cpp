@@ -1187,7 +1187,9 @@ extern qboolean Sys_LowPhysicalMemory();
 #define G2_VERT_SPACE_SERVER_SIZE 256
 #endif
 
+#ifdef JEDIACADEMY_GLOW
 GLuint pboIds[2];
+#endif
 /*
 ===============
 R_Init
@@ -1300,6 +1302,7 @@ void R_Init( void ) {
 	if ( err != GL_NO_ERROR )
 		ri.Printf (PRINT_ALL, "glGetError() = 0x%x\n", err);
 #endif
+#ifdef JEDIACADEMY_GLOW
 	{
 		// create 2 pixel buffer objects, you need to delete them when program exits.
 		// glBufferDataARB with NULL pointer reserves only memory space.
@@ -1312,6 +1315,7 @@ void R_Init( void ) {
 
 		qglBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
 	}
+#endif
 	ri.Printf( PRINT_ALL, "----- finished R_Init -----\n" );
 }
 
