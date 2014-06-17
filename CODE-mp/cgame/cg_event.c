@@ -229,7 +229,7 @@ clientkilled:
 	if ( cg.playerCent && attacker == cg.playerCent->currentState.clientNum ) {
 		char	*s;
 
-		if ( cgs.gametype < GT_TEAM && cgs.gametype != GT_TOURNAMENT ) {
+		if ( cgs.gametype < GT_TEAM && cgs.gametype != GT_TOURNAMENT && attacker == cg.snap->ps.clientNum ) {
 			if (cgs.gametype == GT_JEDIMASTER &&
 				attacker < MAX_CLIENTS &&
 				!ent->isJediMaster &&
