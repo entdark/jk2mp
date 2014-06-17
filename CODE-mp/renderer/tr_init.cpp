@@ -82,6 +82,7 @@ cvar_t	*r_facePlaneCull;
 cvar_t	*r_showcluster;
 cvar_t	*r_nocurves;
 
+cvar_t	*r_dlightStyle;
 cvar_t	*r_surfaceSprites;
 cvar_t	*r_surfaceWeather;
 
@@ -945,6 +946,7 @@ void R_Register( void )
 	r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
 	r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
 
+	r_dlightStyle = ri.Cvar_Get( "r_dlightStyle", "0", CVAR_ARCHIVE );
 	r_surfaceSprites = ri.Cvar_Get ("r_surfaceSprites", "1", CVAR_TEMP);
 	r_surfaceWeather = ri.Cvar_Get ("r_surfaceWeather", "0", CVAR_TEMP);
 

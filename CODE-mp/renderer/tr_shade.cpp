@@ -666,6 +666,324 @@ ProjectDlightTexture
 Perform dynamic lighting with another rendering pass
 ===================
 */
+
+static void ProjectDlightTexture2( void ) {
+	int		i, l;
+	vec3_t	origin;
+	byte	clipBits[SHADER_MAX_VERTEXES];
+	MAC_STATIC float	texCoordsArray[SHADER_MAX_VERTEXES][2];
+	MAC_STATIC float	oldTexCoordsArray[SHADER_MAX_VERTEXES][2];
+	MAC_STATIC float	vertCoordsArray[SHADER_MAX_VERTEXES][4];
+	unsigned int		colorArray[SHADER_MAX_VERTEXES];
+	glIndex_t	hitIndexes[SHADER_MAX_INDEXES];
+	int		numIndexes;
+	float	radius;
+	int		fogging;
+	shaderStage_t *dStage;
+	vec3_t	posa;
+	vec3_t	posb;
+	vec3_t	posc;
+	vec3_t	dist;
+	vec3_t	e1;
+	vec3_t	e2;
+	vec3_t	normal;
+	float	fac,modulate;
+	vec3_t	floatColor;
+	byte colorTemp[4];
+
+	int		needResetVerts=0;
+
+	if ( !backEnd.refdef.num_dlights ) 
+	{
+		return;
+	}
+
+	for ( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
+	{
+		dlight_t	*dl;
+
+		if ( !( tess.dlightBits & ( 1 << l ) ) ) {
+			continue;	// this surface definately doesn't have any of this light
+		}
+
+		dl = &backEnd.refdef.dlights[l];
+		VectorCopy( dl->transformed, origin );
+		radius = dl->radius / 2.0f;
+
+		int		clipall = 63;
+		for ( i = 0 ; i < tess.numVertexes ; i++) 
+		{
+			int		clip;
+			VectorSubtract( origin, tess.xyz[i], dist );
+
+			clip = 0;
+			if (  dist[0] < -radius ) 
+			{
+				clip |= 1;
+			}
+			else if ( dist[0] > radius ) 
+			{
+				clip |= 2;
+			}
+			if (  dist[1] < -radius ) 
+			{
+				clip |= 4;
+			}
+			else if ( dist[1] > radius ) 
+			{
+				clip |= 8;
+			}
+			if (  dist[2] < -radius ) 
+			{
+				clip |= 16;
+			}
+			else if ( dist[2] > radius ) 
+			{
+				clip |= 32;
+			}
+
+			clipBits[i] = clip;
+			clipall &= clip;
+		}
+		if ( clipall ) 
+		{
+			continue;	// this surface doesn't have any of this light
+		}
+		floatColor[0] = dl->color[0] * 255.0f;
+		floatColor[1] = dl->color[1] * 255.0f;
+		floatColor[2] = dl->color[2] * 255.0f;
+
+		// build a list of triangles that need light
+		numIndexes = 0;
+		for ( i = 0 ; i < tess.numIndexes ; i += 3 ) 
+		{
+			int		a, b, c;
+
+			a = tess.indexes[i];
+			b = tess.indexes[i+1];
+			c = tess.indexes[i+2];
+			if ( clipBits[a] & clipBits[b] & clipBits[c] ) 
+			{
+				continue;	// not lighted
+			}
+
+			// copy the vertex positions
+			VectorCopy(tess.xyz[a],posa);
+			VectorCopy(tess.xyz[b],posb);
+			VectorCopy(tess.xyz[c],posc);
+
+			VectorSubtract( posa, posb,e1);
+			VectorSubtract( posc, posb,e2);
+			CrossProduct(e1,e2,normal);
+// rjr - removed for hacking 			if ( (!r_dlightBacks->integer && DotProduct(normal,origin)-DotProduct(normal,posa) <= 0.0f) || // backface
+			if ( DotProduct(normal,origin)-DotProduct(normal,posa) <= 0.0f || // backface
+				DotProduct(normal,normal) < 1E-8f) // junk triangle
+			{
+				continue;
+			}
+			VectorNormalize(normal);
+			fac=DotProduct(normal,origin)-DotProduct(normal,posa);
+			if (fac >= radius)  // out of range
+			{
+				continue;
+			}
+			modulate = 1.0f-((fac*fac) / (radius*radius));
+			fac = 0.5f/sqrtf(radius*radius - fac*fac);
+
+			// save the verts
+			VectorCopy(posa,vertCoordsArray[numIndexes]);
+			VectorCopy(posb,vertCoordsArray[numIndexes+1]);
+			VectorCopy(posc,vertCoordsArray[numIndexes+2]);
+
+			// now we need e1 and e2 to be an orthonormal basis
+			if (DotProduct(e1,e1) > DotProduct(e2,e2))
+			{
+				VectorNormalize(e1);
+				CrossProduct(e1,normal,e2);
+			}
+			else
+			{
+				VectorNormalize(e2);
+				CrossProduct(normal,e2,e1);
+			}
+			VectorScale(e1,fac,e1);
+			VectorScale(e2,fac,e2);
+
+			VectorSubtract( posa, origin,dist);
+			texCoordsArray[numIndexes][0]=DotProduct(dist,e1)+0.5f;
+			texCoordsArray[numIndexes][1]=DotProduct(dist,e2)+0.5f;
+
+			VectorSubtract( posb, origin,dist);
+			texCoordsArray[numIndexes+1][0]=DotProduct(dist,e1)+0.5f;
+			texCoordsArray[numIndexes+1][1]=DotProduct(dist,e2)+0.5f;
+
+			VectorSubtract( posc, origin,dist);
+			texCoordsArray[numIndexes+2][0]=DotProduct(dist,e1)+0.5f;
+			texCoordsArray[numIndexes+2][1]=DotProduct(dist,e2)+0.5f;
+
+			if ((texCoordsArray[numIndexes][0] < 0.0f && texCoordsArray[numIndexes+1][0] < 0.0f && texCoordsArray[numIndexes+2][0] < 0.0f) ||
+				(texCoordsArray[numIndexes][0] > 1.0f && texCoordsArray[numIndexes+1][0] > 1.0f && texCoordsArray[numIndexes+2][0] > 1.0f) ||
+				(texCoordsArray[numIndexes][1] < 0.0f && texCoordsArray[numIndexes+1][1] < 0.0f && texCoordsArray[numIndexes+2][1] < 0.0f) ||
+				(texCoordsArray[numIndexes][1] > 1.0f && texCoordsArray[numIndexes+1][1] > 1.0f && texCoordsArray[numIndexes+2][1] > 1.0f) )
+			{
+				continue; // didn't end up hitting this tri
+			}
+			/* old code, get from the svars = wrong
+			oldTexCoordsArray[numIndexes][0]=tess.svars.texcoords[0][a][0];
+			oldTexCoordsArray[numIndexes][1]=tess.svars.texcoords[0][a][1];
+			oldTexCoordsArray[numIndexes+1][0]=tess.svars.texcoords[0][b][0];
+			oldTexCoordsArray[numIndexes+1][1]=tess.svars.texcoords[0][b][1];
+			oldTexCoordsArray[numIndexes+2][0]=tess.svars.texcoords[0][c][0];
+			oldTexCoordsArray[numIndexes+2][1]=tess.svars.texcoords[0][c][1];
+			*/
+			oldTexCoordsArray[numIndexes][0]=tess.texCoords[a][0][0];
+			oldTexCoordsArray[numIndexes][1]=tess.texCoords[a][0][1];
+			oldTexCoordsArray[numIndexes+1][0]=tess.texCoords[b][0][0];
+			oldTexCoordsArray[numIndexes+1][1]=tess.texCoords[b][0][1];
+			oldTexCoordsArray[numIndexes+2][0]=tess.texCoords[c][0][0];
+			oldTexCoordsArray[numIndexes+2][1]=tess.texCoords[c][0][1];
+
+			colorTemp[0] = myftol(floatColor[0] * modulate);
+			colorTemp[1] = myftol(floatColor[1] * modulate);
+			colorTemp[2] = myftol(floatColor[2] * modulate);
+			colorTemp[3] = 255;
+			colorArray[numIndexes]=*(unsigned int *)colorTemp;
+			colorArray[numIndexes+1]=*(unsigned int *)colorTemp;
+			colorArray[numIndexes+2]=*(unsigned int *)colorTemp;
+
+			hitIndexes[numIndexes] = numIndexes;
+			hitIndexes[numIndexes+1] = numIndexes+1;
+			hitIndexes[numIndexes+2] = numIndexes+2;
+			numIndexes += 3;
+
+			if (numIndexes>=SHADER_MAX_VERTEXES-3)
+			{
+				break; // we are out of space, so we are done :)
+			}
+		}
+
+		if ( !numIndexes ) {
+			continue;
+		}
+
+		//don't have fog enabled when we redraw with alpha test, or it will double over
+		//and screw the tri up -rww
+		if (//r_drawfog->value == 2 && 
+			tr.world &&
+			(tess.fogNum == tr.world->globalFog || tess.fogNum == tr.world->numfogs))
+		{
+			fogging = qglIsEnabled(GL_FOG);
+
+			if (fogging)
+			{
+				qglDisable(GL_FOG);
+			}
+		}
+		else
+		{
+			fogging = 0;
+		}
+
+
+		dStage = NULL;
+		if (tess.shader && qglActiveTextureARB)
+		{
+			int i = 0;
+			while (i < tess.shader->numUnfoggedPasses)
+			{
+				const int blendBits = (GLS_SRCBLEND_BITS+GLS_DSTBLEND_BITS);
+				if (((tess.shader->stages[i]->bundle[0].image && !tess.shader->stages[i]->bundle[0].isLightmap && !tess.shader->stages[i]->bundle[0].numTexMods && tess.shader->stages[i]->bundle[0].tcGen != TCGEN_ENVIRONMENT_MAPPED && tess.shader->stages[i]->bundle[0].tcGen != TCGEN_FOG) ||
+					 (tess.shader->stages[i]->bundle[1].image && !tess.shader->stages[i]->bundle[1].isLightmap && !tess.shader->stages[i]->bundle[1].numTexMods && tess.shader->stages[i]->bundle[1].tcGen != TCGEN_ENVIRONMENT_MAPPED && tess.shader->stages[i]->bundle[1].tcGen != TCGEN_FOG)) &&
+					(tess.shader->stages[i]->stateBits & blendBits) == 0 )
+				{ //only use non-lightmap opaque stages
+                    dStage = tess.shader->stages[i];
+					break;
+				}
+				i++;
+			}
+		}
+		if (!needResetVerts)
+		{
+			needResetVerts=1;
+			if (qglUnlockArraysEXT) 
+			{
+				qglUnlockArraysEXT();
+				GLimp_LogComment( "glUnlockArraysEXT\n" );
+			}
+		}
+		qglVertexPointer (3, GL_FLOAT, 16, vertCoordsArray);	// padded for SIMD
+
+		if (dStage)
+		{
+			GL_SelectTexture( 0 );
+			GL_State(0);
+			qglTexCoordPointer( 2, GL_FLOAT, 0, oldTexCoordsArray[0] );
+			if (dStage->bundle[0].image && !dStage->bundle[0].isLightmap && !dStage->bundle[0].numTexMods && dStage->bundle[0].tcGen != TCGEN_ENVIRONMENT_MAPPED && dStage->bundle[0].tcGen != TCGEN_FOG)
+			{
+				R_BindAnimatedImage( &dStage->bundle[0] );
+			}
+			else
+			{
+				R_BindAnimatedImage( &dStage->bundle[1] );
+			}
+
+			GL_SelectTexture( 1 );
+			qglEnable( GL_TEXTURE_2D );
+			qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			qglTexCoordPointer( 2, GL_FLOAT, 0, texCoordsArray[0] );
+			qglEnableClientState( GL_COLOR_ARRAY );
+			qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, colorArray );
+			GL_Bind( tr.dlightImage );
+			GL_TexEnv( GL_MODULATE );
+
+
+			GL_State(GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL);// | GLS_ATEST_GT_0);
+
+			R_DrawElements( numIndexes, hitIndexes );
+
+			qglDisable( GL_TEXTURE_2D );
+			GL_SelectTexture(0);
+		}
+		else
+		{
+			qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			qglTexCoordPointer( 2, GL_FLOAT, 0, texCoordsArray[0] );
+
+			qglEnableClientState( GL_COLOR_ARRAY );
+			qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, colorArray );
+
+			GL_Bind( tr.dlightImage );
+			// include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
+			// where they aren't rendered
+			if ( dl->additive ) {
+				GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
+			}
+			else {
+				GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
+			}
+
+			R_DrawElements( numIndexes, hitIndexes );
+		}
+
+		if (fogging)
+		{
+			qglEnable(GL_FOG);
+		}
+
+		backEnd.pc.c_totalIndexes += numIndexes;
+		backEnd.pc.c_dlightIndexes += numIndexes;
+	}
+	if (needResetVerts)
+	{
+		qglVertexPointer (3, GL_FLOAT, 16, tess.xyz);	// padded for SIMD
+		if (qglLockArraysEXT)
+		{
+			qglLockArraysEXT(0, tess.numVertexes);
+			GLimp_LogComment( "glLockArraysEXT\n" );
+		}
+	}
+}
+
 static void ProjectDlightTexture( void ) {
 	int		i, l;
 	vec3_t	origin;
@@ -684,8 +1002,10 @@ static void ProjectDlightTexture( void ) {
 		return;
 	}
 
-	if (r_newDLights->integer)
-	{
+	if (r_dlightStyle->integer>0) {
+		ProjectDlightTexture2();
+		return;
+	} else if (r_newDLights->integer) {
 		NewProjectDlightTexture();
 		return;
 	}
