@@ -265,7 +265,7 @@ void CL_Record_f( void ) {
 		return;
 	}
 
-	if ( !Cvar_VariableValue( "g_synchronousClients" ) ) {
+	if ( NET_IsLocalAddress( clc.serverAddress ) && !Cvar_VariableValue( "g_synchronousClients" ) ) {
 		Com_Printf ("The server must have 'g_synchronousClients 1' set for demos\n");
 		return;
 	}
@@ -282,8 +282,8 @@ void CL_Record_f( void ) {
 			CL_DemoFilename( number, demoName );
 			Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", demoName, PROTOCOL_VERSION );
 
-			len = FS_ReadFile( name, NULL );
-			if ( len <= 0 ) {
+//			len = FS_ReadFile( name, NULL );
+			if ( !FS_FileExists( name )/*len <= 0*/ ) {
 				break;	// file doesn't exist
 			}
 		}
