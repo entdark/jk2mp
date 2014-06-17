@@ -166,6 +166,7 @@ void cameraMove( void );
 void cameraMoveDirect( void );
 void cameraUpdate( int time, float timeFraction );
 void cameraDraw( int time, float timeFraction );
+void cameraPointReset( demoCameraPoint_t *point );
 void demoCameraCommand_f(void);
 void cameraSave( fileHandle_t fileHandle );
 qboolean cameraParse( BG_XMLParse_t *parse, const struct BG_XMLParseBlock_s *fromBlock, void *data);
