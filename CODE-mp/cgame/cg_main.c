@@ -627,7 +627,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 
 	{ &cg_swingAngles, "cg_swingAngles", "1", 0 },
 
-	{ &cg_oldPainSounds, "cg_oldPainSounds", "0", 0 },
+	{ &cg_oldPainSounds, "cg_oldPainSounds", "0", CVAR_ARCHIVE },
 
 #ifdef G2_COLLISION_ENABLED
 	{ &cg_saberModelTraceEffect, "cg_saberModelTraceEffect", "0", 0 },
@@ -639,18 +639,18 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_saberDynamicMarkTime, "cg_saberDynamicMarkTime", "60000", 0 },
 
 	{ &cg_saberContact, "cg_saberContact", "1", 0 },
-	{ &cg_saberTrail, "cg_saberTrail", "1", 0 },
+	{ &cg_saberTrail, "cg_saberTrail", "1", CVAR_ARCHIVE },
 
 	{ &cg_duelHeadAngles, "cg_duelHeadAngles", "0", 0 },
 
-	{ &cg_speedTrail, "cg_speedTrail", "1", 0 },
-	{ &cg_auraShell, "cg_auraShell", "1", 0 },
+	{ &cg_speedTrail, "cg_speedTrail", "1", CVAR_ARCHIVE },
+	{ &cg_auraShell, "cg_auraShell", "1", CVAR_ARCHIVE },
 
 	{ &cg_animBlend, "cg_animBlend", "1", 0 },
 
 	{ &cg_dismember, "cg_dismember", "0", CVAR_ARCHIVE },
 
-	{ &cg_thirdPerson, "cg_thirdPerson", "0", 0 },
+	{ &cg_thirdPerson, "cg_thirdPerson", "0", CVAR_ARCHIVE },
 	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "80", CVAR_CHEAT },
 	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT },
 	{ &cg_thirdPersonPitchOffset, "cg_thirdPersonPitchOffset", "0", CVAR_CHEAT },
