@@ -186,12 +186,6 @@ int		max_polyverts;
 cvar_t	*r_modelpoolmegs;
 
 
-//mme
-cvar_t	*mme_fps;
-cvar_t	*mme_name;
-cvar_t	*mme_focus;
-
-
 /*
 Ghoul2 Insert Start
 */
