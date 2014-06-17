@@ -1724,17 +1724,14 @@ extern	vmCvar_t	fx_disruptSpiral;
 extern	vmCvar_t	fx_disruptCoreColor;
 extern	vmCvar_t	fx_disruptSpiralColor;
 
-#ifdef TRUEVIEW
 extern	vmCvar_t	cg_trueEyePosition;
 extern	vmCvar_t	cg_trueFlip;
 extern	vmCvar_t	cg_trueFOV;
 extern	vmCvar_t	cg_trueGuns;
-extern	vmCvar_t	cg_trueInvertSaber;
 extern	vmCvar_t	cg_trueMoveRoll;
 extern	vmCvar_t	cg_trueRoll;
-extern	vmCvar_t	cg_trueSaberOnly;
+extern	vmCvar_t	cg_trueSaber;
 extern	vmCvar_t	cg_trueSpin;
-#endif
 
 
 /*
