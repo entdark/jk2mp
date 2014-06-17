@@ -2296,11 +2296,11 @@ static void CG_DrawDisconnect( void ) {
 
 	if (cg.mMapChange) {			
 		s = CG_GetStripEdString("INGAMETEXT", "SERVER_CHANGING_MAPS");	// s = "Server Changing Maps";			
-		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
+		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH*cgs.widthRatioCoef;
 		CG_DrawBigString( 320 - w/2, 100, s, 1.0F);
 
 		s = CG_GetStripEdString("INGAMETEXT", "PLEASE_WAIT");	// s = "Please wait...";
-		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
+		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH*cgs.widthRatioCoef;
 		CG_DrawBigString( 320 - w/2, 200, s, 1.0F);
 		return;
 	}
@@ -2315,7 +2315,7 @@ static void CG_DrawDisconnect( void ) {
 
 	// also add text in center of screen
 	s = CG_GetStripEdString("INGAMETEXT", "CONNECTION_INTERRUPTED"); // s = "Connection Interrupted"; // bk 010215 - FIXME
-	w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
+	w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH*cgs.widthRatioCoef;
 	CG_DrawBigString( 320 - w/2, 100, s, 1.0F);
 
 	// blink the icon
@@ -2323,10 +2323,10 @@ static void CG_DrawDisconnect( void ) {
 		return;
 	}
 
-	x = 640 - 48;
+	x = 640 - 48*cgs.widthRatioCoef;
 	y = 480 - 48;
 
-	CG_DrawPic( x, y, 48, 48, trap_R_RegisterShader("gfx/2d/net.tga" ) );
+	CG_DrawPic( x, y, 48*cgs.widthRatioCoef, 48, trap_R_RegisterShader("gfx/2d/net.tga" ) );
 }
 
 
@@ -3632,7 +3632,7 @@ static void CG_DrawWarmup( void ) {
 	if ( sec < 0 ) {
 //		s = "Waiting for players";		
 		s = CG_GetStripEdString("INGAMETEXT", "WAITING_FOR_PLAYERS");
-		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
+		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH*cgs.widthRatioCoef;
 		CG_DrawBigString(320 - w / 2, 24, s, 1.0F);
 		cg.warmupCount = 0;
 		return;
