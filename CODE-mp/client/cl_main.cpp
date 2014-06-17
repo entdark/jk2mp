@@ -612,7 +612,8 @@ CL_ShutdownAll
 =====================
 */
 void CL_ShutdownAll(void) {
-
+	if(clc.demorecording)
+		CL_StopRecord_f();
 	// clear sounds
 	S_DisableSounds();
 	// shutdown CGame
