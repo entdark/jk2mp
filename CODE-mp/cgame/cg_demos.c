@@ -417,7 +417,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	static qboolean intermission = qfalse;
 	float stereoSep = CG_Cvar_Get( "r_stereoSeparation" );
 
-	int inwater;
+	int inwater, entityNum;
 	vec4_t hcolor = {0, 0, 0, 0};
 
 	if (!demo.initDone) {
