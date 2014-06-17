@@ -97,8 +97,8 @@ typedef struct {
 	void	(*GetBModelVerts)( int bmodelIndex, vec3_t *vec, vec3_t normal );
 
 	//mme
-	void	(*Capture)( const char *baseName, float fps, float focus );
-	void	(*CaptureStereo)( const char *baseName, float fps, float focus );
+	void	(*Capture)( const char *baseName, float fps, float focus, float radius );
+	void	(*CaptureStereo)( const char *baseName, float fps, float focus, float radius );
 	void	(*BlurInfo)( int* total, int* index );
 	void	(*DemoRandomSeed)( int time, float timeFraction );
 	void	(*ClearDecals)( void );

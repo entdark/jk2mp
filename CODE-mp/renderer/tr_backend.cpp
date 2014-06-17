@@ -643,12 +643,12 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 	// we don't want to pump the event loop too often and waste time, so
 	// we are going to check every shader change
-	macEventTime = ri.Milliseconds() + MAC_EVENT_PUMP_MSEC;
+	macEventTime = ri.Milliseconds()*ri.Cvar_VariableValue( "timescale" ) + MAC_EVENT_PUMP_MSEC;
 #endif
 
 #ifdef JEDIACADEMY_GLOW
-	if (g_bRenderGlowingObjects)
-	{ //only shadow on initial passes
+	if (g_bRenderGlowingObjects) {
+	//only shadow on initial passes
 		didShadowPass = true;
 	}
 #endif
@@ -668,27 +668,31 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	oldDlighted = qfalse;
 	oldSort = (uint64_t) -1;
 	depthRange = qfalse;
+	
+	// Clear for endsurface first run
+	tess.numIndexes = 0;
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
 	if (!(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
 		backEnd.sceneZfar = backEnd.viewParms.zFar;
 	}
 
-	for (i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++) {
-		if (*drawSurf->surface < 0)
+	for (i = 0, drawSurf = drawSurfs; i < numDrawSurfs && drawSurf; i++, drawSurf++) {
+/*		if (!drawSurf->surface)
 			continue;
-		
-		if ( drawSurf->sort == oldSort ) {
+		if (!*drawSurf->surface)
+			continue;
+		if (*drawSurf->surface < SF_BAD || *drawSurf->surface >= SF_NUM_SURFACE_TYPES)
+			continue;
+*/		if ( drawSurf->sort == oldSort ) {
 			// fast path, same as previous sort
 			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
 			continue;
 		}
-
 #ifdef JEDIACADEMY_GLOW
 		R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
 		// If we're rendering glowing objects, but this shader has no stages with glow, skip it!
-		if ( g_bRenderGlowingObjects && !shader->hasGlow )
-		{
+		if ( g_bRenderGlowingObjects && !shader->hasGlow ) {
 			shader = oldShader;
 			entityNum = oldEntityNum;
 			fogNum = oldFogNum;
@@ -711,7 +715,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 #ifdef __MACOS__	// crutch up the mac's limited buffer queue size
 				int		t;
 
-				t = ri.Milliseconds();
+				t = ri.Milliseconds()*ri.Cvar_VariableValue( "timescale" );
 				if ( t > macEventTime ) {
 					macEventTime = t + MAC_EVENT_PUMP_MSEC;
 					Sys_PumpEvents();
@@ -1188,34 +1192,17 @@ const void	*RB_DrawSurfs( const void *data ) {
 	backEnd.refdef = cmd->refdef;
 	backEnd.viewParms = cmd->viewParms;
 	//Jitter the camera origin
-	if ( !backEnd.viewParms.isPortal
-		&& !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)
-		&& r_stereoSeparation->value == 0) {
-//		int i;
+	if ( !backEnd.viewParms.isPortal && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) ) {
 		float x, y;
-		if ( R_MME_JitterOrigin( &x, &y ) ) {
+		if ( (r_stereoSeparation->value <= 0 && R_MME_JitterOrigin( &x, &y ))
+			|| (r_stereoSeparation->value > 0 && R_MME_JitterOriginStereo( &x, &y ))) {
 			orientationr_t* or = &backEnd.viewParms.ori;
 			orientationr_t* world = &backEnd.viewParms.world;
 
-//			VectorScale( or->axis[0], 0.5, or->axis[0] );
-//			VectorScale( or->axis[1], 0.3, or->axis[1] );
-//			VectorScale( or->axis[2], 0.8, or->axis[2] );
 			VectorMA( or->origin, x, or->axis[1], or->origin );
 			VectorMA( or->origin, y, or->axis[2], or->origin );
-//			or->origin[2] += 4000;
-//			or->origin[2] += 0.1 * x;
 			R_RotateForWorld( or, world );
-//			for ( i = 0; i < 16; i++ ) {
-//				int r = (rand() & 0xffff ) - 0x4000;
-//				world->modelMatrix[i] *= (0.9 + r * 0.0001);
-//				or->modelMatrix[i] *= (0.9 + r * 0.0001);
-//			}
-		}// else { 	
-//			for ( i = 0; i < 16; i++ ) {
-//				int r = (rand() & 0xffff ) - 0x4000;
-//				backEnd.viewParms.world.modelMatrix[i] *= (0.9 + r * 0.0001);
-//			}
-//		}
+		}
 	}
 	RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
 
@@ -1408,6 +1395,8 @@ const void	*RB_SwapBuffers( const void *data ) {
 	RB_RenderWorldEffects();
 
 	cmd = (const swapBuffersCommand_t *)data;
+	
+	backEnd.projection2D = qfalse;
 
 	r_capturingDofOrStereo = qfalse;
 	r_latestDofOrStereoFrame = qfalse;
@@ -1422,7 +1411,6 @@ const void	*RB_SwapBuffers( const void *data ) {
 			return (const void *)NULL;
 		}
 	}
-
 	// we measure overdraw by reading back the stencil buffer and
 	// counting up the number of increments that have happened
 	if ( r_measureOverdraw->integer ) {
@@ -1472,16 +1460,9 @@ const void	*RB_SwapBuffers( const void *data ) {
 
     GLimp_EndFrame();
 
-	backEnd.projection2D = qfalse;
-
 	return (const void *)(cmd + 1);
 }
 
-
-const void	*RB_IncDataCapture( const void *data ) {
-	const captureCommand_t *cmd = (const captureCommand_t *)data;
-	return (const void *)(cmd + 1);
-}
 
 /*
 ====================
@@ -1526,7 +1507,7 @@ again:
 			break;
 		case RC_SWAP_BUFFERS:
 			data = RB_SwapBuffers( data );
-			if ( (int)data == -1)
+			if ( (int)data == NULL)
 				goto again;
 			break;
 		case RC_CAPTURE:

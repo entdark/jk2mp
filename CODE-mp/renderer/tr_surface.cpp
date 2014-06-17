@@ -369,8 +369,7 @@ void RB_SurfaceTriangles( srfTriangles_t *srf ) {
 RB_SurfaceBeam
 ==============
 */
-void RB_SurfaceBeam( void ) 
-{
+void RB_SurfaceBeam( void ) {
 #define NUM_BEAM_SEGS 6
 	refEntity_t *e;
 	int	i;
@@ -424,8 +423,7 @@ void RB_SurfaceBeam( void )
 //------------------
 // DoSprite
 //------------------
-static void DoSprite( vec3_t origin, float radius, float rotation ) 
-{
+static void DoSprite( vec3_t origin, float radius, float rotation ) {
 	float	s, c;
 	float	ang;
 	vec3_t	left, up;
@@ -451,20 +449,16 @@ static void DoSprite( vec3_t origin, float radius, float rotation )
 //------------------
 // RB_SurfaceSaber
 //------------------
-static void RB_SurfaceSaberGlow()
-{ 
+static void RB_SurfaceSaberGlow() { 
 	vec3_t		end;
-	refEntity_t *e;
-
-	e = &backEnd.currentEntity->e;
+	refEntity_t *e = &backEnd.currentEntity->e;
+	float		radius = e->radius;
 
 	// Render the glow part of the blade
-	for ( float i = e->saberLength; i > 0; i -= e->radius * 0.65f )
-	{
+	for ( float i = e->saberLength; i > 0; i -= radius * 0.65f ) {
 		VectorMA( e->origin, i, e->axis[0], end );
-
 		DoSprite( end, e->radius, 0.0f );//random() * 360.0f );
-		e->radius += 0.017f;
+		radius += 0.017f;
 	}
 
 	// Big hilt sprite
@@ -492,8 +486,7 @@ RB_SurfaceLine
 //		startRGB, endRGB
 //		
 
-static void DoLine( const vec3_t start, const vec3_t end, const vec3_t up, float spanWidth )
-{
+static void DoLine( const vec3_t start, const vec3_t end, const vec3_t up, float spanWidth ) {
 	float		spanWidth2;
 	int			vbase;
 
@@ -549,8 +542,7 @@ static void DoLine( const vec3_t start, const vec3_t end, const vec3_t up, float
 	tess.indexes[tess.numIndexes++] = vbase + 3;
 }
 
-static void DoLine2( const vec3_t start, const vec3_t end, const vec3_t up, float spanWidth, float spanWidth2 )
-{
+static void DoLine2( const vec3_t start, const vec3_t end, const vec3_t up, float spanWidth, float spanWidth2 ) {
 	int			vbase;
 
 	RB_CHECKOVERFLOW( 4, 6 );
@@ -603,8 +595,7 @@ static void DoLine2( const vec3_t start, const vec3_t end, const vec3_t up, floa
 	tess.indexes[tess.numIndexes++] = vbase + 3;
 }
 
-static void DoLine_Oriented( const vec3_t start, const vec3_t end, const vec3_t up, float spanWidth )
-{
+static void DoLine_Oriented( const vec3_t start, const vec3_t end, const vec3_t up, float spanWidth ) {
 	float		spanWidth2;
 	int			vbase;
 
@@ -662,8 +653,7 @@ static void DoLine_Oriented( const vec3_t start, const vec3_t end, const vec3_t 
 //-----------------
 // RB_SurfaceLine
 //-----------------
-void RB_SurfaceLine( void ) 
-{
+void RB_SurfaceLine( void ) {
 	refEntity_t *e;
 	vec3_t		right;
 	vec3_t		start, end;
@@ -683,8 +673,7 @@ void RB_SurfaceLine( void )
 	DoLine( start, end, right, e->radius);
 }
 
-void RB_SurfaceOrientedLine( void ) 
-{
+void RB_SurfaceOrientedLine( void ) {
 	refEntity_t *e;
 	vec3_t		right;
 	vec3_t		start, end;
@@ -709,8 +698,7 @@ RB_SurfaceCylinder
 #define NUM_CYLINDER_SEGMENTS 32
 
 // FIXME: use quad stamp?
-static void DoCylinderPart(polyVert_t *verts)
-{
+static void DoCylinderPart(polyVert_t *verts) {
 	int			vbase;
 	int			i;
 
@@ -718,8 +706,7 @@ static void DoCylinderPart(polyVert_t *verts)
 
 	vbase = tess.numVertexes;
 
-	for (i=0; i<4; i++)
-	{
+	for (i=0; i<4; i++) {
 		VectorCopy( verts->xyz, tess.xyz[tess.numVertexes] );
 		tess.texCoords[tess.numVertexes][0][0] = verts->st[0];
 		tess.texCoords[tess.numVertexes][0][1] = verts->st[1];
@@ -744,8 +731,7 @@ static void DoCylinderPart(polyVert_t *verts)
 // e->oldorigin holds the top point
 // e->radius holds the radius
 
-void RB_SurfaceCylinder( void )
-{
+void RB_SurfaceCylinder( void ) {
 	static polyVert_t	lower_points[NUM_CYLINDER_SEGMENTS], upper_points[NUM_CYLINDER_SEGMENTS], verts[4];
 	vec3_t		vr, vu, midpoint, v1;
 	float		detail, length;
@@ -770,13 +756,9 @@ void RB_SurfaceCylinder( void )
 	segments = NUM_CYLINDER_SEGMENTS * detail;
 
 	// 3 is the absolute minimum, but the pop between 3-8 is too noticeable
-	if ( segments < 8 )
-	{
+	if ( segments < 8 ) {
 		segments = 8;
-	}
-
-	if ( segments > NUM_CYLINDER_SEGMENTS )
-	{
+	} else if ( segments > NUM_CYLINDER_SEGMENTS ) {
 		segments = NUM_CYLINDER_SEGMENTS;
 	}
 
@@ -789,8 +771,7 @@ void RB_SurfaceCylinder( void )
 	// Calculate the step around the cylinder
 	detail = 360.0f / (float)segments;
 
-	for ( i = 0; i < segments; i++ )
-	{
+	for ( i = 0; i < segments; i++ ) {
 		//Upper ring
 		RotatePointAroundVector( upper_points[i].xyz, e->axis[0], vu, detail * i );
 		VectorAdd( upper_points[i].xyz, e->origin, upper_points[i].xyz );
@@ -803,8 +784,7 @@ void RB_SurfaceCylinder( void )
 	// Calculate the texture coords so the texture can wrap around the whole cylinder
 	detail = 1.0f / (float)segments;
 
-	for ( i = 0; i < segments; i++ )
-	{
+	for ( i = 0; i < segments; i++ ) {
 		if ( i + 1 < segments )
 			nextSegment = i + 1;
 		else

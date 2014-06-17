@@ -64,6 +64,9 @@ typedef enum {
 	hudLineSpeed,
 	hudLineStart,
 	hudLineEnd,
+	
+	hudDofFocus,
+	hudDofRadius,
 
 	hudLogBase
 } hudHandler_t;
@@ -71,6 +74,7 @@ typedef enum {
 #define MASK_CAM				0x00010
 #define MASK_LINE				0x00020
 #define MASK_CHASE				0x00040
+#define MASK_DOF				0x00400
 
 #define MASK_HUD				0x1
 #define MASK_POINT				0x2
@@ -85,6 +89,8 @@ typedef enum {
 #define MASK_CHASE_EDIT			( MASK_CHASE | MASK_EDIT )
 
 #define MASK_LINE_HUD			( MASK_LINE | MASK_HUD )
+
+#define MASK_DOF_EDIT			( MASK_DOF | MASK_EDIT )
 
 static struct {
 	int cursorX, cursorY;
@@ -105,6 +111,10 @@ static struct {
 		int *flags;
 		demoChasePoint_t *point;
 	} chase;
+	struct {
+		float *focus, *radius;
+		demoDofPoint_t *point;
+	} dof;
 	demoLinePoint_t *linePoint;
 	const char	*logLines[LOGLINES];
 } hud;
@@ -244,6 +254,10 @@ static float *hudGetFloat( hudItem_t *item ) {
 		return hud.chase.angles + item->handler - hudChasePitch;
 	case hudChaseDistance:
 		return hud.chase.distance;
+	case hudDofFocus:
+		return hud.dof.focus;
+	case hudDofRadius:
+		return hud.dof.radius;
 	default:
 		break;
 	}
@@ -273,6 +287,9 @@ static void hudGetHandler( hudItem_t *item, char *buf, int bufSize ) {
 			break;
 		case editLine:
 			Com_sprintf( buf, bufSize, "Line%s", demo.line.locked ? " locked" : "" );
+			break;
+		case editDof:
+			Com_sprintf( buf, bufSize, "Dof%s", demo.dof.locked ? " locked" : "" );
 			break;
 		}
 		return;
@@ -535,6 +552,24 @@ void hudDraw( void ) {
 			hud.showMask |= MASK_EDIT;
 		}
 		break;
+	case editDof:
+		hud.showMask = MASK_DOF;
+		if ( demo.dof.locked ) {
+			hud.dof.point = dofPointSynch(  demo.play.time );
+			if (!hud.dof.point || hud.dof.point->time != demo.play.time || demo.play.fraction) {
+				hud.dof.point = 0;
+			} else {
+				hud.dof.focus = &hud.dof.point->focus;
+				hud.dof.radius = &hud.dof.point->radius;
+				hud.showMask |= MASK_EDIT | MASK_POINT;
+			}
+		} else {
+			hud.dof.focus = &demo.dof.focus;
+			hud.dof.radius = &demo.dof.radius;
+			hud.dof.point = 0;
+			hud.showMask |= MASK_EDIT;
+		}
+		break;
 	default:
 		hud.showMask = 0;
 		break;
@@ -699,6 +734,10 @@ void hudInitTables(void) {
 	hudAddCvar(   0,  16, MASK_LINE_HUD, "saveStencil:", "mme_saveStencil" );
 	hudAddCvar(   0,  17, MASK_LINE_HUD, "MusicFile:", "mov_musicFile" );
 	hudAddCvar(   0,  18, MASK_LINE_HUD, "MusicStart:", "mov_musicStart" );
+	
+	// Depth of field Items
+	hudAddFloat(   0,  4, MASK_DOF_EDIT, "Focus:",  hudDofFocus );
+	hudAddFloat(   0,  5, MASK_DOF_EDIT, "Radius:",  hudDofRadius );
 
 }
 

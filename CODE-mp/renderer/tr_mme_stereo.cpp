@@ -14,7 +14,7 @@ static struct {
 static struct {
 	qboolean		take;
 	float			fps;
-	float			dofFocus;
+	float			dofFocus, dofRadius;
 	mmeShot_t		main, stencil, depth;
 	float			jitter[BLURMAX][2];
 } shotData;
@@ -71,6 +71,12 @@ static void R_MME_CheckCvars( void ) {
 	} else if (mme_blurOverlap->integer < 0 ) {
 		ri.Cvar_Set( "mme_blurOverlap", "0");
 	}
+	
+	if (mme_dofFrames->integer > BLURMAX ) {
+		ri.Cvar_Set( "mme_dofFrames", va( "%d", BLURMAX) );
+	} else if (mme_dofFrames->integer < 0 ) {
+		ri.Cvar_Set( "mme_dofFrames", "0");
+	}
 
 	blurTotal = mme_blurFrames->integer + mme_blurOverlap->integer ;
 	passTotal = mme_dofFrames->integer;
@@ -89,9 +95,8 @@ static void R_MME_CheckCvars( void ) {
 		R_MME_MakeBlurBlock( &blurData.shot, pixelCount * 3, blurControl );
 		R_MME_MakeBlurBlock( &blurData.stencil, pixelCount * 1, blurControl );
 		R_MME_MakeBlurBlock( &blurData.depth, pixelCount * 1, blurControl );
-
-		//we don't do jitter in stereo
-		//R_MME_JitterTableStereo( blurData.jitter[0], blurTotal );
+		
+		R_MME_JitterTable( blurData.jitter[0], blurTotal );
 
 		//Multi pass data
 		blurCreate( passControl, "median", passTotal );
@@ -100,12 +105,56 @@ static void R_MME_CheckCvars( void ) {
 		passControl->overlapFrames = 0;
 		passControl->overlapIndex = 0;
 		R_MME_MakeBlurBlock( &passData.dof, pixelCount * 3, passControl );
-		//R_MME_JitterTableStereo( passData.jitter[0], passTotal );
+		R_MME_JitterTable( passData.jitter[0], passTotal );
 	}
 	mme_blurOverlap->modified = qfalse;
 	mme_blurType->modified = qfalse;
 	mme_blurFrames->modified = qfalse;
 	mme_dofFrames->modified = qfalse;
+}
+
+qboolean R_MME_JitterOriginStereo( float *x, float *y ) {
+	mmeBlurControl_t* passControl = &passData.control;
+	*x = 0;
+	*y = 0;
+	if ( !shotData.take )
+		return qfalse;
+	if ( passControl->totalFrames ) {
+		int i = passControl->totalIndex;
+		float scale;
+		float focus = shotData.dofFocus;
+		float radius = shotData.dofRadius;
+		R_MME_ClampDof(&focus, &radius);
+		scale = radius * R_MME_FocusScale(focus);
+		*x = scale * passData.jitter[i][0];
+		*y = -scale * passData.jitter[i][1];
+		return qtrue;
+	} 
+	return qfalse;
+}
+
+void R_MME_JitterViewStereo( float *pixels, float *eyes ) {
+	mmeBlurControl_t* blurControl = &blurData.control;
+	mmeBlurControl_t* passControl = &passData.control;
+	if ( !shotData.take )
+		return;
+	if ( blurControl->totalFrames ) {
+		int i = blurControl->totalIndex;
+		pixels[0] = mme_blurJitter->value * blurData.jitter[i][0];
+		pixels[1] = mme_blurJitter->value * blurData.jitter[i][1];
+	}
+	if ( passControl->totalFrames ) {
+		int i = passControl->totalIndex;
+		float scale;
+		float focus = shotData.dofFocus;
+		float radius = shotData.dofRadius;
+		R_MME_ClampDof(&focus, &radius);
+		scale = r_znear->value / focus;
+		scale *= radius * R_MME_FocusScale(focus);;
+		eyes[0] = scale * passData.jitter[i][0];
+		eyes[1] = scale * passData.jitter[i][1];
+	}
+
 }
 
 int R_MME_MultiPassNextStereo( ) {
@@ -125,9 +174,14 @@ int R_MME_MultiPassNextStereo( ) {
 	GLimp_EndFrame();
 	R_MME_GetShot( outAlign );
 	R_MME_BlurAccumAdd( &passData.dof, outAlign );
+	
+	r_capturingDofOrStereo = qtrue;
 
 	ri.Hunk_FreeTempMemory( outAlloc );
 	if ( ++(control->totalIndex) < control->totalFrames ) {
+		int nextIndex = control->totalIndex;
+		if ( ++(nextIndex) >= control->totalFrames )
+			r_latestDofOrStereoFrame = qtrue;
 		return 1;
 	}
 	control->totalIndex = 0;
@@ -262,8 +316,7 @@ qboolean R_MME_TakeShotStereo( void ) {
 //				R_MME_BlurAccumShift( blurStencil );
 		
 			// Big test for an rgba shot
-			if ( mme_saveShot->integer == 1 && shotData.main.type == mmeShotTypeRGBA ) 
-			{
+			if ( mme_saveShot->integer == 1 && shotData.main.type == mmeShotTypeRGBA ) {
 				int i;
 				byte *alphaShot = (byte *)ri.Hunk_AllocateTempMemory( pixelCount * 4);
 				byte *rgbData = (byte *)(blurShot->accum );
@@ -329,7 +382,7 @@ qboolean R_MME_TakeShotStereo( void ) {
 /*		if ( mme_saveStencil->integer > 1 || ( !blurControl->totalFrames && mme_saveStencil->integer) ) {
 			byte *stencilShot = (byte *)ri.Hunk_AllocateTempMemory( pixelCount * 1);
 			R_MME_GetStencil( stencilShot );
-			R_MME_SaveShotStereo( &shotData.stencil, glConfig.vidWidth, glConfig.vidHeight, shotData.fps, stencilShot, qfalse, 0, 0 );
+			R_MME_SaveShot( &shotData.stencil, glConfig.vidWidth, glConfig.vidHeight, shotData.fps, stencilShot, qfalse, 0, 0 );
 			ri.Hunk_FreeTempMemory( stencilShot );
 		}
 */		if ( mme_saveDepth->integer > 1 || ( !blurControl->totalFrames && mme_saveDepth->integer) ) {
@@ -351,6 +404,7 @@ const void *R_MME_CaptureShotCmdStereo( const void *data ) {
 	shotData.take = qtrue;
 	shotData.fps = cmd->fps;
 	shotData.dofFocus = cmd->focus;
+	shotData.dofRadius = cmd->radius;
 	if (strcmp( cmd->name, shotData.main.name) || mme_screenShotFormat->modified || mme_screenShotAlpha->modified ) {
 		/* Also reset the the other data */
 		blurData.control.totalIndex = 0;
@@ -400,7 +454,7 @@ const void *R_MME_CaptureShotCmdStereo( const void *data ) {
 	return (const void *)(cmd + 1);	
 }
 
-void R_MME_CaptureStereo( const char *shotName, float fps, float focus ) {
+void R_MME_CaptureStereo( const char *shotName, float fps, float focus, float radius ) {
 	captureCommand_t *cmd;
 	
 	if ( !tr.registered || !fps ) {
@@ -414,6 +468,7 @@ void R_MME_CaptureStereo( const char *shotName, float fps, float focus ) {
 	cmd->commandId = RC_CAPTURE_STEREO;
 	cmd->fps = fps;
 	cmd->focus = focus;
+	cmd->radius = radius;
 	Com_sprintf(cmd->name, sizeof( cmd->name ), "%s.stereo", shotName );
 }
 
