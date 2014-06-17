@@ -277,13 +277,7 @@ static void CG_DrawZoomMask( void )
 			flip = !flip;
 		}
 	}
-	else if (cg.playerPredicted && cg.predictedPlayerState.zoomMode
-		|| (!cg.playerPredicted
-		&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
-		||
-		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))))
+	else if (cg.zoomMode)
 	{
 		// disruptor zoom mode
 		level = (float)(50.0f - zoomFov) / 50.0f;//(float)(80.0f - zoomFov) / 80.0f;
@@ -298,12 +292,7 @@ static void CG_DrawZoomMask( void )
 			level = 1.0f;
 		}
 
-		if (!cg.playerPredicted
-			&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
-		||
-		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected)))
+		if (!cg.playerPredicted)
 			level = 0.46f;
 
 		// Using a magic number to convert the zoom level to a rotation amount that correlates more or less with the zoom artwork. 
@@ -394,13 +383,7 @@ static void CG_DrawZoomMask( void )
 		}
 
 		if ((cg.playerPredicted && cg.predictedPlayerState.weaponstate == WEAPON_CHARGING_ALT)
-			|| (!cg.playerPredicted
-			&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
-			||
-			((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-			|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))
-			&& cg.charging && cg.chargeTime && cg.time > cg.chargeTime))
+			|| (!cg.playerPredicted && cg.charging && cg.chargeTime && cg.time > cg.chargeTime))
 		{
 			trap_R_SetColor( colorTable[CT_WHITE] );
 
@@ -1739,7 +1722,7 @@ static float CG_DrawEnemyInfo ( float y )
 			size = ICON_SIZE * 1.25;
 			y += 5;
 
-			CG_DrawPic( 640 - size*cgs.widthRatioCoef - 12, y, size, size*cgs.widthRatioCoef, cgs.media.weaponIcons[WP_SABER] );
+			CG_DrawPic( 640 - size*cgs.widthRatioCoef - 5, y, size*cgs.widthRatioCoef, size, cgs.media.weaponIcons[WP_SABER] );
 
 			y += size;
 			CG_Text_Paint( 630 - CG_Text_Width ( title, 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, title, 0, 0, 0, FONT_MEDIUM );
@@ -2620,13 +2603,7 @@ static void CG_DrawCrosshair( vec3_t worldPoint, int chEntValid ) {
 		return;
 
 	//not while scoped
-	if ((cg.playerPredicted && cg.predictedPlayerState.zoomMode != 0)
-		|| (!cg.playerPredicted
-		&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
-		||
-		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected)))) {
+	if (cg.zoomMode) {
 		return;
 	}
 
@@ -2861,8 +2838,10 @@ static void CG_DrawHolocronIcons(void) {
 
 	int endx = icon_size;
 	int endy = icon_size;
+	
+	int holocronBits = cg.playerPredicted ? cg.snap->ps.holocronBits : cg.playerCent->currentState.time2;
 
-	if (cg.snap->ps.zoomMode) {
+	if (cg.zoomMode) {
 	//don't display over zoom mask
 		return;
 	}
@@ -2908,14 +2887,8 @@ static void CG_DrawActivePowers(void) {
 	int endx = icon_size;
 	int endy = icon_size;
 
-	if ((cg.playerPredicted && cg.snap->ps.zoomMode)
-		|| (!cg.playerPredicted
-		&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
-		||
-		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))))
-	{ //don't display over zoom mask
+	//don't display over zoom mask
+	if (cg.zoomMode) {
 		return;
 	}
 
@@ -4327,7 +4300,8 @@ void CG_Draw2D( void ) {
 
 	if (mov_fragsOnly.integer != 0) {
 		CG_SaberClashFlare();
-		if(!cg.renderingThirdPerson && mov_fragsOnly.integer == 2)CG_DrawZoomMask();
+		if(!cg.renderingThirdPerson && mov_fragsOnly.integer == 2)
+			CG_DrawZoomMask();
 		if (cg.playerPredicted)
 			CG_DrawReward();
 		CG_DrawCenterString();

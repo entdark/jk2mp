@@ -713,6 +713,8 @@ typedef struct {
 	qboolean	trueView;
 	qboolean	playerPredicted;
 	centity_t		*playerCent;
+	
+	qboolean	zoomMode;
 
 	// prediction state
 	qboolean	hyperspace;				// true if prediction has hit a trigger_teleport

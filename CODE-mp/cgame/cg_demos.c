@@ -159,7 +159,7 @@ void CG_SetPredictedThirdPerson(void) {
 		)
 
 		&& !(cg_fpls.integer && cg.predictedPlayerState.weapon == WP_SABER))
-		&& !cg.snap->ps.zoomMode;
+		&& !cg.zoomMode;
 
 	if (cg.predictedPlayerState.pm_type == PM_SPECTATOR) { //always first person for spec
 		cg.renderingThirdPerson = 0;
@@ -198,20 +198,19 @@ static int demoSetupView( void) {
 					//Make sure lerporigin of playercent is val
 					CG_CalcEntityLerpPositions( cg.playerCent );
 				}
-				if (cg.playerPredicted)
+				if (cg.playerPredicted) {
+					cg.zoomMode = cg.snap->ps.zoomMode || cg.predictedPlayerState.zoomMode;
 					CG_SetPredictedThirdPerson();
-				else
-					cg.renderingThirdPerson = ((cg_thirdPerson.integer || cent->currentState.eFlags & EF_DEAD
-#ifdef TRUEVIEW
-						|| (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
-#endif
-						|| cg.playerCent->currentState.weapon == WP_SABER)
-						&& !(((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
+				} else {
+					cg.zoomMode = ((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
 						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
 						||
 						((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))
-						&& !(cg_fpls.integer && cg.playerCent->currentState.weapon == WP_SABER));
+						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected);
+					cg.renderingThirdPerson = ((cg_thirdPerson.integer || cent->currentState.eFlags & EF_DEAD
+						|| (weapon == WP_SABER && !cg.trueView) || cg.fallingToDeath) && !cg.zoomMode
+						&& !(cg_fpls.integer && weapon == WP_SABER));
+				}
 				inwater = CG_DemosCalcViewValues();
 				// first person blend blobs, done after AnglesToAxis
 				if (!cg.renderingThirdPerson) {

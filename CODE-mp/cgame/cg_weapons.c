@@ -484,6 +484,9 @@ Ghoul2 Insert Start
 			cent->currentState.trickedentindex4,
 			cg.playerCent->currentState.number))
 		{
+			if (cg.zoomMode)
+				goto getFlash;
+			
 			CG_AddWeaponWithPowerups( &gun, cent->currentState.powerups ); //don't draw the weapon if the player is invisible
 			/*
 			if ( weaponNum == WP_STUN_BATON )
@@ -538,6 +541,10 @@ Ghoul2 Insert Start
 				{
 					CG_PositionRotatedEntityOnTag( &barrel, parent/*&gun*/, /*weapon->weaponModel*/weapon->handsModel, "tag_barrel3" );
 				}
+				
+				if (cg.zoomMode)
+					goto getFlash;
+				
 				CG_AddWeaponWithPowerups( &barrel, cent->currentState.powerups );
 
 				i++;
@@ -561,6 +568,9 @@ Ghoul2 Insert Start
 
 				CG_PositionRotatedEntityOnTag( &barrel, parent/*&gun*/, /*weapon->weaponModel*/weapon->handsModel, "tag_barrel" );
 
+				if (cg.zoomMode)
+					goto getFlash;
+
 				CG_AddWeaponWithPowerups( &barrel, cent->currentState.powerups );
 			}
 		}
@@ -568,11 +578,13 @@ Ghoul2 Insert Start
 /*
 Ghoul2 Insert End
 */
-
+getFlash:
 	memset (&flash, 0, sizeof(flash));
 	CG_PositionEntityOnTag( &flash, &gun, gun.hModel, "tag_flash");
 
 	VectorCopy(flash.origin, cg.lastFPFlashPoint);
+	if (cg.zoomMode)
+		return;
 
 	// Do special charge bits
 	//-----------------------
