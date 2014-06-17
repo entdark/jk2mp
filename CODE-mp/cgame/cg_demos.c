@@ -22,7 +22,6 @@ extern void trap_MME_BlurInfo( int* total, int * index );
 extern void trap_MME_Capture( const char *baseName, float fps, float focus, float radius );
 extern int trap_MME_SeekTime( int seekTime );
 extern void trap_MME_Music( const char *musicName, float time, float length );
-extern qboolean trap_MME_Demo15Detection( void );
 extern void trap_R_RandomSeed( int time, float timeFraction );
 extern void trap_FX_RandomSeed( int time, float timeFraction );
 extern void trap_S_UpdatePitch( float pitch );
@@ -1005,8 +1004,6 @@ void demoPlaybackInit(void) {
 	trap_AddCommand("clientOverride");
 	trap_AddCommand("musicPlay");
 	trap_AddCommand("stopLoop");
-
-	demo15detected = trap_MME_Demo15Detection();
 
 	demo.media.additiveWhiteShader = trap_R_RegisterShader( "mme_additiveWhite" );
 	demo.media.mouseCursor = trap_R_RegisterShaderNoMip( "cursor" );

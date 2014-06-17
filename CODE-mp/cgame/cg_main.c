@@ -2528,6 +2528,7 @@ Called after every level change or subsystem restart
 Will perform callbacks to make the loading info screen update.
 =================
 */
+extern qboolean trap_MME_Demo15Detection( void );
 void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	const char	*s;
 	int i = 0;
@@ -2679,8 +2680,7 @@ Ghoul2 Insert End
 	cgs.media.HUDInnerRight		= trap_R_RegisterShaderNoMip( "gfx/hud/hudright_innerframe" );
 
 	// Load tics
-	for (i=0;i<MAX_TICS;i++)
-	{
+	for (i = 0; i < MAX_TICS; i++) {
 		forceTicPos[i].tic		= trap_R_RegisterShaderNoMip( forceTicPos[i].file );
 		ammoTicPos[i].tic		= trap_R_RegisterShaderNoMip( ammoTicPos[i].file );
 	}
@@ -2736,6 +2736,8 @@ Ghoul2 Insert End
 	CG_RegisterGraphics();
 
 	CG_LoadingString( "clients" );
+	
+	demo15detected = trap_MME_Demo15Detection();
 
 	CG_RegisterClients();		// if low on memory, some clients will be deferred
 
