@@ -6,6 +6,7 @@
 #include "../server/server.h"
 #include "cl_demos.h"
 #include "qcommon/game_version.h"
+#include "../ghoul2/G2_local.h"
 
 #define DEMOLISTSIZE 1024
 
@@ -362,7 +363,7 @@ void demoConvert( const char *oldName, const char *newBaseName, qboolean smoothe
 				if ( !Q_stricmp( Cmd_Argv(0), "cs" ) ) {
 					int num = atoi( Cmd_Argv(1) );
 					s = Cmd_ArgsFrom( 2 );
-					demoFrameAddString( &workFrame->string, num, Cmd_ArgsFrom( 2 ) );
+					demoFrameAddString( &workFrame->string, num, Cmd_ArgsFrom( 2 ) );	
 					break;
 				}
 				if ( clientNum >= 0 && clientNum < MAX_CLIENTS ) {
@@ -934,6 +935,71 @@ void demoStop( void ) {
 	Com_Memset( &demo.play, 0, sizeof( demo.play ));
 }
 
+static void demoPrecacheClient(char *str) {
+	const char *v;
+	int     team;
+	char	modelName[MAX_QPATH];
+	char	skinName[MAX_QPATH];
+	char		*slash;
+	qhandle_t torsoSkin;
+	void	  *ghoul2;
+	memset(&ghoul2, 0, sizeof(ghoul2));
+
+	v = Info_ValueForKey(str, "t");
+	team = atoi(v);
+	v = Info_ValueForKey(str, "model");
+	Q_strncpyz( modelName, v, sizeof( modelName ) );
+
+	slash = strchr( modelName, '/' );
+	if ( !slash ) {
+		// modelName did not include a skin name
+		Q_strncpyz( skinName, "default", sizeof( skinName ) );
+	} else {
+		Q_strncpyz( skinName, slash + 1, sizeof( skinName ) );
+		// truncate modelName
+		*slash = 0;
+	}
+
+	if (team == TEAM_RED) {
+		Q_strncpyz(skinName, "red", sizeof(skinName));
+	} else if (team == TEAM_BLUE) {
+		Q_strncpyz(skinName, "blue", sizeof(skinName));
+	}
+	torsoSkin = re.RegisterSkin(va("models/players/%s/model_%s.skin", modelName, skinName));
+	G2API_InitGhoul2Model((CGhoul2Info_v **)&ghoul2, va("models/players/%s/model.glm", modelName), 0, torsoSkin, 0, 0, 0);
+}
+
+static void demoPrecache( void ) {
+	demoPlay_t *play = demo.play.handle;
+	int latestSequence = 0, time = 0;
+	demoPlaySetIndex(play, 0);
+	while (!play->lastFrame) {
+		demoPlaySynch( play, play->frame );
+		while (latestSequence < play->commandCount) {
+			if (demoGetServerCommand(++latestSequence)) {
+				if ( !Q_stricmp( Cmd_Argv(0), "cs" ) ) {
+					int num = atoi( Cmd_Argv(1) );
+					char *str = cl.gameState.stringData + cl.gameState.stringOffsets[num];
+					if ( num >= CS_MODELS && num < CS_MODELS+MAX_MODELS ) {
+						re.RegisterModel(str);
+					} else if ( num >= CS_SOUNDS && num < CS_SOUNDS+MAX_SOUNDS ) {
+						if ( str[0] != '*' ) S_StartSound(vec3_origin, 0, CHAN_AUTO, S_RegisterSound( str ));
+					} else if ( num >= CS_PLAYERS && num < CS_PLAYERS+MAX_CLIENTS ) {
+						demoPrecacheClient(str);
+					}	
+					break;
+				}
+			}
+		}
+		time += 50;
+		while (!play->lastFrame && time > play->nextFrame->serverTime)
+			demoPlayForwardFrame(play);
+	}
+	S_Update();
+	S_StopAllSounds();
+	demoPlaySetIndex(play, 0);
+}
+
 qboolean demoPlay( const char *fileName ) {
 	demo.play.handle = demoPlayOpen( fileName );
 	if (demo.play.handle) {
@@ -963,6 +1029,9 @@ qboolean demoPlay( const char *fileName ) {
 		Com_Memcpy( cl.gameState.stringOffsets, play->frame->string.offsets, sizeof( play->frame->string.offsets ));
 		Com_Memcpy( cl.gameState.stringData, play->frame->string.data, play->frame->string.used );
 		cl.gameState.dataCount = play->frame->string.used;
+		if (mme_demoPrecache->integer) {
+			demoPrecache();
+		}
 		CL_InitCGame();
 		cls.state = CA_ACTIVE;
 		return qtrue;
