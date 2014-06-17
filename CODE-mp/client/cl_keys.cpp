@@ -1543,10 +1543,12 @@ void CL_KeyEvent (int key, qboolean down, unsigned time) {
 		Console_Key( key );
 		return;
 	}
-	if ( uivm && (cls.keyCatchers & KEYCATCH_UI) ) {
+	if ( cls.keyCatchers & KEYCATCH_UI ) {
+		if ( uivm ) {
 			VM_Call( uivm, UI_KEY_EVENT, key, down );
+		} 
 	}
-	if ( cls.keyCatchers & KEYCATCH_CGAME ) {
+	if ( cgvm && (cls.keyCatchers & KEYCATCH_CGAME) ) {
 		qboolean ret = (qboolean)VM_Call( cgvm, CG_KEY_EVENT, key, down );
 		if ( Key_GetCatcher( ) & KEYCATCH_CGAMEEXEC )  {
 			if ( ret )
@@ -1629,6 +1631,10 @@ void CL_CharEvent( int key ) {
 	else if ( cls.keyCatchers & KEYCATCH_MESSAGE ) 
 	{
 		Field_CharEvent( &chatField, key );
+	}
+	else if ( Key_GetCatcher( ) & KEYCATCH_CGAME && cgvm ) 
+	{
+		VM_Call( cgvm, CG_KEY_EVENT, key | K_CHAR_FLAG, qtrue );
 	}
 	else if ( cls.state == CA_DISCONNECTED )
 	{
