@@ -894,14 +894,15 @@ qboolean demoGetSnapshot( int snapNumber, snapshot_t *snap ) {
 
 	snap->numEntities = 0;
 	for (i=0;i<MAX_GENTITIES-1 && snap->numEntities < MAX_ENTITIES_IN_SNAPSHOT;i++) {
-		entityState_t *newEntity;
+//		entityState_t *newEntity;
 		if (frame->entities[i].number != i)
 			continue;
 		/* Skip your own entity if there ever comes server side recording */
 		if (frame->entities[i].number == snap->ps.clientNum)
 			continue;
-		newEntity = &snap->entities[snap->numEntities++];
-		*newEntity = frame->entities[i];
+//		newEntity = &snap->entities[snap->numEntities++];
+//		*newEntity = frame->entities[i];
+		memcpy(&snap->entities[snap->numEntities++], &frame->entities[i], sizeof(entityState_t));
 	}
 	snap->snapFlags = 0;
 	snap->ping = 0;
