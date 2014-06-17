@@ -1104,6 +1104,10 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 			trap_FS_FCloseFile(hilt);
 		}
 	}
+	
+	//hide player
+	v = ConfigValue( strings, "hide");
+	newInfo.hide = (v[0] && atoi(v) > 0);
 
 	// bot skill
 	v = ConfigValue( strings, "skill" );
@@ -1355,7 +1359,7 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 
 static void CG_ShowOverride( const char *configString, const char *overrideString ) {
 	static char * entryList[] = {
-		"n", "t", "model", "c1", "hilt", "shader", "effect", 0
+		"n", "t", "model", "c1", "hide", "hilt", "shader", "effect", 0
 	};
 	int n;
 
@@ -1409,7 +1413,8 @@ void CG_ClientOverride_f(void) {
 		CG_Printf("model \"modelname/skin\", Change model\n" );
 		CG_Printf("n \"name\", Change name\n" );
 		CG_Printf("t \"0-3\", Change team number\n" );
-		CG_Printf("c1 \"0-9,w-zhexcode\", Change saber color1\n" );
+		CG_Printf("c1 \"0-9,a-t,u-zhexcode\", Change saber color1\n" );
+		CG_Printf("hide \"0,1\", hide player yes or no\n" );
 		CG_Printf("hilt \"hiltname\", Change saber hilt\n" );
 		CG_Printf("shader \"shadername\", Shader override to be use on the whole player\n" );
 		CG_Printf("effect \"effectname\", Effect .efx to run from the player's position\n" );
@@ -6987,9 +6992,8 @@ void CG_Player( centity_t *cent ) {
 
 	// it is possible to see corpses from disconnected players that may
 	// not have valid clientinfo
-	if ( !ci->infoValid ) {
+	if ( ci->hide || !ci->infoValid )
 		return;
-	}
 
 	cent->ghoul2 = cg_entities[cent->currentState.number].ghoul2;
 

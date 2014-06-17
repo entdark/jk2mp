@@ -1171,7 +1171,12 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		clientNum = 0;
 	}
 	ci = &cgs.clientinfo[ clientNum ];
-
+	switch ( es->eType ) {
+	case ET_PLAYER:
+		if ( ci->hide || !ci->infoValid )
+			return;
+	}
+	
 	switch ( event ) {
 	//
 	// movement generated events
