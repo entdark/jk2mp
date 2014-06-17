@@ -552,17 +552,14 @@ vmCvar_t	fx_disruptSpiral;
 vmCvar_t	fx_disruptCoreColor;
 vmCvar_t	fx_disruptSpiralColor;
 
-#ifdef TRUEVIEW
 vmCvar_t	cg_trueEyePosition;
 vmCvar_t	cg_trueFlip;
 vmCvar_t	cg_trueFOV;
 vmCvar_t	cg_trueGuns;
-vmCvar_t	cg_trueInvertSaber;
 vmCvar_t	cg_trueMoveRoll;
 vmCvar_t	cg_trueRoll;
-vmCvar_t	cg_trueSaberOnly;
+vmCvar_t	cg_trueSaber;
 vmCvar_t	cg_trueSpin;
-#endif
 
 
 typedef struct {
@@ -749,17 +746,15 @@ Ghoul2 Insert End
 	{ &fx_disruptSpiral,	"fx_disruptSpiral",		"0",		CVAR_ARCHIVE	},
 	{ &fx_disruptCoreColor,	"fx_disruptCoreColor",	"0",		CVAR_ARCHIVE	},
 	{ &fx_disruptSpiralColor,"fx_disruptSpiralColor","0",		CVAR_ARCHIVE	},
-#ifdef TRUEVIEW
+
 	{ &cg_trueEyePosition,	"cg_trueEyePosition",	"-2",		CVAR_ARCHIVE	},
 	{ &cg_trueFlip,			"cg_trueFlip",			"2",		CVAR_ARCHIVE	},
 	{ &cg_trueFOV,			"cg_trueFOV",			"0",		CVAR_ARCHIVE	},
 	{ &cg_trueGuns,			"cg_trueGuns",			"0",		CVAR_ARCHIVE	},
-	{ &cg_trueInvertSaber,	"cg_trueInvertSaber",	"0",		CVAR_ARCHIVE	},
 	{ &cg_trueMoveRoll,		"cg_trueMoveRoll",		"0",		CVAR_ARCHIVE	},
 	{ &cg_trueRoll,			"cg_trueRoll",			"2",		CVAR_ARCHIVE	},
-	{ &cg_trueSaberOnly,	"cg_trueSaberOnly",		"1",		CVAR_ARCHIVE	},
+	{ &cg_trueSaber,		"cg_trueSaber",			"0",		CVAR_ARCHIVE	},
 	{ &cg_trueSpin,			"cg_trueSpin",			"1",		CVAR_ARCHIVE	},
-#endif
 };
 
 static int  cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );

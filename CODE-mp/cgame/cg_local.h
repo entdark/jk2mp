@@ -211,6 +211,7 @@ typedef struct centity_s {
 	vec3_t			lerpAngles;
 
 	void			*ghoul2;
+	int				localAnimIndex; //index locally (game/cgame) to anim data for this skel
 	int				weapon;
 
 	void			*ghoul2weapon; //rww - pointer to ghoul2 instance of the current 3rd person weapon
@@ -709,6 +710,7 @@ typedef struct {
 	qboolean	mapRestart;			// set on a map restart to set back the weapon
 
 	qboolean	renderingThirdPerson;		// during deaths, chasecams, etc
+	qboolean	trueView;
 	qboolean	playerPredicted;
 	centity_t		*playerCent;
 

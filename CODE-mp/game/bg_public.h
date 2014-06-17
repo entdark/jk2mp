@@ -1077,3 +1077,9 @@ extern int forcePowerDarkLight[NUM_FORCE_POWERS];
 #define MAX_BOTS_TEXT		8192
 
 #endif //__BG_PUBLIC_H__
+
+
+//[AnimationSys]
+float BG_GetTorsoAnimPoint( playerState_t *ps, int AnimIndex );
+float BG_GetLegsAnimPoint( playerState_t *ps, int AnimIndex );
+//[/AnimationSys]

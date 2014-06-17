@@ -1519,3 +1519,62 @@ void PM_SetAnim(int setAnimParts,int anim,int setAnimFlags, int blendTime) {
 }
 
 
+//[AnimationSys]
+float BG_GetTorsoAnimPoint(playerState_t * ps, int AnimIndex)
+{
+	float attackAnimLength = 0;
+	float currentPoint = 0;
+	float animSpeedFactor = 1.0f;
+	float animPercentage = 0;
+
+	//Be sure to scale by the proper anim speed just as if we were going to play the animation
+	BG_SaberStartTransAnim(ps->fd.saberAnimLevel, ps->torsoAnim, &animSpeedFactor);
+
+	if( animSpeedFactor > 0 )
+	{
+		if (demo15detected)
+			attackAnimLength = (bgGlobalAnimations15[ps->torsoAnim].numFrames-1) * fabs((float)(bgGlobalAnimations15[ps->torsoAnim].frameLerp)) * (1/animSpeedFactor);
+		else
+			attackAnimLength = (bgGlobalAnimations[ps->torsoAnim].numFrames-1) * fabs((float)(bgGlobalAnimations[ps->torsoAnim].frameLerp)) * (1/animSpeedFactor);
+		attackAnimLength--;
+	}
+
+	currentPoint = ps->torsoTimer;
+
+	animPercentage = currentPoint/attackAnimLength;
+
+
+	//Com_Printf("%f\n", animPercentage);
+
+	return animPercentage;
+}
+
+
+float BG_GetLegsAnimPoint(playerState_t * ps, int AnimIndex)
+{
+	float attackAnimLength = 0;
+	float currentPoint = 0;
+	float animSpeedFactor = 1.0f;
+	float animPercentage = 0;
+
+	//Be sure to scale by the proper anim speed just as if we were going to play the animation
+	BG_SaberStartTransAnim(ps->fd.saberAnimLevel, ps->legsAnim, &animSpeedFactor);
+
+	if( animSpeedFactor > 0 )
+	{
+		if (demo15detected)
+			attackAnimLength = (bgGlobalAnimations15[ps->legsAnim].numFrames-1) * fabs((float)(bgGlobalAnimations15[ps->legsAnim].frameLerp)) * (1/animSpeedFactor);
+		else
+			attackAnimLength = (bgGlobalAnimations[ps->legsAnim].numFrames-1) * fabs((float)(bgGlobalAnimations[ps->legsAnim].frameLerp)) * (1/animSpeedFactor);
+		attackAnimLength--;
+	}
+
+	currentPoint = ps->legsTimer;
+
+	animPercentage = currentPoint/attackAnimLength;
+
+	//Com_Printf("%f\n", animPercentage);
+
+	return animPercentage;
+}
+//[/AnimationSys]

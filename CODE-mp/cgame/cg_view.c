@@ -12,6 +12,10 @@
 #define CAMERA_SIZE	4
 
 
+static int GetCameraClip( void ) {
+	return (MASK_SOLID|CONTENTS_PLAYERCLIP);
+}
+
 /*
 =============================================================================
 
@@ -948,7 +952,28 @@ static int CG_CalcFov( void ) {
 	float	fov_x, fov_y;
 	float	f;
 	int		inwater;
-	float	cgFov = cg_fov.value;
+	//[TrueView]
+	float	cgFov;
+	//float	cgFov = cg_fov.value;
+
+	if(cg.playerPredicted && (!cg.renderingThirdPerson
+		&& (cg.trueView
+		|| cg.predictedPlayerState.weapon == WP_SABER) 
+		&& cg_trueFOV.value && (cg.predictedPlayerState.pm_type != PM_SPECTATOR)
+		&& (cg.predictedPlayerState.pm_type != PM_INTERMISSION))) {
+		cgFov = cg_trueFOV.value;
+	} else if(!cg.renderingThirdPerson 
+		&& (cg.trueView
+		|| cg.playerCent->currentState.weapon == WP_SABER) 
+		&& cg_trueFOV.value && (cg.predictedPlayerState.pm_type != PM_INTERMISSION))
+	{
+		cgFov = cg_trueFOV.value;
+	}
+	else
+	{
+		cgFov = cg_fov.value;
+	}
+	//[/TrueView]
 
 	if (cgFov < 1)
 		cgFov = 1;
@@ -1602,6 +1627,7 @@ CG_DrawActiveFrame
 Generates and draws a game scene and status information at the given time.
 =================
 */
+extern void CG_SetPredictedThirdPerson(void);
 extern void trap_S_UpdatePitch( float pitch );
 extern void CG_UpdateFallVector (void);
 void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback ) {
@@ -1678,24 +1704,10 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	VectorCopy( cg.predictedPlayerEntity.currentState.apos.trBase, cg.predictedPlayerEntity.lerpAngles );
 
 	// decide on third person view
-	cg.renderingThirdPerson = cg_thirdPerson.integer || (cg.snap->ps.stats[STAT_HEALTH] <= 0);
-
-	if (cg.snap->ps.stats[STAT_HEALTH] > 0 && (cg.predictedPlayerState.weapon == WP_SABER || cg.predictedPlayerState.usingATST ||
-		cg.predictedPlayerState.forceHandExtend == HANDEXTEND_KNOCKDOWN || cg.predictedPlayerState.fallingToDeath))
-	{
-		if (cg_fpls.integer && cg.predictedPlayerState.weapon == WP_SABER)
-		{ //force to first person for fpls
-			cg.renderingThirdPerson = 0;
-		}
-		else
-		{
-			cg.renderingThirdPerson = 1;
-		}
-	}
-	else if (cg.snap->ps.zoomMode)
-	{ //always force first person when zoomed
-		cg.renderingThirdPerson = 0;
-	}
+	cg.trueView = (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaber.integer)
+		|| (cg.playerCent->currentState.weapon != WP_SABER && cg_trueGuns.integer);
+	cg.zoomMode = cg.snap->ps.zoomMode || cg.predictedPlayerState.zoomMode;
+	CG_SetPredictedThirdPerson();
 
 	// build cg.refdef
 	inwater = CG_CalcViewValues();
@@ -1785,10 +1797,22 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	// actually issue the rendering calls
 	CG_DrawActive( stereoView );
 
-	CG_UpdateFallVector();
-
 	if ( cg_stats.integer ) {
 		CG_Printf( "cg.clientFrame:%i\n", cg.clientFrame );
 	}
 }
+
+//[TrueView]
+//Checks to see if the current camera position is valid based on the last known safe location.  If it's not safe, place
+//the camera at the last position safe location
+void CheckCameraLocation( vec3_t OldeyeOrigin ) {
+	trace_t			trace;
+	refdef_t		*refdef = &cg.refdef;//CG_GetRefdef();
+
+	CG_Trace(&trace, OldeyeOrigin, cameramins, cameramaxs, refdef->vieworg, cg.playerCent->currentState.number, GetCameraClip());
+	if (trace.fraction <= 1.0) {
+		VectorCopy(trace.endpos, refdef->vieworg);
+	}
+}
+//[/TrueView]
 

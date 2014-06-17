@@ -141,24 +141,22 @@ static void FX_VibrateView( const float scale, vec3_t origin, vec3_t angles ) {
 	}
 }
 
-static void CG_SetPredictedThirdPerson(void) {
+void CG_SetPredictedThirdPerson(void) {
 	cg.renderingThirdPerson = ((cg_thirdPerson.integer
 		|| (cg.snap->ps.stats[STAT_HEALTH] <= 0)
-#ifdef TRUEVIEW
-		|| (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
+
+		|| (cg.playerCent->currentState.weapon == WP_SABER && !cg.trueView)
+		
 		|| (cg.predictedPlayerState.forceHandExtend == HANDEXTEND_KNOCKDOWN 
-		&& ((cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
-		|| (cg.playerCent->currentState.weapon != WP_SABER && !cg_trueGuns.integer)))
-#endif
-		|| (cg.predictedPlayerState.fallingToDeath) || cg.predictedPlayerState.usingATST
-		|| cg.predictedPlayerState.forceHandExtend == HANDEXTEND_KNOCKDOWN
-		|| cg.predictedPlayerState.weapon == WP_SABER
-		|| (CG_InKnockDown(cg.predictedPlayerState.torsoAnim) || CG_InKnockDown(cg.predictedPlayerState.legsAnim)
-#ifdef TRUEVIEW
-		&& ((cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaberOnly.integer)
-		|| (cg.playerCent->currentState.weapon != WP_SABER && !cg_trueGuns.integer))
-#endif
-		))
+		&& !cg.trueView)
+
+		|| cg.predictedPlayerState.fallingToDeath
+		|| cg.predictedPlayerState.usingATST
+		
+		|| ((CG_InKnockDown(cg.predictedPlayerState.torsoAnim)
+		|| CG_InKnockDown(cg.predictedPlayerState.legsAnim))
+		&& !cg.trueView)
+		)
 
 		&& !(cg_fpls.integer && cg.predictedPlayerState.weapon == WP_SABER))
 		&& !cg.snap->ps.zoomMode;
@@ -178,6 +176,7 @@ static int demoSetupView( void) {
 	int	contents = 0;
 	qboolean behindView = qfalse;
 
+	cg.trueView = qfalse;
 	cg.playerPredicted = qfalse;
 	cg.playerCent = 0;
 	demo.viewFocus = 0;
@@ -190,6 +189,9 @@ static int demoSetupView( void) {
 			centity_t *cent = demo.chase.cent;
 			
 			if ( cent->currentState.number < MAX_CLIENTS ) {
+				int weapon = cent->currentState.weapon;
+				cg.trueView = (weapon == WP_SABER && cg_trueSaber.integer)
+					|| (weapon != WP_SABER && cg_trueGuns.integer);
 				cg.playerCent = cent;
 				cg.playerPredicted = cent == &cg.predictedPlayerEntity;
 				if (!cg.playerPredicted ) {

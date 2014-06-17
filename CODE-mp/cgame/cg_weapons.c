@@ -576,7 +576,12 @@ Ghoul2 Insert End
 
 	// Do special charge bits
 	//-----------------------
-	if ( (firstPerson || cg.renderingThirdPerson || (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number)) &&
+	//[TrueView]
+	//Make the guns do their charging visual in True View.
+	if ( (firstPerson || cg.renderingThirdPerson
+		|| (cg.playerCent && cg.playerCent->currentState.number != cent->currentState.number)
+		|| cg.trueView) &&
+	//[/TrueView]
 		( ( cent->currentState.modelindex2 == WEAPON_CHARGING_ALT && cent->currentState.weapon == WP_BRYAR_PISTOL ) ||
 		  ( cent->currentState.weapon == WP_BOWCASTER && cent->currentState.modelindex2 == WEAPON_CHARGING ) ||
 		  ( cent->currentState.weapon == WP_DEMP2 && cent->currentState.modelindex2 == WEAPON_CHARGING_ALT) ) )
@@ -693,7 +698,10 @@ Ghoul2 Insert End
 		}
 	}
 
-	if (firstPerson || cg.renderingThirdPerson || (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number)) 
+	//[TrueView]
+	if (firstPerson || cg.renderingThirdPerson || cg.trueView
+		|| (cg.playerCent && cent->currentState.number != cg.playerCent->currentState.number)) 
+	//[/TrueView]
 	{	// Make sure we don't do the thirdperson model effects for the local player if we're in first person
 		vec3_t flashorigin, flashdir;
 		refEntity_t	flash;
@@ -757,12 +765,23 @@ void CG_AddViewWeaponDirect( centity_t *cent ) {
 	float		fovOffset;
 	vec3_t		angles;
 	weaponInfo_t	*weapon;
-	float	cgFov = cg_fov.value;
+	float	cgFov;
 
 	// no gun if in third person view or a camera is active
 	if ( cg.renderingThirdPerson ) {
 		return;
 	}
+	
+	//[TrueView]
+	if ( !cg.renderingThirdPerson
+		&& cg.trueView
+		&& cg_trueFOV.value 
+		&& (cg.playerPredicted && cg.predictedPlayerState.pm_type != PM_SPECTATOR
+		&& cg.predictedPlayerState.pm_type != PM_INTERMISSION) )
+		cgFov = cg_trueFOV.value;
+	else
+		cgFov = cg_fov.value;
+	//[/TrueView]
 
 	if (cgFov < 1) {
 		cgFov = 1;
@@ -771,13 +790,9 @@ void CG_AddViewWeaponDirect( centity_t *cent ) {
 	}
 
 	// allow the gun to be completely removed
-	if ( !cg_drawGun.integer || (cg.playerPredicted && cg.predictedPlayerState.zoomMode
-		|| (!cg.playerPredicted
-		&& (((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
-		||
-		((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-		|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected))))) {
+	//[TrueView]
+	if (!cg_drawGun.integer || cg.trueView) {
+	//[/TrueView]
 		vec3_t		origin;
 
 		if ( cent->currentState.eFlags & EF_FIRING ) {
