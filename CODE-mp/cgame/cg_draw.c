@@ -4033,7 +4033,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0;
 			
 			if (!cg.renderingThirdPerson) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			}
 			
 			cgRageFadeTime = 0;
@@ -4072,14 +4072,14 @@ static void CG_Draw2DScreenTints(void) {
 			}
 			
 			if (!cg.renderingThirdPerson && rageTime) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			} else {
 				if (cg.snap->ps.fd.forceRageRecoveryTime > cg.time) {
 					hcolor[3] = 0.15;
 					hcolor[0] = 0.2;
 					hcolor[1] = 0.2;
 					hcolor[2] = 0.2;
-					CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+					CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 				}
 				cgRageTime = 0;
 			}
@@ -4101,7 +4101,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0.2;
 			
 			if (!cg.renderingThirdPerson) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			}
 			
 			cgRageRecFadeTime = 0;
@@ -4126,7 +4126,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0.2;
 			
 			if (!cg.renderingThirdPerson && rageRecTime) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			} else {
 				cgRageRecTime = 0;
 			}
@@ -4150,7 +4150,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0.7;
 			
 			if (!cg.renderingThirdPerson) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			}
 			
 			cgAbsorbFadeTime = 0;
@@ -4175,7 +4175,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0.7;
 			
 			if (!cg.renderingThirdPerson && absorbTime) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			} else {
 				cgAbsorbTime = 0;
 			}
@@ -4199,7 +4199,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0;
 			
 			if (!cg.renderingThirdPerson) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			}
 			
 			cgProtectFadeTime = 0;
@@ -4224,7 +4224,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0;
 			
 			if (!cg.renderingThirdPerson && protectTime) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			} else {
 				cgProtectTime = 0;
 			}
@@ -4248,7 +4248,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0;
 			
 			if (!cg.renderingThirdPerson) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			}
 			
 			cgYsalFadeTime = 0;
@@ -4273,7 +4273,7 @@ static void CG_Draw2DScreenTints(void) {
 			hcolor[2] = 0;
 			
 			if (!cg.renderingThirdPerson && ysalTime) {
-				CG_DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH*SCREEN_HEIGHT, hcolor);
+				CG_FillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
 			} else {
 				cgYsalTime = 0;
 			}
@@ -4328,7 +4328,10 @@ void CG_Draw2D( void ) {
 	float			wpTime = cg.weaponSelectTime+WEAPON_SELECT_TIME;
 	float			bestTime;
 	int				drawSelect = 0;
-
+	vec4_t			hcolor = {0, 0, 0, 0};
+	
+	CG_FillRect(0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
+	
 	if (cgs.orderPending && cg.time > cgs.orderTime) {
 		CG_CheckOrderPending();
 	}
