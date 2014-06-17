@@ -719,7 +719,8 @@ typedef struct {
 	// prediction state
 	qboolean	hyperspace;				// true if prediction has hit a trigger_teleport
 	playerState_t	predictedPlayerState;
-	centity_t		predictedPlayerEntity;
+	//centity_t		predictedPlayerEntity;
+	//rww - I removed this and made it use cg_entities[clnum] directly.
 	qboolean	validPPS;				// clear until the first call to CG_PredictPlayerState
 	int			predictedErrorTime;
 	vec3_t		predictedError;

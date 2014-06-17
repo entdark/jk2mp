@@ -193,7 +193,7 @@ static int demoSetupView( void) {
 				cg.trueView = (weapon == WP_SABER && cg_trueSaber.integer)
 					|| (weapon != WP_SABER && cg_trueGuns.integer);
 				cg.playerCent = cent;
-				cg.playerPredicted = cent == &cg.predictedPlayerEntity;
+				cg.playerPredicted = cent == &cg_entities[cg.snap->ps.clientNum];
 				if (!cg.playerPredicted ) {
 					//Make sure lerporigin of playercent is val
 					CG_CalcEntityLerpPositions( cg.playerCent );
@@ -350,7 +350,7 @@ void demoProcessSnapShots(qboolean hadSkip) {
 		cg.nextSnap = 0;
 
 		for (i=-1;i<MAX_GENTITIES;i++) {
-			centity_t *cent = i < 0 ? &cg.predictedPlayerEntity : &cg_entities[i];
+			centity_t *cent = i < 0 ? &cg_entities[cg.predictedPlayerState.clientNum] : &cg_entities[i];
 			cent->trailTime = cg.time;
 			cent->snapShotTime = cg.time;
 			cent->currentValid = qfalse;

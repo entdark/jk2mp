@@ -159,7 +159,7 @@ centity_t *demoTargetEntity(int num) {
 	if (num < 0 || num >= (MAX_GENTITIES - 1))
 		return 0;
 	if (num == cg.snap->ps.clientNum)
-		return &cg.predictedPlayerEntity;
+		return &cg_entities[cg.predictedPlayerState.clientNum];
 	if (cg_entities[num].currentValid)
 		return &cg_entities[num];
 	return 0;
@@ -493,7 +493,7 @@ void chaseUpdate( int time, float timeFraction ) {
 		chaseEntityOrigin( targetCent, demo.chase.origin );
 		demo.chase.cent = targetCent;
 	} else {
-		demo.chase.cent = &cg.predictedPlayerEntity;
+		demo.chase.cent = &cg_entities[cg.predictedPlayerState.clientNum];
 	}
 }
 

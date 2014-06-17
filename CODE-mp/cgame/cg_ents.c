@@ -2194,7 +2194,7 @@ void CG_CalcEntityLerpPositions( centity_t *cent ) {
 
 	// adjust for riding a mover if it wasn't rolled into the predicted
 	// player state
-	if ( cent != &cg.predictedPlayerEntity ) {
+	if ( cent->currentState.number != cg.predictedPlayerState.clientNum ) {
 		CG_AdjustPositionForMover( cent->lerpOrigin, cent->currentState.groundEntityNum, 
 		cg.snap->serverTime, cg.time, cent->lerpOrigin );
 	}
@@ -2368,14 +2368,13 @@ void CG_AddPacketEntities( void ) {
 	int					num;
 	centity_t			*cent;
 	
-	// add in the Ghoul2 stuff.
-	VectorCopy( cg_entities[ cg.snap->ps.clientNum].modelScale, cg.predictedPlayerEntity.modelScale);
-	cg.predictedPlayerEntity.radius = cg_entities[ cg.snap->ps.clientNum].radius;
+	CG_AddCEntity( &cg_entities[cg.predictedPlayerState.clientNum] );
 
-	CG_AddCEntity( &cg.predictedPlayerEntity );
-
+	/*
 	// lerp the non-predicted value for lightning gun origins
 	CG_CalcEntityLerpPositions( &cg_entities[ cg.snap->ps.clientNum ] );
+	*/
+	//No longer have to do this.
 
 	// add each entity sent over by the server
 	for ( num = 0 ; num < cg.snap->numEntities ; num++ ) {

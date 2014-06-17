@@ -1237,7 +1237,7 @@ int CG_DemosCalcViewValues( void ) {
 		return CG_CalcFov();
 	}
 
-	if ( cg.playerCent == &cg.predictedPlayerEntity ) {
+	if ( cg.playerPredicted ) {
 		cg.bobcycle = ( cg.predictedPlayerState.bobCycle & 128 ) >> 7;
 		cg.bobfracsin = fabs( sin( ( cg.predictedPlayerState.bobCycle & 127 ) / 127.0 * M_PI ) );
 	} else {
@@ -1686,17 +1686,18 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	// this counter will be bumped for every valid scene we generate
 	cg.clientFrame++;
 	//mme
-	cg.playerCent = &cg.predictedPlayerEntity;
+	cg.playerCent = &cg_entities[cg.predictedPlayerState.clientNum];
 	cg.playerPredicted = qtrue;
 
 	// update cg.predictedPlayerState
 	CG_PredictPlayerState();
 
 	// generate and add the entity from the playerstate
-	BG_PlayerStateToEntityState( &cg.predictedPlayerState, &cg.predictedPlayerEntity.currentState, qfalse );
-	cg.predictedPlayerEntity.currentValid = qtrue;
-	VectorCopy( cg.predictedPlayerEntity.currentState.pos.trBase, cg.predictedPlayerEntity.lerpOrigin );
-	VectorCopy( cg.predictedPlayerEntity.currentState.apos.trBase, cg.predictedPlayerEntity.lerpAngles );
+	CG_CheckPlayerG2Weapons(&cg.predictedPlayerState, &cg_entities[cg.predictedPlayerState.clientNum]);
+	BG_PlayerStateToEntityState(&cg.predictedPlayerState, &cg_entities[cg.snap->ps.clientNum].currentState, qfalse);
+	cg_entities[cg.snap->ps.clientNum].currentValid = qtrue;
+	VectorCopy( cg_entities[cg.snap->ps.clientNum].currentState.pos.trBase, cg_entities[cg.snap->ps.clientNum].lerpOrigin );
+	VectorCopy( cg_entities[cg.snap->ps.clientNum].currentState.apos.trBase, cg_entities[cg.snap->ps.clientNum].lerpAngles );
 
 	// decide on third person view
 	cg.trueView = (cg.playerCent->currentState.weapon == WP_SABER && cg_trueSaber.integer)

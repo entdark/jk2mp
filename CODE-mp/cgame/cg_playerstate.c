@@ -212,7 +212,7 @@ void CG_CheckPlayerstateEvents( playerState_t *ps, playerState_t *ops ) {
 		CG_EntityEvent( cent, cent->lerpOrigin );
 	}
 
-	cent = &cg.predictedPlayerEntity; // cg_entities[ ps->clientNum ];
+	cent = &cg_entities[ ps->clientNum ];
 	// go through the predictable events buffer
 	for ( i = ps->eventSequence - MAX_PS_EVENTS ; i < ps->eventSequence ; i++ ) {
 		// if we have a new predictable event
@@ -243,7 +243,7 @@ void CG_CheckChangedPredictableEvents( playerState_t *ps ) {
 	int event;
 	centity_t	*cent;
 
-	cent = &cg.predictedPlayerEntity;
+	cent = &cg_entities[ps->clientNum];
 	for ( i = ps->eventSequence - MAX_PS_EVENTS ; i < ps->eventSequence ; i++ ) {
 		//
 		if (i >= cg.eventSequence) {
@@ -341,7 +341,7 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 		{
 			if ( ps->stats[STAT_HEALTH] > 0 )
 			{
-				CG_PainEvent( &cg.predictedPlayerEntity, ps->stats[STAT_HEALTH] );
+				CG_PainEvent( &cg_entities[cg.predictedPlayerState.clientNum], ps->stats[STAT_HEALTH] );
 			}
 		}
 	}
@@ -567,11 +567,12 @@ void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops ) {
 	CG_CheckPlayerstateEvents( ps, ops );
 
 	//mme
-	cg.predictedPlayerEntity.pe.viewHeight = ps->viewheight;
+	cg_entities[cg.predictedPlayerState.clientNum].pe.viewHeight = ps->viewheight;
 	// smooth the ducking viewheight change
 	if ( ps->viewheight != ops->viewheight ) {
-		cg.predictedPlayerEntity.pe.duckChange = ps->viewheight - ops->viewheight;
-		cg.predictedPlayerEntity.pe.duckTime = cg.time;
+		//mme
+		cg_entities[cg.predictedPlayerState.clientNum].pe.duckChange = ps->viewheight - ops->viewheight;
+		cg_entities[cg.predictedPlayerState.clientNum].pe.duckTime = cg.time;
 	}
 }
 

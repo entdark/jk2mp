@@ -885,7 +885,7 @@ void CG_AddViewWeapon( playerState_t *ps ) {
 	if ( ps->pm_type == PM_INTERMISSION || ps->persistant[PERS_TEAM] == TEAM_SPECTATOR ) {
 		return;
 	}
-	CG_AddViewWeaponDirect( &cg.predictedPlayerEntity );
+	CG_AddViewWeaponDirect( &cg_entities[cg.predictedPlayerState.clientNum] );
 }
 
 /*
@@ -2113,7 +2113,7 @@ qboolean CG_CalcMuzzlePoint( int entityNum, vec3_t muzzle ) {
 				gunpoint[2] += 46;
 
 				if (cg.renderingThirdPerson)
-					VectorCopy(cg.predictedPlayerEntity.lerpAngles, pitchConstraint);
+					VectorCopy(pEnt->lerpAngles, pitchConstraint);
 				else
 					VectorCopy(cg.refdefViewAngles, pitchConstraint);
 
