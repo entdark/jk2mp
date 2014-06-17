@@ -2850,12 +2850,12 @@ static void CG_DrawHolocronIcons(void) {
 	}
 
 	while (i < NUM_FORCE_POWERS) {
-		if (cg.snap->ps.holocronBits & (1 << forcePowerSorted[i])) {
+		if (holocronBits & (1 << forcePowerSorted[i])) {
 			CG_DrawPic( startx, starty, endx*cgs.widthRatioCoef, endy, cgs.media.forcePowerIcons[forcePowerSorted[i]]);
-			starty += (icon_size+2)*cgs.widthRatioCoef; //+2 for spacing
-			if ((starty+icon_size*cgs.widthRatioCoef) >= SCREEN_HEIGHT-80) {
+			starty += icon_size+2; //+2 for spacing
+			if ((starty+icon_size) >= SCREEN_HEIGHT-80) {
 				starty = 10;//SCREEN_HEIGHT - icon_size*3;
-				startx += (icon_size+2);
+				startx += (icon_size+2)*cgs.widthRatioCoef;
 			}
 		}
 		i++;
@@ -4356,6 +4356,9 @@ void CG_Draw2D( void ) {
 	if (!cg.playerCent)
 		return;
 	else if (!cg.playerPredicted) {
+		cg.scoreBoardShowing = qfalse;
+		if (cg.playerCent->currentState.time2)
+			CG_DrawHolocronIcons();
 		if (cg.playerCent->currentState.forcePowersActive)
 			CG_DrawActivePowers();
 		CG_DrawZoomMask();
