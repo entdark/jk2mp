@@ -545,8 +545,8 @@ void R_SetupProjection( void ) {
 
 	tr.viewParms.projectionMatrix[0] = 2 * zNear / width;
 	tr.viewParms.projectionMatrix[4] = 0;
-	tr.viewParms.projectionMatrix[8] = (xmax + xmin + 2 * stereoSep) / width;//( xmax + xmin ) / width;	// normally 0
-	tr.viewParms.projectionMatrix[12] = 2 * zProj * stereoSep / width;//0;
+	tr.viewParms.projectionMatrix[8] = (xmax + xmin + 2 * stereoSep) / width;	// normally 0
+	tr.viewParms.projectionMatrix[12] = 2 * zProj * stereoSep / width;
 
 	tr.viewParms.projectionMatrix[1] = 0;
 	tr.viewParms.projectionMatrix[5] = 2 * zNear / height;
@@ -576,14 +576,14 @@ void R_SetupFrustum (void) {
 	float	xs, xc;
 	float	ang;
 	float	stereoSep;
-	vec3_t	ofsorigin;
+	vec3_t	origin;
 
 	stereoSep = r_stereoSeparation->value;
 
 	if(stereoSep == 0) {
-		VectorCopy(tr.viewParms.ori.origin, ofsorigin);
+		VectorCopy(tr.viewParms.ori.origin, origin);
 	} else {
-		VectorMA(tr.viewParms.ori.origin, stereoSep*20, tr.viewParms.ori.axis[1], ofsorigin);
+		VectorMA(tr.viewParms.ori.origin, stereoSep*20, tr.viewParms.ori.axis[1], origin);
 	}
 
 	ang = tr.viewParms.fovX / 180 * M_PI * 0.5f;
@@ -608,7 +608,7 @@ void R_SetupFrustum (void) {
 
 	for (i=0 ; i<4 ; i++) {
 		tr.viewParms.frustum[i].type = PLANE_NON_AXIAL;
-		tr.viewParms.frustum[i].dist = DotProduct (ofsorigin, tr.viewParms.frustum[i].normal);
+		tr.viewParms.frustum[i].dist = DotProduct (origin, tr.viewParms.frustum[i].normal);
 		SetPlaneSignbits( &tr.viewParms.frustum[i] );
 	}
 }

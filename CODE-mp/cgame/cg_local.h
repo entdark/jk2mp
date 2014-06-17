@@ -749,8 +749,6 @@ typedef struct {
 	refdef_t	refdefStereo;
 	vec3_t		refdefViewAngles;		// will be converted to refdef.viewaxis
 
-	qboolean	stereoCapture;
-
 	float		constrictValue;
 	float		constrict;
 	int			doConstrict;

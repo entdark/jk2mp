@@ -41,11 +41,6 @@ cvar_t	*cl_timedemo;
 cvar_t	*cl_avidemo;
 cvar_t	*cl_forceavidemo;
 
-cvar_t	*cl_mme_capture;
-cvar_t	*cl_mme_fps;
-cvar_t	*cl_mme_name;
-cvar_t	*cl_mme_focus;
-
 cvar_t	*cl_freelook;
 cvar_t	*cl_sensitivity;
 
@@ -2278,35 +2273,7 @@ void CL_Frame ( int msec ) {
 		CL_DemoSetCGameTime();
 	}
 
-	// update the screen
-/*	if (cl_mme_capture->integer) {
-		float stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
-		float frameTime, fps;
-		
-		if (stereoSep != 0) {
-			if (stereoSep < 0)
-				stereoSep = -stereoSep; // we start always with positive for correct sync
-			Cvar_SetValue("r_stereoSeparation", stereoSep);
-			SCR_UpdateScreen();
-
-			re.Capture( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value );
-
-			stereoSep = -stereoSep;
-			Cvar_SetValue("r_stereoSeparation", stereoSep);
-			SCR_UpdateScreen();
-
-			re.CaptureStereo( cl_mme_name->string, cl_mme_fps->value, cl_mme_focus->value  );
-			Cvar_SetLatched("cl_mme_capture", "2");
-//			stereoSep = -stereoSep;
-//			Cvar_SetValue("r_stereoSeparation", stereoSep);
-			SCR_UpdateScreen();
-			Cvar_SetLatched("cl_mme_capture", "1");
-			skipScreenUpdate = qtrue;
-		} else {
-			SCR_UpdateScreen();
-		}
-	} else*/
-		SCR_UpdateScreen();
+	SCR_UpdateScreen();
 
 	// update audio
 	S_Update();
@@ -2579,11 +2546,6 @@ void CL_Init( void ) {
 	cl_timedemo = Cvar_Get ("timedemo", "0", 0);
 	cl_avidemo = Cvar_Get ("cl_avidemo", "0", 0);
 	cl_forceavidemo = Cvar_Get ("cl_forceavidemo", "0", 0);
-
-	cl_mme_capture = Cvar_Get ("cl_mme_capture", "0", CVAR_INTERNAL);
-	cl_mme_fps = Cvar_Get ("cl_mme_fps", "0", CVAR_INTERNAL);
-	cl_mme_name = Cvar_Get ("cl_mme_name", "", CVAR_INTERNAL);
-	cl_mme_focus = Cvar_Get("cl_mme_focus", "0", CVAR_INTERNAL);
 
 	rconAddress = Cvar_Get ("rconAddress", "", 0);
 

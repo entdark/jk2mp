@@ -143,14 +143,14 @@ static void R_MME_MultiShot( byte * target ) {
 	}
 }
 
-void R_MME_TakeShotStereo( void ) {
+qboolean R_MME_TakeShotStereo( void ) {
 	int pixelCount;
 	qboolean doGamma;
 	qboolean doShot;
 	mmeBlurControl_t* blurControl = &blurData.control;
 
 	if ( !shotData.take || allocFailed )
-		return;
+		return qfalse;
 	shotData.take = qfalse;
 
 	pixelCount = glConfig.vidHeight * glConfig.vidWidth;
@@ -163,7 +163,7 @@ void R_MME_TakeShotStereo( void ) {
 		float fps;
 		byte *shotBuf;
 		if ( ++(blurControl->totalIndex) < blurControl->totalFrames ) 
-			return;
+			return qtrue;
 		blurControl->totalIndex = 0;
 		shotBuf = (byte *)ri.Hunk_AllocateTempMemory( pixelCount * 3 );
 		R_MME_MultiShot( shotBuf );
@@ -173,7 +173,7 @@ void R_MME_TakeShotStereo( void ) {
 		fps = shotData.fps / ( blurControl->totalFrames );
 		R_MME_SaveShot( &shotData.main, glConfig.vidWidth, glConfig.vidHeight, fps, shotBuf, qfalse, 0, 0 );
 		ri.Hunk_FreeTempMemory( shotBuf );
-		return;
+		return qtrue;
 	}*/
 
 	/* Test if we need to do blurred shots */
@@ -339,6 +339,7 @@ void R_MME_TakeShotStereo( void ) {
 			ri.Hunk_FreeTempMemory( depthShot );
 		}
 	}
+	return qtrue;
 }
 
 const void *R_MME_CaptureShotCmdStereo( const void *data ) {
@@ -409,14 +410,11 @@ void R_MME_CaptureStereo( const char *shotName, float fps, float focus ) {
 	if ( !cmd ) {
 		return;
 	}
+	r_capturingDofOrStereo = qtrue;
 	cmd->commandId = RC_CAPTURE_STEREO;
 	cmd->fps = fps;
 	cmd->focus = focus;
 	Com_sprintf(cmd->name, sizeof( cmd->name ), "%s.stereo", shotName );
-//	Q_strncpyz( cmd->name, shotName, sizeof( cmd->name ));
-	R_MME_CaptureShotCmdStereo( cmd );
-	if (R_MME_MultiPassNextStereo()) return;
-	R_MME_TakeShotStereo();
 }
 
 void R_MME_ShutdownStereo(void) {

@@ -373,11 +373,6 @@ extern	cvar_t	*m_filter;
 extern	cvar_t	*cl_timedemo;
 extern	cvar_t	*cl_avidemo;
 
-extern	cvar_t	*cl_mme_capture;
-extern	cvar_t	*cl_mme_fps;
-extern	cvar_t	*cl_mme_name;
-extern	cvar_t	*cl_mme_focus;
-
 extern	cvar_t	*cl_activeAction;
 
 extern	cvar_t	*cl_allowDownload;

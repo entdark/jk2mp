@@ -1336,6 +1336,9 @@ void R_SwapBuffers( int );
 
 void R_RenderView( viewParms_t *parms );
 
+void R_SetupProjection( void );
+void R_SetupFrustum (void);
+
 void R_AddMD3Surfaces( trRefEntity_t *e );
 void R_AddNullModelSurfaces( trRefEntity_t *e );
 void R_AddBeamSurfaces( trRefEntity_t *e );
@@ -1956,15 +1959,23 @@ void R_MME_Init(void);
 void R_MME_InitStereo(void);
 void R_MME_Shutdown(void);
 void R_MME_ShutdownStereo(void);
-void R_MME_TakeShot( void );
-void R_MME_TakeShotStereo( void );
+qboolean R_MME_TakeShot( void );
+qboolean R_MME_TakeShotStereo( void );
 const void *R_MME_CaptureShotCmd( const void *data );
 const void *R_MME_CaptureShotCmdStereo( const void *data );
 void R_MME_Capture( const char *shotName, float fps, float focus );
 void R_MME_CaptureStereo( const char *shotName, float fps, float focus );
 void R_MME_BlurInfo( int* total, int* index );
 void R_MME_JitterView( float *pixels, float* eyes );
+void R_MME_JitterViewStereo( float *pixels, float* eyes );
 qboolean R_MME_JitterOrigin( float *x, float *y );
+qboolean R_MME_JitterOriginStereo( float *x, float *y );
 
 int R_MME_MultiPassNext( );
 int R_MME_MultiPassNextStereo( );
+
+void R_MME_DoNotTake( );
+
+extern qboolean finishStereo;
+extern qboolean r_capturingDofOrStereo;
+extern qboolean r_latestDofOrStereoFrame;

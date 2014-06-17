@@ -413,7 +413,6 @@ void SCR_DrawScreenField( stereoFrame_t stereoFrame ) {
 
 	// wide aspect ratio screens need to have the sides cleared
 	// unless they are displaying game renderings
-	//if ( cls.state != CA_ACTIVE ) {
 	if ( uiFullscreen || (cls.state != CA_ACTIVE && cls.state != CA_CINEMATIC) ) {
 		if ( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 ) {
 			re.SetColor( g_color_table[0] );
@@ -511,11 +510,7 @@ void SCR_UpdateScreen( void ) {
 			SCR_DrawScreenField( STEREO_LEFT );
 			SCR_DrawScreenField( STEREO_RIGHT );
 		} else {
-/*			float stereoSep = Cvar_VariableValue( "r_stereoSeparation" );
-			if (stereoSep != 0)
-				SCR_DrawScreenField( STEREO_LEFT );
-			else*/
-				SCR_DrawScreenField( STEREO_CENTER );
+			SCR_DrawScreenField( STEREO_CENTER );
 		}
 
 		if ( com_speeds->integer ) {
