@@ -474,8 +474,6 @@ void demoDrawBox( const vec3_t origin, const vec3_t container, const vec4_t colo
 	unsigned int i;
 	vec3_t boxCorners[8];
 	polyVert_t verts[4];
-	static const float xMul[4] = {1,1,-1,-1};
-	static const float yMul[4] = {1,-1,-1,1};
 
 	demoDrawSetupVerts( verts, color );
 	/* Create the box corners */
@@ -491,17 +489,27 @@ void demoDrawBox( const vec3_t origin, const vec3_t container, const vec4_t colo
 	}
 }
 
-void demoRotatePoint(vec3_t point, const vec3_t matrix[3]) { 
-	vec3_t tvec;
+void demoDrawCrosshair( void ) {
+	float		w, h;
+	qhandle_t	hShader;
+	float		x, y;
+	int			ca;
 
-	VectorCopy(point, tvec);
-	point[0] = DotProduct(matrix[0], tvec);
-	point[1] = DotProduct(matrix[1], tvec);
-	point[2] = DotProduct(matrix[2], tvec);
-}
-void demoCreateRotationMatrix(const vec3_t angles, vec3_t matrix[3]) {
-	AngleVectors(angles, matrix[0], matrix[1], matrix[2]);
-	VectorInverse(matrix[1]);
+	if ( !cg_drawCrosshair.integer ) {
+		return;
+	}
+
+	w = h = cg_crosshairSize.value;
+	x = cg_crosshairX.integer;
+	y = cg_crosshairY.integer;
+	ca = cg_drawCrosshair.integer;
+	if (ca < 0) {
+		ca = 0;
+	}
+	hShader = cgs.media.crosshairShader[ ca % NUM_CROSSHAIRS ];
+	trap_R_DrawStretchPic( x + (float)cg.refdef.x + 0.5f * ((float)SCREEN_WIDTH - w*cgs.widthRatioCoef), 
+		y + (float)cg.refdef.y + 0.5f * ((float)SCREEN_HEIGHT - h), 
+		w*cgs.widthRatioCoef, h, 0, 0, 1, 1, hShader );
 }
 
 void demoNowTrajectory( const trajectory_t *tr, vec3_t result ) {
@@ -543,4 +551,17 @@ void demoNowTrajectory( const trajectory_t *tr, vec3_t result ) {
 		Com_Error( ERR_DROP, "demoNowTrajectory: unknown trType: %i", tr->trType );
 		break;
 	}
+}
+
+void demoRotatePoint(vec3_t point, const vec3_t matrix[3]) { 
+	vec3_t tvec;
+
+	VectorCopy(point, tvec);
+	point[0] = DotProduct(matrix[0], tvec);
+	point[1] = DotProduct(matrix[1], tvec);
+	point[2] = DotProduct(matrix[2], tvec);
+}
+void demoCreateRotationMatrix(const vec3_t angles, vec3_t matrix[3]) {
+	AngleVectors(angles, matrix[0], matrix[1], matrix[2]);
+	VectorInverse(matrix[1]);
 }

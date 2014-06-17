@@ -157,6 +157,7 @@ void demoPlaybackInit(void);
 centity_t *demoTargetEntity( int num );
 int demoHitEntities( const vec3_t start, const vec3_t forward );
 qboolean demoCentityBoxSize( const centity_t *cent, vec3_t container );
+void demoDrawCrosshair( void );
 
 void CG_DemosAddLog(const char *fmt, ...);
 
