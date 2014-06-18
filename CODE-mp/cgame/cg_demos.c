@@ -22,6 +22,7 @@ extern void trap_MME_BlurInfo( int* total, int * index );
 extern void trap_MME_Capture( const char *baseName, float fps, float focus, float radius );
 extern int trap_MME_SeekTime( int seekTime );
 extern void trap_MME_Music( const char *musicName, float time, float length );
+extern qboolean trap_MME_Demo15Detection( void );
 extern void trap_R_RandomSeed( int time, float timeFraction );
 extern void trap_FX_RandomSeed( int time, float timeFraction );
 extern void trap_S_UpdatePitch( float pitch );
@@ -421,6 +422,8 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	vec4_t hcolor = {0, 0, 0, 0};
 
 	if (!demo.initDone) {
+		//super duper mega hack
+		demo15detected = trap_MME_Demo15Detection();
 		if ( !cg.snap ) {
 			demoProcessSnapShots( qtrue );
 		}
