@@ -947,11 +947,16 @@ Ghoul2 Insert End
 
 	int				chargeTime;
 	qboolean		charging;
+	
+	int				fallingToDeath;
 
 	qboolean		ntModDetected;
 
-	int				dismemberTime;
-	int				fallingToDeath;
+	int				dismemberTime;	
+	struct {
+		vec3_t sunorigin;
+		int raintime;
+	} we;
 } cg_t;
 
 #define MAX_TICS	14
@@ -1334,11 +1339,18 @@ typedef struct {
 	sfxHandle_t	zoomEnd;
 	sfxHandle_t	disruptorZoomLoop;
 
+	// Force looping sounds
 	sfxHandle_t speedLoopSound;
 	sfxHandle_t protectLoopSound;
 	sfxHandle_t absorbLoopSound;
 	sfxHandle_t rageLoopSound;
 	sfxHandle_t seeLoopSound;
+
+	// Weather
+	qhandle_t	saberFlare; //and used for sun
+	sfxHandle_t heavyRain;
+	sfxHandle_t regularRain;
+	sfxHandle_t lightRain;
 } cgMedia_t;
 
 
@@ -1417,6 +1429,10 @@ typedef struct
 	fxHandle_t	mSparks;
 	fxHandle_t	mSpawn;
 	fxHandle_t	mForceConfustion;
+
+	//WEATHER
+	fxHandle_t	saberFizz;
+	fxHandle_t	rain;
 
 } cgEffects_t;
 
@@ -1712,6 +1728,10 @@ extern	vmCvar_t	mov_saberTeamColour;
 extern	vmCvar_t	mov_wallhack;
 
 extern	vmCvar_t	mov_dismember;
+extern	vmCvar_t	mov_rain;
+extern	vmCvar_t	mov_rainDistance;
+extern	vmCvar_t	mov_sun;
+extern	vmCvar_t	mov_sunSize;
 
 extern	vmCvar_t	fx_Vibrate;
 extern	vmCvar_t	fx_vfps;

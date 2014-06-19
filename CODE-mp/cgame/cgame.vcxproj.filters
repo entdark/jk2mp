@@ -241,6 +241,9 @@
     <ClCompile Include="cg_demos_dism.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cg_demos_weather.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="JK2_cgame.def">

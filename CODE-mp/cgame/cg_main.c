@@ -542,6 +542,10 @@ vmCvar_t	mov_saberTeamColour;
 vmCvar_t	mov_wallhack;
 
 vmCvar_t	mov_dismember;
+vmCvar_t	mov_rain;
+vmCvar_t	mov_rainDistance;
+vmCvar_t	mov_sun;
+vmCvar_t	mov_sunSize;
 
 vmCvar_t	fx_Vibrate;
 vmCvar_t	fx_vfps;
@@ -742,6 +746,10 @@ Ghoul2 Insert End
 	{ &mov_saberTeamColour,	"mov_saberTeamColour",	"1",		CVAR_ARCHIVE	},
 	{ &mov_wallhack,		"mov_wallhack",			"0",		CVAR_ARCHIVE	},
 	{ &mov_dismember,		"mov_dismember",		"0",		CVAR_ARCHIVE	},
+	{ &mov_rain,			"mov_rain",				"0",		CVAR_ARCHIVE	},
+	{ &mov_rainDistance,	"mov_rainDistance",		"1000",		CVAR_ARCHIVE	},
+	{ &mov_sun,				"mov_sun",				"0",		CVAR_ARCHIVE	},
+	{ &mov_sunSize,			"mov_sunSize",			"1",		CVAR_ARCHIVE	},
 	{ &fx_Vibrate,			"fx_Vibrate",			"1",		CVAR_ARCHIVE	},
 	{ &fx_vfps,				"fx_vfps",				"1000",		CVAR_ARCHIVE	},
 	{ &fx_disruptTime,		"fx_disruptTime",		"150",		CVAR_ARCHIVE	},	//from smod
@@ -1095,7 +1103,7 @@ static void CG_RegisterSounds( void ) {
 
 	cgs.media.rivetMarkShader			= trap_R_RegisterShader( "gfx/damage/rivetmark" );
 
-	trap_R_RegisterShader( "gfx/effects/saberFlare" );
+	cgs.media.saberFlare				= trap_R_RegisterShader( "gfx/effects/saberFlare" );
 
 	trap_R_RegisterShader( "powerups/ysalimarishell" );
 	trap_R_RegisterShader("gfx/effects/saberDamageGlow" );
@@ -1344,6 +1352,11 @@ static void CG_RegisterSounds( void ) {
 	
 	cgs.media.winnerSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM006" );
 	cgs.media.loserSound = trap_S_RegisterSound( "sound/chars/mothma/misc/40MOM010" );
+
+	// Weather
+	cgs.media.heavyRain = trap_S_RegisterSound("sound/ambient/rain_hard");
+	cgs.media.regularRain = trap_S_RegisterSound("sound/ambient/rain_mid");
+	cgs.media.lightRain = trap_S_RegisterSound("sound/ambient/rain_light");
 }
 
 
@@ -1759,6 +1772,10 @@ Ghoul2 Insert End
 		}
 	}
 */
+
+	//Weather
+	cgs.effects.saberFizz = trap_FX_RegisterEffect("saber/fizz.efx");
+	cgs.effects.rain = trap_FX_RegisterEffect("effects/rain");
 }
 
 
