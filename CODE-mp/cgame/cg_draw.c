@@ -1310,7 +1310,7 @@ void CG_DrawForceSelect( void )
 	i = BG_ProperForceIndex(cg.forceSelect) - 1;
 	if (i < 0)
 	{
-		i = MAX_SHOWPOWERS;
+		i = MAX_SHOWPOWERS - 1;
 	}
 
 	trap_R_SetColor(NULL);
@@ -1320,7 +1320,7 @@ void CG_DrawForceSelect( void )
 	{
 		if (i < 0)
 		{
-			i = MAX_SHOWPOWERS;
+			i = MAX_SHOWPOWERS - 1;
 		}
 
 		if (!ForcePower_Valid(forcePowerSorted[i]))	// Does he have this power?
@@ -1347,7 +1347,7 @@ void CG_DrawForceSelect( void )
 	}
 
 	i = BG_ProperForceIndex(cg.forceSelect) + 1;
-	if (i>MAX_SHOWPOWERS)
+	if (i>=MAX_SHOWPOWERS)
 	{
 		i = 0;
 	}
@@ -1356,7 +1356,7 @@ void CG_DrawForceSelect( void )
 	holdX = x + ((bigIconSize/2) + pad)*cgs.widthRatioCoef;
 	for (iconCnt=1;iconCnt<(sideRightIconCnt+1);i++)
 	{
-		if (i>MAX_SHOWPOWERS)
+		if (i>=MAX_SHOWPOWERS)
 		{
 			i = 0;
 		}
@@ -2051,8 +2051,7 @@ static float CG_DrawTeamOverlay( float y, qboolean right, qboolean upper ) {
 }
 
 
-static void CG_DrawPowerupIcons(int y)
-{
+static void CG_DrawPowerupIcons(int y) {
 	int j;
 	int ico_size = 64;
 	//int y = ico_size/2;
@@ -2062,46 +2061,27 @@ static void CG_DrawPowerupIcons(int y)
 		return;
 
 	y += 16;
-
-	for (j = 0; j <= PW_NUM_POWERUPS; j++)
-	{
-		if ((!cg.playerPredicted?cg.playerCent->currentState.powerups & (1 << j):cg.snap->ps.powerups[j] > cg.time))
-		{
+	for (j = 0; j <= PW_NUM_POWERUPS; j++) {
+		if ((!cg.playerPredicted?cg.playerCent->currentState.powerups & (1 << j):cg.snap->ps.powerups[j] > cg.time)) {
 			int secondsleft = (cg.snap->ps.powerups[j] - cg.time)/1000;
-
 			if (!cg.playerPredicted)
 				secondsleft = 1000; //we don't draw timer
-
 			item = BG_FindItemForPowerup( j );
-
-			if (item)
-			{
+			if (item) {
 				int icoShader = 0;
-				if (cgs.gametype == GT_CTY && (j == PW_REDFLAG || j == PW_BLUEFLAG))
-				{
+				if (cgs.gametype == GT_CTY && (j == PW_REDFLAG || j == PW_BLUEFLAG)) {
 					if (j == PW_REDFLAG)
-					{
 						icoShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_rflag_ys" );
-					}
 					else
-					{
 						icoShader = trap_R_RegisterShaderNoMip( "gfx/hud/mpi_bflag_ys" );
-					}
-				}
-				else
-				{
+				} else {
 					icoShader = trap_R_RegisterShader( item->icon );
 				}
-
-				CG_DrawPic( (640-(ico_size*1.1)*cgs.widthRatioCoef), y, ico_size*cgs.widthRatioCoef, ico_size, icoShader );
-	
+				CG_DrawPic( (640-(ico_size*1.1)*cgs.widthRatioCoef), y, ico_size*cgs.widthRatioCoef, ico_size, icoShader );	
 				y += ico_size;
-
-				if (j != PW_REDFLAG && j != PW_BLUEFLAG && secondsleft < 999)
-				{
+				if (j != PW_REDFLAG && j != PW_BLUEFLAG && secondsleft < 999) {
 					UI_DrawProportionalString((640-(ico_size*1.1)*cgs.widthRatioCoef)+(ico_size/2*cgs.widthRatioCoef), y-8, va("%i", secondsleft), UI_CENTER | UI_BIGFONT | UI_DROPSHADOW, colorTable[CT_WHITE]);
 				}
-
 				y += (ico_size/3);
 			}
 		}
