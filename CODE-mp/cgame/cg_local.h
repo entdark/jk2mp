@@ -1728,15 +1728,16 @@ extern	vmCvar_t	mov_saberTeamColour;
 extern	vmCvar_t	mov_wallhack;
 
 extern	vmCvar_t	mov_dismember;
-extern	vmCvar_t	mov_rain;
-extern	vmCvar_t	mov_rainDistance;
-extern	vmCvar_t	mov_sun;
-extern	vmCvar_t	mov_sunSize;
+
+extern	vmCvar_t	mov_absorbVisibility;
+extern	vmCvar_t	mov_absorbColour;
+extern	vmCvar_t	mov_protectColour;
+extern	vmCvar_t	mov_rageColour;
+
+extern	vmCvar_t	mme_demoFileName;
 
 extern	vmCvar_t	fx_Vibrate;
 extern	vmCvar_t	fx_vfps;
-
-extern	vmCvar_t	mme_demoFileName;
 
 extern	vmCvar_t	fx_disruptTime;
 extern	vmCvar_t	fx_disruptTeamColour;

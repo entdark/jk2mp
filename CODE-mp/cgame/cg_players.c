@@ -8732,9 +8732,18 @@ doEssentialThree:
 		legs.renderfx &= ~RF_MINLIGHT;
 
 		legs.renderfx |= RF_RGB_TINT;
-		legs.shaderRGBA[0] = 255;
-		legs.shaderRGBA[1] = legs.shaderRGBA[2] = 0;
-		legs.shaderRGBA[3] = 255;
+		if (mov_rageColour.string[0] == '0') {
+			legs.shaderRGBA[0] = 255;
+			legs.shaderRGBA[1] = legs.shaderRGBA[2] = 0;
+			legs.shaderRGBA[3] = 255;
+		} else {
+			vec3_t color;
+			Q_parseColor(mov_rageColour.string, defaultColors, color);
+			legs.shaderRGBA[0] = color[0] * 255;
+			legs.shaderRGBA[1] = color[1] * 255;
+			legs.shaderRGBA[2] = color[2] * 255;
+			legs.shaderRGBA[3] = 255;
+		}
 
 		if ( rand() & 1 ) {
 			legs.customShader = cgs.media.electricBodyShader;	
@@ -8761,10 +8770,19 @@ doEssentialThree:
 	//can tell it apart from the JM/duel shaders, but it's still very obvious.
 	if (cent->currentState.forcePowersActive & (1 << FP_PROTECT))
 	{ //aborb is represented by green..
-		legs.shaderRGBA[0] = 0;
-		legs.shaderRGBA[1] = 255;
-		legs.shaderRGBA[2] = 0;
-		legs.shaderRGBA[3] = 254;
+		if (mov_protectColour.string[0] == '0') {
+			legs.shaderRGBA[0] = 0;
+			legs.shaderRGBA[1] = 255;
+			legs.shaderRGBA[2] = 0;
+			legs.shaderRGBA[3] = 254;
+		} else {
+			vec3_t color;
+			Q_parseColor(mov_protectColour.string, defaultColors, color);
+			legs.shaderRGBA[0] = color[0] * 255;
+			legs.shaderRGBA[1] = color[1] * 255;
+			legs.shaderRGBA[2] = color[2] * 255;
+			legs.shaderRGBA[3] = 255;
+		}
 
 		legs.renderfx &= ~RF_RGB_TINT;
 		legs.renderfx &= ~RF_FORCE_ENT_ALPHA;
@@ -8780,10 +8798,19 @@ doEssentialThree:
 		&& cg_entities[cent->currentState.number].teamPowerType == 3)
 	|| (demo15detected && (cent->currentState.forcePowersActive & (1 << FP_ABSORB))))
 	{ //absorb is represented by blue..
-		legs.shaderRGBA[0] = 0;
-		legs.shaderRGBA[1] = 0;
-		legs.shaderRGBA[2] = 255;
-		legs.shaderRGBA[3] = 254;
+		if (mov_absorbColour.string[0] == '0') {
+			legs.shaderRGBA[0] = 0;
+			legs.shaderRGBA[1] = 0;
+			legs.shaderRGBA[2] = 255;
+			legs.shaderRGBA[3] = 254;
+		} else {
+			vec3_t color;
+			Q_parseColor(mov_absorbColour.string, defaultColors, color);
+			legs.shaderRGBA[0] = color[0] * 255;
+			legs.shaderRGBA[1] = color[1] * 255;
+			legs.shaderRGBA[2] = color[2] * 255;
+			legs.shaderRGBA[3] = 255;
+		}
 
 		legs.renderfx &= ~RF_RGB_TINT;
 		legs.renderfx &= ~RF_FORCE_ENT_ALPHA;

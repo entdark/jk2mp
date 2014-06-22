@@ -542,15 +542,16 @@ vmCvar_t	mov_saberTeamColour;
 vmCvar_t	mov_wallhack;
 
 vmCvar_t	mov_dismember;
-vmCvar_t	mov_rain;
-vmCvar_t	mov_rainDistance;
-vmCvar_t	mov_sun;
-vmCvar_t	mov_sunSize;
+
+vmCvar_t	mov_absorbVisibility;
+vmCvar_t	mov_absorbColour;
+vmCvar_t	mov_protectColour;
+vmCvar_t	mov_rageColour;
+
+vmCvar_t	mme_demoFileName;
 
 vmCvar_t	fx_Vibrate;
 vmCvar_t	fx_vfps;
-
-vmCvar_t	mme_demoFileName;
 
 vmCvar_t	fx_disruptTime;
 vmCvar_t	fx_disruptTeamColour;
@@ -746,10 +747,10 @@ Ghoul2 Insert End
 	{ &mov_saberTeamColour,	"mov_saberTeamColour",	"1",		CVAR_ARCHIVE	},
 	{ &mov_wallhack,		"mov_wallhack",			"0",		CVAR_ARCHIVE	},
 	{ &mov_dismember,		"mov_dismember",		"0",		CVAR_ARCHIVE	},
-	{ &mov_rain,			"mov_rain",				"0",		CVAR_ARCHIVE	},
-	{ &mov_rainDistance,	"mov_rainDistance",		"1000",		CVAR_ARCHIVE	},
-	{ &mov_sun,				"mov_sun",				"0",		CVAR_ARCHIVE	},
-	{ &mov_sunSize,			"mov_sunSize",			"1",		CVAR_ARCHIVE	},
+	{ &mov_absorbVisibility,"mov_absorbVisibility",	"0",		CVAR_ARCHIVE	},
+	{ &mov_absorbColour,	"mov_absorbColour",		"0",		CVAR_ARCHIVE	},
+	{ &mov_protectColour,	"mov_protectColour",	"0",		CVAR_ARCHIVE	},
+	{ &mov_rageColour,		"mov_rageColour",		"0",		CVAR_ARCHIVE	},
 	{ &fx_Vibrate,			"fx_Vibrate",			"1",		CVAR_ARCHIVE	},
 	{ &fx_vfps,				"fx_vfps",				"1000",		CVAR_ARCHIVE	},
 	{ &fx_disruptTime,		"fx_disruptTime",		"150",		CVAR_ARCHIVE	},	//from smod
