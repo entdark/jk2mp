@@ -1044,14 +1044,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="ALut.lib">
-      <Filter>Resource Files</Filter>
-    </Library>
-    <Library Include="OpenAL32.lib">
-      <Filter>Resource Files</Filter>
-    </Library>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="win32\qe3.ico">
       <Filter>Resource Files</Filter>
     </None>
