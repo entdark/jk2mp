@@ -219,7 +219,8 @@ void R_BindAnimatedImage( textureBundle_t *bundle ) {
 	}
 
 	if ( bundle->numImageAnimations <= 1 ) {
-		GL_Bind( bundle->image[0] );
+		if ( bundle->image[0] )
+			GL_Bind( bundle->image[0] );
 		return;
 	}
 
