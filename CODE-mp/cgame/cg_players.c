@@ -8793,10 +8793,10 @@ doEssentialThree:
 	//if (cent->currentState.forcePowersActive & (1 << FP_ABSORB))
 	//Showing only when the power has been active (absorbed something) recently now, instead of always.
 //	if (cent->teamPowerEffectTime > cg.time && cent->teamPowerEffectTime <= cg.time + 1000 && cent->teamPowerType == 3)
-	if ((!demo15detected && cg_entities[cent->currentState.number].teamPowerEffectTime > cg.time
-		&& cg_entities[cent->currentState.number].teamPowerEffectTime <= cg.time + 1000
-		&& cg_entities[cent->currentState.number].teamPowerType == 3)
-	|| (demo15detected && (cent->currentState.forcePowersActive & (1 << FP_ABSORB))))
+	if ((mov_absorbVisibility.integer && cg.demoPlayback && (cent->currentState.forcePowersActive & (1 << FP_ABSORB)))
+		|| (!demo15detected &&cent->teamPowerEffectTime > cg.time
+		&& cent->teamPowerEffectTime <= cg.time + 1000 && cent->teamPowerType == 3)
+		|| (demo15detected && (cent->currentState.forcePowersActive & (1 << FP_ABSORB))))
 	{ //absorb is represented by blue..
 		if (mov_absorbColour.string[0] == '0') {
 			legs.shaderRGBA[0] = 0;
