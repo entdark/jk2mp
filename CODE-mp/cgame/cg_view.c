@@ -1624,11 +1624,17 @@ Generates and draws a game scene and status information at the given time.
 */
 extern void CG_SetPredictedThirdPerson(void);
 extern void trap_S_UpdatePitch( float pitch );
+extern void CG_Set2DRatio(void);
 void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback ) {
 	int		inwater;
 
 	cg.time = serverTime;
 	cg.demoPlayback = demoPlayback;
+	
+	if (mov_ratioFix.modificationCount > 0) {
+		CG_Set2DRatio();
+		mov_ratioFix.modificationCount = 0;
+	}
 
 	if (cg.snap && ui_myteam.integer != cg.snap->ps.persistant[PERS_TEAM])
 	{

@@ -952,9 +952,9 @@ const char *CG_Argv( int arg ) {
 }
 
 
-static void CG_Set2DRatio(void) {
+void CG_Set2DRatio(void) {
 	if (mov_ratioFix.integer)
-		cgs.widthRatioCoef = (640.0*cgs.glconfig.vidHeight) / (480.0*cgs.glconfig.vidWidth);
+		cgs.widthRatioCoef = (float)(SCREEN_WIDTH * cgs.glconfig.vidHeight) / (float)(SCREEN_HEIGHT * cgs.glconfig.vidWidth);
 	else
 		cgs.widthRatioCoef = 1.0f;
 }
