@@ -756,8 +756,8 @@ Ghoul2 Insert End
 	{ &fx_disruptTime,		"fx_disruptTime",		"150",		CVAR_ARCHIVE	},	//from smod
 	{ &fx_disruptTeamColour,"fx_disruptTeamColour",	"0",		CVAR_ARCHIVE	},
 	{ &fx_disruptSpiral,	"fx_disruptSpiral",		"0",		CVAR_ARCHIVE	},
-	{ &fx_disruptCoreColor,	"fx_disruptCoreColor",	"0",		CVAR_ARCHIVE	},
-	{ &fx_disruptSpiralColor,"fx_disruptSpiralColor","0",		CVAR_ARCHIVE	},
+	{ &fx_disruptCoreColor,	"fx_disruptCoreColor",	"xff4400",	CVAR_ARCHIVE	},
+	{ &fx_disruptSpiralColor,"fx_disruptSpiralColor","xff2200",	CVAR_ARCHIVE	},
 
 	{ &cg_trueEyePosition,	"cg_trueEyePosition",	"-2",		CVAR_ARCHIVE	},
 	{ &cg_trueFlip,			"cg_trueFlip",			"2",		CVAR_ARCHIVE	},
