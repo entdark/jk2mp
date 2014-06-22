@@ -592,7 +592,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		cg.headStartTime = 0;
 		cg.v_dmg_time = 0;
 		cg.fallingToDeath = 0;
-		cg.we.raintime = 0;
+		demo.rain.time = 0;
 		trap_S_ClearLoopingSounds(qtrue);
 
 		for (i = 0; i < MAX_CLIENTS && mov_dismember.integer; i++)
@@ -659,6 +659,14 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	else if ((cg.playerCent && (cg.fallingToDeath + 5000) < cg.time
 		&& !(cg.playerCent->currentState.eFlags & EF_DEAD)) || !cg.playerCent)
 		cg.fallingToDeath = 0;
+
+	if (demo.rain.active) { // transfer this to CG_DoSaber
+		cg.rainNumber = demo.rain.number;
+		cg.rainTime = demo.rain.time;
+	} else {
+		cg.rainNumber = 0;
+		cg.rainTime = INT_MAX;
+	}
 
 	CG_CalcScreenEffects();
 		
@@ -960,8 +968,7 @@ static void demoFindCommand_f(void) {
 		demo.play.paused = qfalse;
 }
 
-void demoPlaybackInit(void) {
-	vec3_t angles;	
+void demoPlaybackInit(void) {	
 	char projectFile[MAX_OSPATH];
 
 	demo.initDone = qtrue;
@@ -1003,10 +1010,16 @@ void demoPlaybackInit(void) {
 	demo.dof.radius = 5.0f;
 	demo.dof.target = -1;
 
-	angles[YAW] = AngleNormalize360(1);
-	angles[PITCH] = AngleNormalize360(1);
-	angles[ROLL] = AngleNormalize360(1);	 	
-	VectorScale(angles, 9999, cg.we.sunorigin);
+	demo.sun.active = qfalse;
+	demo.sun.size = 1.0f;
+	demo.sun.precision = 10.0f;
+	demo.sun.angles[YAW] = 45.0f;
+	demo.sun.angles[PITCH] = -45.0f;
+	demo.sun.angles[ROLL] = 0.0f;
+
+	demo.rain.active = qfalse;
+	demo.rain.number = 100;
+	demo.rain.range = 1000.0f;
 
 	hudInitTables();
 	demoSynchMusic( -1, 0 );
@@ -1032,6 +1045,8 @@ void demoPlaybackInit(void) {
 	trap_AddCommand("clientOverride");
 	trap_AddCommand("musicPlay");
 	trap_AddCommand("stopLoop");
+	trap_AddCommand("sun");
+	trap_AddCommand("rain");
 
 	demo.media.additiveWhiteShader = trap_R_RegisterShader( "mme_additiveWhite" );
 	demo.media.mouseCursor = trap_R_RegisterShaderNoMip( "cursor" );
@@ -1181,6 +1196,10 @@ qboolean CG_DemosConsoleCommand( void ) {
 		musicPlayCommand_f();
 	} else if (!Q_stricmp(cmd, "stopLoop")) {
 		stopLoopingSounds_f();
+	} else if (!Q_stricmp(cmd, "sun")) {
+		demoSunCommand_f();
+	} else if (!Q_stricmp(cmd, "rain")) {
+		demoRainCommand_f();
 	} else {
 		return CG_ConsoleCommand();
 	}

@@ -4176,8 +4176,7 @@ void CG_DoSaber(vec3_t origin, vec3_t dir, float length, saber_colors_t color, i
 	// Find the midpoint of the saber for lighting purposes
 	VectorMA(origin, length * 0.5f, dir, mid);
 	
-	if ((int)length > 1 && mov_rain.integer > 0
-		&& cg.we.raintime <= cg.time && Q_irand(0,5000) <= (float)mov_rain.integer) {
+	if ((int)length > 1 && cg.rainNumber > 0 && cg.rainTime <= cg.time && Q_irand(0,5000) <= cg.rainNumber) {
 		int pos = Q_irand(0,length);
 		vec3_t fizz;
 		vec3_t endf;

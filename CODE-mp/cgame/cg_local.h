@@ -954,10 +954,7 @@ Ghoul2 Insert End
 	qboolean		ntModDetected;
 
 	int				dismemberTime;	
-	struct {
-		vec3_t sunorigin;
-		int raintime;
-	} we;
+	int				rainTime, rainNumber;
 } cg_t;
 
 #define MAX_TICS	14
