@@ -949,6 +949,7 @@ Ghoul2 Insert End
 	qboolean		charging;
 	
 	int				fallingToDeath;
+	int				tip;
 
 	qboolean		ntModDetected;
 
