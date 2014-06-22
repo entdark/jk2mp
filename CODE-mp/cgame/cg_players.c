@@ -7442,7 +7442,7 @@ doEssentialOne:
 //			}
 //		}
 //	}
-	goto SkipTrueView;
+//	goto SkipTrueView;
 	//[TrueView]
 	//Restrict True View Model changes to the player and do the True View camera view work.
 	if ((!cg.playerPredicted || cg.snap) && cg.playerCent
