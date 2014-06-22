@@ -4029,9 +4029,8 @@ static void CG_Draw2DScreenTints(void) {
 			}
 			hcolor[3] = rageTime;
 			
-			if (!cg.renderingThirdPerson) {
+			if (!cg.renderingThirdPerson)
 				CG_FillRect(0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);
-			}
 			
 			cgRageFadeTime = 0;
 			cgRageFadeVal = 0.0f;
@@ -4405,6 +4404,7 @@ void CG_Draw2D( void ) {
 		return;
 	else if (!cg.playerPredicted) {
 		cg.scoreBoardShowing = qfalse;
+		CG_Draw2DScreenTints();
 		if (cg.playerCent->currentState.time2)
 			CG_DrawHolocronIcons();
 		if (cg.playerCent->currentState.forcePowersActive)
