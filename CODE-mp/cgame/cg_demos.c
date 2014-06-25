@@ -204,11 +204,12 @@ static int demoSetupView( void) {
 					cg.zoomMode = cg.snap->ps.zoomMode || cg.predictedPlayerState.zoomMode;
 					CG_SetPredictedThirdPerson();
 				} else {
-					cg.zoomMode = ((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4
-						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4) && !demo15detected)
+					int torsoAnim = cg.playerCent->currentState.torsoAnim & ~ANIM_TOGGLEBIT;
+					cg.zoomMode = ((torsoAnim == TORSO_WEAPONREADY4
+						|| torsoAnim == BOTH_ATTACK4) && !demo15detected)
 						||
-						((cg.playerCent->currentState.torsoAnim == TORSO_WEAPONREADY4_15
-						|| cg.playerCent->currentState.torsoAnim == BOTH_ATTACK4_15) && demo15detected);
+						((torsoAnim == TORSO_WEAPONREADY4_15
+						|| torsoAnim == BOTH_ATTACK4_15) && demo15detected);
 					cg.renderingThirdPerson = ((cg_thirdPerson.integer || cent->currentState.eFlags & EF_DEAD
 						|| (weapon == WP_SABER && !cg.trueView) || cg.fallingToDeath) && !cg.zoomMode
 						&& !(cg_fpls.integer && weapon == WP_SABER));
