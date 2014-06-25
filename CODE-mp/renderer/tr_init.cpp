@@ -799,7 +799,7 @@ void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "anisotropic filtering: %s\n", enablestrings[(r_ext_texture_filter_anisotropic->integer != 0) && glConfig.textureFilterAnisotropicAvailable] );
 
 #ifdef JEDIACADEMY_GLOW
-	Com_Printf ("Dynamic Glow: %s\n", enablestrings[r_DynamicGlow->integer] );
+	Com_Printf ("Dynamic Glow: %s\n", enablestrings[r_DynamicGlow->integer != 0] );
 	if (g_bTextureRectangleHack) Com_Printf ("Dynamic Glow ATI BAD DRIVER HACK %s\n", enablestrings[g_bTextureRectangleHack] );
 #endif
 
