@@ -75,7 +75,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\JK2_game.def</ModuleDefinitionFile>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <GenerateMapFile>true</GenerateMapFile>
