@@ -3068,7 +3068,7 @@ static void CG_G2PlayerAngles( centity_t *cent, vec3_t legs[3], vec3_t legsAngle
 	AnglesSubtract( headAngles, torsoAngles, headAngles );
 	AnglesSubtract( torsoAngles, legsAngles, torsoAngles );
 
-	if (!demo15detected)
+	if (!demo15detected || (cg.trueView && !cg.renderingThirdPerson && cg.playerCent == cent))
 		legsAngles[PITCH] = 0;
 
 	AnglesToAxis( legsAngles, legs );
@@ -6451,8 +6451,8 @@ void SmoothTrueView(vec3_t eyeAngles) {
 	legsAnim = cg.playerPredicted ? cg.predictedPlayerState.legsAnim : cg.playerCent->currentState.legsAnim;
 	torsoAnim = cg.playerPredicted ? cg.predictedPlayerState.torsoAnim : cg.playerCent->currentState.torsoAnim;
 
-	legsAnim&=~ANIM_TOGGLEBIT;
-	torsoAnim&=~ANIM_TOGGLEBIT;
+	legsAnim &= ~ANIM_TOGGLEBIT;
+	torsoAnim &= ~ANIM_TOGGLEBIT;
 
 	//Debug messages
 	//Com_Printf("eyeAngles: %f, %f, %f\n", eyeAngles[0], eyeAngles[1], eyeAngles[2]);
