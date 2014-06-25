@@ -7445,7 +7445,7 @@ doEssentialOne:
 	//[TrueView]
 	//Restrict True View Model changes to the player and do the True View camera view work.
 	if ((!cg.playerPredicted || cg.snap) && cg.playerCent
-		&& cent->currentState.number == cg.playerCent->currentState.number) {
+		&& cent->currentState.number == cg.playerCent->currentState.number && !(cent->currentState.eFlags & EF_DEAD)) {
 		if ( !cg.renderingThirdPerson
 			&& cg.trueView )
 		{
