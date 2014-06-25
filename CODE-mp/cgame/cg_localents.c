@@ -376,16 +376,15 @@ void CG_AddFragment( localEntity_t *le ) {
 			AnglesToAxis( angles, le->refEntity.axis );
 		}
 
+		if ( mov_dismember.integer && le->leFragmentType == LEFT_GIB ) {
+			le->refEntity.origin[2] += 8;
+		} else if ( mov_dismember.integer && le->leFragmentType == LEFT_SABER ) {
+			le->refEntity.origin[2] += 1;
+		}
 		trap_R_AddRefEntityToScene( &le->refEntity );
 
 		// add a blood trail
-		if ( mov_dismember.integer && le->leFragmentType == LEFT_GIB ) {
-			le->refEntity.origin[2] += 8;
-			trap_R_AddRefEntityToScene( &le->refEntity );
-		} else if ( mov_dismember.integer && le->leFragmentType == LEFT_SABER ) {
-			le->refEntity.origin[2] += 1;
-			trap_R_AddRefEntityToScene( &le->refEntity );
-		} else if ( le->leBounceSoundType == LEBS_BLOOD ) {
+		if ( !mov_dismember.integer && le->leBounceSoundType == LEBS_BLOOD ) {
 			CG_BloodTrail( le );
 		}
 
