@@ -604,9 +604,9 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	}
 
 	/* Make sure the random seed is the same each time we hit this frame */
-	srand(cg.time + cg.timeFraction);
-	trap_R_RandomSeed(cg.time, cg.timeFraction);
-	trap_FX_RandomSeed(cg.time, cg.timeFraction);
+	srand(cg.time % 100000 + cg.timeFraction);
+	trap_R_RandomSeed(cg.time % 100000, cg.timeFraction);
+	trap_FX_RandomSeed(cg.time % 100000, cg.timeFraction);
 
 	//silly hack :s
 	if (demo.play.paused || !frameSpeed) {
