@@ -227,6 +227,10 @@ void demoCheckDismember(vec3_t saberhitorg) {
 		}
 	}
 
+	/* found dismembered client? */
+	if (best < 0)
+		return;
+
 	target = &cg_entities[best];
 	if (!target)
 		return;
