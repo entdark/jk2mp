@@ -612,7 +612,12 @@ void trap_FX_PlayEntityEffectID( int id, vec3_t org,
 			return;
 		}
 
-		if (!(cg.frametime > 0
+		if (id == cgs.effects.forceDrainWide || id == cgs.effects.forceDrain) {
+			if (!(cg.frametime > 0
+				&& ((cg.frametime < 1 && fmod((float)cg.time, 1.0f) <= cg.frametime)
+				|| cg.frametime >= 1)))
+				return;
+		} else if (!(cg.frametime > 0
 			&& ((cg.frametime < 17 && fmod((float)cg.time, 17.0f) <= cg.frametime)
 			|| cg.frametime >= 17)))
 			return;
