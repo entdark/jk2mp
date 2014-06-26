@@ -4904,7 +4904,10 @@ Ghoul2 Insert Start
 					trDir[1] = 1;
 				}
 
-				trap_FX_PlayEffectID( trap_FX_RegisterEffect("saber/spark.efx"), trace.endpos, trDir );
+				if (cg.frametime > 0
+					&& ((cg.frametime < 50 && cg.time % 50 <= cg.frametime)
+					|| cg.frametime >= 50))
+					trap_FX_PlayEffectID( trap_FX_RegisterEffect("saber/spark.efx"), trace.endpos, trDir );
 
 				//Stop saber? (it wouldn't look right if it was stuck through a thin wall and unable to hurt players on the other side)
 				VectorSubtract(otherPos, trace.endpos, v);
@@ -8383,7 +8386,7 @@ stillDoSaber:
 				if (!cent->bolt2) {
 					cent->bolt2 = cg.time;
 				}
-				if (cent->bolt3 != 90) {
+				if (cent->bolt3 != 90 && cg.frametime) {
 					if (cent->bolt3 < 90) {
 						cent->bolt3 += ((cg.time - cent->bolt2) + cg.timeFraction) * 0.5f;
 						if (cent->bolt3 > 90) {
