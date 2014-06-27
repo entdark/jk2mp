@@ -1631,9 +1631,9 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	cg.time = serverTime;
 	cg.demoPlayback = demoPlayback;
 	
-	if (mov_ratioFix.modificationCount > 0) {
+	if (mov_ratioFix.integer != cg.lastRatioFix) {
 		CG_Set2DRatio();
-		mov_ratioFix.modificationCount = 0;
+		cg.lastRatioFix = mov_ratioFix.integer;
 	}
 
 	if (cg.snap && ui_myteam.integer != cg.snap->ps.persistant[PERS_TEAM])

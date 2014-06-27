@@ -435,9 +435,9 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		demoPlaybackInit();
 	}
 
-	if (mov_ratioFix.modificationCount > 0) {
+	if (mov_ratioFix.integer != cg.lastRatioFix) {
 		CG_Set2DRatio();
-		mov_ratioFix.modificationCount = 0;
+		cg.lastRatioFix = mov_ratioFix.integer;
 	}
 
 	cg.demoPlayback = 2;

@@ -950,6 +950,7 @@ Ghoul2 Insert End
 	
 	int				fallingToDeath;
 	int				tip;
+	int				lastRatioFix;
 
 	qboolean		ntModDetected;
 
