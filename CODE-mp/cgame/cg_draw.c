@@ -738,8 +738,15 @@ void CG_DrawHealth(int x,int y)
 	float	healthPercent;
 	playerState_t	*ps;
 	int healthAmt;
-
+	char num[16];
+	int l;
+	
 	ps = &cg.snap->ps;
+	
+	Com_sprintf (num, sizeof(num), "%i", ps->stats[STAT_HEALTH]);
+	l = strlen(num);
+	if (l > 3)
+		l = 3;
 
 	healthAmt = ps->stats[STAT_HEALTH];
 
@@ -764,7 +771,7 @@ void CG_DrawHealth(int x,int y)
 	}
 
 	trap_R_SetColor( colorTable[CT_HUD_RED] );	
-	CG_DrawNumField ((x + 16)*cgs.widthRatioCoef, y + 40, 3, ps->stats[STAT_HEALTH], 6, 12, 
+	CG_DrawNumField ((float)x - (float)l + ((float)l + 16.0f)*cgs.widthRatioCoef, y + 40, 3, ps->stats[STAT_HEALTH], 6, 12, 
 		NUM_FONT_SMALL,qfalse);
 
 }
@@ -780,8 +787,15 @@ void CG_DrawArmor(int x,int y)
 	float			armorPercent,hold;
 	playerState_t	*ps;
 	int				armor;
+	char			num[16];
+	int				l;
 
 	ps = &cg.snap->ps;
+	
+	Com_sprintf (num, sizeof(num), "%i", ps->stats[STAT_ARMOR]);
+	l = strlen(num);
+	if (l > 3)
+		l = 3;
 
 	//	Outer Armor circular
 	memcpy(calcColor, colorTable[CT_HUD_GREEN], sizeof(vec4_t));
@@ -856,7 +870,7 @@ void CG_DrawArmor(int x,int y)
 	}
 
 	trap_R_SetColor( colorTable[CT_HUD_GREEN] );	
-	CG_DrawNumField ((x + 18 + 12)*cgs.widthRatioCoef, y + 40 + 14, 3, ps->stats[STAT_ARMOR], 6, 12, 
+	CG_DrawNumField ((float)x - (float)l + ((float)l + 18.0f + 14.0f)*cgs.widthRatioCoef, y + 40 + 14, 3, ps->stats[STAT_ARMOR], 6, 12, 
 		NUM_FONT_SMALL,qfalse);
 
 }
@@ -2319,7 +2333,8 @@ CG_DrawLagometer
 ==============
 */
 static void CG_DrawLagometer( void ) {
-	int		a, x, y, i;
+	int		a, i;
+	float	x, y;
 	float	v;
 	float	ax, ay, aw, ah, mid, range;
 	int		color;
@@ -2333,22 +2348,22 @@ static void CG_DrawLagometer( void ) {
 	//
 	// draw the graph
 	//
-	x = 640 - 48*cgs.widthRatioCoef;
-	y = 480 - 165;
+	x = (float)SCREEN_WIDTH - 48.0f*cgs.widthRatioCoef;
+	y = (float)SCREEN_HEIGHT - 165.0f;
 
 	trap_R_SetColor( NULL );
-	CG_DrawPic( x, y, 48*cgs.widthRatioCoef, 48, cgs.media.lagometerShader );
+	CG_DrawPic( x, y, 48*cgs.widthRatioCoef, 48.0f, cgs.media.lagometerShader );
 
-	ax = x;
+	ax = x-0.5f*cgs.widthRatioCoef;
 	ay = y;
-	aw = 48*2;
-	ah = 48;
+	aw = 48.0f*2.0f;
+	ah = 48.0f;
 
 	color = -1;
-	range = ah / 3;
+	range = ah / 3.0f;
 	mid = ay + range;
 
-	vscale = range / MAX_LAGOMETER_RANGE;
+	vscale = range / (float)MAX_LAGOMETER_RANGE;
 
 	// draw the frame interpoalte / extrapolate graph
 	for ( a = 0 ; a < aw ; a++ ) {
@@ -2412,8 +2427,8 @@ static void CG_DrawLagometer( void ) {
 
 	trap_R_SetColor( NULL );
 
-	if ( cg_nopredict.integer || cg_synchronousClients.integer ) {
-		CG_DrawBigString( ax, ay, "snc", 1.0 );
+	if ( !cg.demoPlayback && (cg_nopredict.integer || cg_synchronousClients.integer) ) {
+		CG_DrawBigString( ax, ay, "snc", 1.0f );
 	}
 
 	CG_DrawDisconnect();
@@ -2859,13 +2874,13 @@ static qboolean CG_IsDurationPower(int power) {
 //--------------------------------------------------------------
 static void CG_DrawActivePowers(void) {
 //--------------------------------------------------------------
-	int icon_size = 40;
+	float icon_size = 40.0f;
 	int i = 0;
-	int startx = icon_size*2+16;
-	int starty = SCREEN_HEIGHT - icon_size*2;
+	float startx = (icon_size*2.0f+16.0f)*cgs.widthRatioCoef;
+	float starty = (float)SCREEN_HEIGHT - icon_size*2.0f;
 
-	int endx = icon_size;
-	int endy = icon_size;
+	float endx = icon_size*cgs.widthRatioCoef;
+	float endy = icon_size;
 
 	//don't display over zoom mask
 	if (cg.zoomMode) {
@@ -2878,10 +2893,10 @@ static void CG_DrawActivePowers(void) {
 	while (i < NUM_FORCE_POWERS) {
 		if ((cg.playerCent->currentState.forcePowersActive & (1 << forcePowerSorted[i])) &&
 			CG_IsDurationPower(forcePowerSorted[i])) {
-			CG_DrawPic( startx, starty, endx*cgs.widthRatioCoef, endy, cgs.media.forcePowerIcons[forcePowerSorted[i]]);
+			CG_DrawPic( startx, starty, endx, endy, cgs.media.forcePowerIcons[forcePowerSorted[i]]);
 			startx += (icon_size+2)*cgs.widthRatioCoef; //+2 for spacing
-			if ((startx+icon_size*cgs.widthRatioCoef) >= SCREEN_WIDTH-80) {
-				startx = icon_size*2+16;
+			if ((startx+endx) >= (float)SCREEN_WIDTH-80.0f) {
+				startx = (icon_size*2.0f+16.0f)*cgs.widthRatioCoef;
 				starty += (icon_size+2);
 			}
 		}
@@ -2890,7 +2905,7 @@ static void CG_DrawActivePowers(void) {
 
 	//additionally, draw an icon force force rage recovery
 	if (cg.playerPredicted && cg.snap->ps.fd.forceRageRecoveryTime > cg.time)
-		CG_DrawPic( startx, starty, endx*cgs.widthRatioCoef, endy, cgs.media.rageRecShader);
+		CG_DrawPic( startx, starty, endx, endy, cgs.media.rageRecShader);
 }
 
 //--------------------------------------------------------------
@@ -3755,7 +3770,7 @@ void CG_DrawFlagStatus() {
 	int myFlagTakenShader = 0;
 	int theirFlagShader = 0;
 	int team = 0;
-	int startDrawPos = 2;
+	float startDrawPos = 2.0f;
 	int ico_size = 32;
 
 	if (!cg.snap)
@@ -3787,12 +3802,12 @@ void CG_DrawFlagStatus() {
 
 	if (CG_YourTeamHasFlag()) {
 		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, theirFlagShader );
-		startDrawPos += ico_size+2;
+		startDrawPos += (ico_size+2)*cgs.widthRatioCoef;
 	} else if (CG_OtherFlagDropped()) {
 		vec4_t c = {1.0f, 1.0f, 1.0f, 0.5f};
 		trap_R_SetColor(c);
 		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, theirFlagShader );
-		startDrawPos += ico_size+2;
+		startDrawPos += (ico_size+2)*cgs.widthRatioCoef;
 		trap_R_SetColor( NULL );
 	}
 

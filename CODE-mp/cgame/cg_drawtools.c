@@ -502,12 +502,12 @@ Take x,y positions as if 640 x 480 and scales them to the proper resolution
 
 ==============
 */
-void CG_DrawNumField (int x, int y, int width, int value,int charWidth,int charHeight,int style,qboolean zeroFill) 
+void CG_DrawNumField (float x, float y, int width, float value,float charWidth,float charHeight,int style,qboolean zeroFill) 
 {
 	char	num[16], *ptr;
 	int		l;
 	int		frame;
-	int		xWidth;
+	float	xWidth;
 	int		i = 0;
 
 	if (width < 1) {
@@ -538,7 +538,7 @@ void CG_DrawNumField (int x, int y, int width, int value,int charWidth,int charH
 		break;
 	}
 
-	Com_sprintf (num, sizeof(num), "%i", value);
+	Com_sprintf (num, sizeof(num), "%i", (int)value);
 	l = strlen(num);
 	if (l > width)
 		l = width;
@@ -550,11 +550,11 @@ void CG_DrawNumField (int x, int y, int width, int value,int charWidth,int charH
 		xWidth = charWidth;
 		break;
 	case NUM_FONT_CHUNKY:
-		xWidth = (charWidth/1.2f) + 2;
+		xWidth = (charWidth/1.2f) + 2.0f;
 		break;
 	default:
 	case NUM_FONT_BIG:
-		xWidth = (charWidth/2) + 7;//(charWidth/6);
+		xWidth = (charWidth/2.0f) + 7.0f;//(charWidth/6);
 		break;
 	}
 
@@ -575,12 +575,12 @@ void CG_DrawNumField (int x, int y, int width, int value,int charWidth,int charH
 				CG_DrawPic( x,y, charWidth*cgs.widthRatioCoef, charHeight, cgs.media.numberShaders[0] );
 				break;
 			}
-			x += 2 + (xWidth);
+			x += 2 + (xWidth)*cgs.widthRatioCoef;
 		}
 	}
 	else
 	{
-		x += 2 + (xWidth)*(width - l);
+		x += (2 + (xWidth)*(width - l))*cgs.widthRatioCoef;
 	}
 
 	ptr = num;
