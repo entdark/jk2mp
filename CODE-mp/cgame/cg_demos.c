@@ -582,6 +582,8 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		cg.headStartTime = 0;
 		cg.v_dmg_time = 0;
 		cg.fallingToDeath = 0;
+		cg.weapFrame = 0;
+		cg.weapFrameTime = 0;
 		cgScreenEffects.shake_duration = 0;
 		demo.rain.time = 0;
 		trap_S_ClearLoopingSounds(qtrue);

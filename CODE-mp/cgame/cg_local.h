@@ -948,6 +948,9 @@ Ghoul2 Insert End
 	int				chargeTime;
 	qboolean		charging;
 	
+	int				weapFrame;
+	int				weapFrameTime;
+
 	int				fallingToDeath;
 	int				tip;
 
