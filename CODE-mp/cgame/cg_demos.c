@@ -1018,6 +1018,7 @@ void demoPlaybackInit(void) {
 	demo.rain.active = qfalse;
 	demo.rain.number = 100;
 	demo.rain.range = 1000.0f;
+	demo.rain.back = qfalse;
 
 	hudInitTables();
 	demoSynchMusic( -1, 0 );
@@ -1137,11 +1138,9 @@ void CG_DemoDismembermentEvent( centity_t *cent, vec3_t position ) {
 		default:
 			break;
 	}	
-	cg.dismemberTime = cg.time;
 }
 void CG_DemoDismembermentPlayer( centity_t *cent ) {
 	demoPlayerDismember(cent);
-	cg.dismemberTime = cg.time;
 }
 
 qboolean CG_DemosConsoleCommand( void ) {

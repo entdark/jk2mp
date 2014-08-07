@@ -132,7 +132,7 @@ typedef struct demoMain_s {
 	struct {
 		int			time, number;
 		float		range;
-		qboolean	active;
+		qboolean	active, back;
 	} rain;
 	vec3_t			viewOrigin, viewAngles;
 	demoViewType_t	viewType;

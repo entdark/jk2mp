@@ -2,15 +2,16 @@
 #include "cg_demos.h" 
 
 void demoDrawRain(void) {
+	float backFactor = demo.rain.back ? 1.0f : 2.0f;
 	float rainRange, rainNumber;
 	sfxHandle_t sfx;
 	if (demo.rain.number <= 0 || !demo.rain.active)
 		return;
-	rainRange = demo.rain.range;
+	rainRange = demo.rain.range / backFactor;
 	rainNumber = (float)demo.rain.number * (rainRange / 1000.0f);
-	if (demo.rain.number >= 1000) {
+	if (demo.rain.number >= 1000 / backFactor) {
 		sfx = cgs.media.heavyRain;
-	} else if (demo.rain.number >= 400) {
+	} else if (demo.rain.number >= 400 / backFactor) {
 		sfx = cgs.media.regularRain;
 	} else {
 		sfx = cgs.media.lightRain;
@@ -26,7 +27,13 @@ void demoDrawRain(void) {
 			int seed = trap_Milliseconds() - i * 15;
 			float range = Q_irand(0, 2.0f * rainRange) - rainRange;				
 				
-			VectorCopy(cg.refdef.vieworg, start);
+			if (!demo.rain.back) {
+				vec3_t fwd;
+				AngleVectors(cg.refdefViewAngles, fwd, NULL, NULL);	 //<-Viewangles YAW		
+				VectorMA(cg.refdef.vieworg, rainRange, fwd, start);
+			} else {
+				VectorCopy(cg.refdef.vieworg, start);
+			}
 			start[2] = cg.refdef.vieworg[2];
 				
 			start[0] = start[0] + (cos(angle)*range);
@@ -78,7 +85,7 @@ void demoDrawSun(void) {
 	if (!(tr.surfaceFlags & SURF_SKY)) //not even worth it
 		return;	
 		
-	for (i = 31; i > 0; i--) {
+	for (i = 31; i >= 0; i--) {
 		vec3_t trmaxs,trmins;			
 		VectorSet(trmaxs, i, i, i);
 		VectorSet(trmins, -i, -i, -i);			
@@ -166,12 +173,17 @@ static qboolean rainParseRange(BG_XMLParse_t *parse,const char *line, void *data
 	demo.rain.range = atof( line );
 	return qtrue;
 }
+static qboolean rainParseBack(BG_XMLParse_t *parse,const char *line, void *data) {
+	demo.rain.back = atoi( line );
+	return qtrue;
+}
 
 static qboolean rainParse( BG_XMLParse_t *parse, const struct BG_XMLParseBlock_s *fromBlock, void *data) {
 	static BG_XMLParseBlock_t rainParseBlock[] = {
 		{"active",	0,					rainParseActive },
 		{"number",	0,					rainParseNumber },
 		{"range",	0,					rainParseRange },
+		{"back",	0,					rainParseBack },
 		{0, 0, 0}
 	};
 
@@ -207,6 +219,7 @@ void weatherSave( fileHandle_t fileHandle ) {
 			demoSaveLine( fileHandle, "\t\t<active>%d</active>\n", demo.rain.active );
 			demoSaveLine( fileHandle, "\t\t<number>%d</number>\n", demo.rain.number );
 			demoSaveLine( fileHandle, "\t\t<range>%9.4f</range>\n", demo.rain.range );
+			demoSaveLine( fileHandle, "\t\t<back>%d</back>\n", demo.rain.back );
 		demoSaveLine( fileHandle, "\t</rain>\n" );
 	demoSaveLine( fileHandle, "</weather>\n" );
 }
@@ -284,11 +297,18 @@ void demoRainCommand_f(void) {
 				demo.rain.range = 9999.9f;
 		}
 		CG_DemosAddLog( "Rain range %.1f", demo.rain.range );
+	} else if (!Q_stricmp(cmd, "back") || !Q_stricmp(cmd, "behind") || !Q_stricmp(cmd, "b")) {
+		demo.rain.back = !demo.rain.back;
+		if (demo.rain.back) 
+			CG_DemosAddLog("Drawing rain around");
+		else 
+			CG_DemosAddLog("Drawing rain in front");
 	} else {
 		Com_Printf("rain usage:\n" );
-		Com_Printf("rain on/activate/a/enable/e, enable/disable rain effect\n" );
+		Com_Printf("rain on/enable/e/activate/a, enable/disable rain effect\n" );
 		Com_Printf("rain number/amount/quantity/num/n 0, number of rain drops\n");
 		Com_Printf("rain range/r/distance/d 0, how far rain can appear\n");
+		Com_Printf("rain back/behind/b, additionally draw rain behind camera\n");
 		return;
 	}
 }
