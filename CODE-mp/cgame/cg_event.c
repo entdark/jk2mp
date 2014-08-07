@@ -1411,7 +1411,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 				index = cg_entities[es->eventParm].currentState.trickedentindex4;
 				trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.holocronPickup );
 								
-				if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number && showPowersName[index]) {
+				if (cg.playerCent == cent && showPowersName[index]) {
 					const char *strText = CG_GetStripEdString("INGAMETEXT", "PICKUPLINE");
 					//Com_Printf("%s %s\n", strText, showPowersName[index]);
 					CG_CenterPrint( va("%s %s\n", strText, CG_GetStripEdString("INGAME",showPowersName[index])), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
@@ -1465,7 +1465,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			}
 
 			// show icon and name on status bar
-			if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
+			if (cg.playerCent == cent) {
 				CG_ItemPickup( index );
 			}
 		}
@@ -1489,7 +1489,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			}
 
 			// show icon and name on status bar
-			if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
+			if (cg.playerCent == cent) {
 				CG_ItemPickup( index );
 			}
 		}
@@ -1501,7 +1501,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_NOAMMO:
 		DEBUGNAME("EV_NOAMMO");
 //		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.noAmmoSound );
-		if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
+		if (cg.playerCent == cent) {
 			int weap = 0;
 			if (es->eventParm && es->eventParm < WP_NUM_WEAPONS) {
 				if (cg.playerPredicted)
@@ -1709,7 +1709,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 			trap_S_StartSound (NULL, es->number, CHAN_AUTO, trap_S_RegisterSound( "sound/weapons/saber/saberon.wav" ) );
 
-			if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
+			if (cg.playerCent == cent) {
 				trap_S_StartLocalSound(cgs.media.happyMusic, CHAN_LOCAL);
 				CGCam_SetMusicMult(0.3, 5000);
 			}
@@ -1795,7 +1795,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 		if ((cg.playerPredicted && es->number == cg.snap->ps.clientNum)
 			|| (!cg.playerPredicted
-			&& es->number == cg.playerCent->currentState.number))
+			&& cg.playerCent == cent))
 		{
 			if (cg.zoomMode) {
 				trap_S_StartLocalSound(trap_S_RegisterSound("sound/weapons/disruptor/zoomstart.wav"), CHAN_AUTO);
@@ -1939,7 +1939,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	case EV_ITEMUSEFAIL:
 		DEBUGNAME("EV_ITEMUSEFAIL");
-		if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number)
+		if (cg.playerCent == cent)
 		{
 			char *stripedref = NULL;
 
@@ -2434,7 +2434,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		DEBUGNAME("EV_DEATHx");
 		trap_S_StartSound( NULL, es->number, CHAN_VOICE, 
 				CG_CustomSound( es->number, va("*death%i.wav", event - EV_DEATH1 + 1) ) );
-		if (es->eventParm && cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
+		if (es->eventParm && cg.playerCent == cent) {
 			trap_S_StartLocalSound(cgs.media.dramaticFailure, CHAN_LOCAL);
 			CGCam_SetMusicMult(0.3, 5000);
 		}
@@ -2457,7 +2457,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	//
 	case EV_POWERUP_QUAD:
 		DEBUGNAME("EV_POWERUP_QUAD");
-		if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
+		if (cg.playerCent == cent) {
 			cg.powerupActive = PW_QUAD;
 			cg.powerupTime = cg.time;
 		}
@@ -2465,7 +2465,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_POWERUP_BATTLESUIT:
 		DEBUGNAME("EV_POWERUP_BATTLESUIT");
-		if (cg.playerCent && cent->currentState.number == cg.playerCent->currentState.number) {
+		if (cg.playerCent == cent) {
 			cg.powerupActive = PW_BATTLESUIT;
 			cg.powerupTime = cg.time;
 		}
@@ -2524,7 +2524,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		if (cg_weapons[es->eventParm].altChargeSound) {
 			if (es->weapon == WP_DISRUPTOR
 				&& cg.playerCent && cg.playerCent->currentState.weapon == WP_DISRUPTOR
-				&& es->number == cg.playerCent->currentState.number) {
+				&& cg.playerCent == cent) {
 				cg.charging = qtrue;
 				cg.chargeTime = cg.time;
 			}
