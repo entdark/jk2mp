@@ -3947,12 +3947,6 @@ static ID_INLINE void CG_ChatBox_DrawStrings(void) {
 		if (cg.chatItems[i].time >= cg.time) {
 			int check = numToDraw;
 			int insertionPoint = numToDraw;
-
-			if (cg.chatItems[i].time > cg_chatBox.integer + cg.time) {
-				cg.chatItems[i].time = cg.time;
-				return;
-			}
-
 			while (check >= 0) {
 				if (drawThese[check] && cg.chatItems[i].time < drawThese[check]->time) {
 				//insert here

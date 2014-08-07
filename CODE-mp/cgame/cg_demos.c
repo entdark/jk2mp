@@ -587,7 +587,9 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		cgScreenEffects.shake_duration = 0;
 		demo.rain.time = 0;
 		trap_S_ClearLoopingSounds(qtrue);
-
+		
+		for (i = 0; i < MAX_CHATBOX_ITEMS; i++)
+			cg.chatItems[i].time = 0;
 		for (i = 0; i < MAX_CLIENTS && mov_dismember.integer; i++)
 			CG_ReattachLimb(&cg_entities[i]);
 	} else {
