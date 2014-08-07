@@ -920,6 +920,6 @@ void trap_R_RandomSeed( int time, float timeFraction ) {
 void trap_FX_RandomSeed( int time, float timeFraction ) {
 	syscall( CG_FX_RANDOMSEED, time, PASSFLOAT(timeFraction) );
 }
-void trap_S_UpdatePitch( float pitch ) {
-	syscall( CG_S_UPDATE_PITCH, PASSFLOAT(pitch) );
+void trap_S_UpdateScale( float scale ) {
+	syscall( CG_S_UPDATE_SCALE, PASSFLOAT(scale) );
 }
