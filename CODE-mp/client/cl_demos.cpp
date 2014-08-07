@@ -21,6 +21,7 @@ static demo_t			demo;
 static byte				demoBuffer[128*1024];
 static entityState_t	demoNullEntityState;
 static playerState_t	demoNullPlayerState;
+static qboolean			demoPrecaching = qfalse;
 
 static const char *demoHeader = Q3_VERSION " Demo";
 
@@ -397,8 +398,8 @@ void demoConvert( const char *oldName, const char *newBaseName, qboolean smoothe
 				levelCount++;
 				newHandle = FS_FOpenFileWrite( newName );
 				if (!newHandle) {
-					FS_FCloseFile( oldHandle );
 					Com_Printf("Failed to open %s for target conversion target.\n", newName);
+					goto conversionerror;
 					return;
 				} else {
 					FS_Write ( demoHeader, strlen( demoHeader ), newHandle );
@@ -665,8 +666,6 @@ static void demoPlaySynch( demoPlay_t *play, demoFrame_t *frame) {
 //	Com_Printf("Added %d commands, length %d\n", play->commandCount - startCount, totalLen );
 }
 
-
-static qboolean demoPrecaching = qfalse;
 static void demoPlayForwardFrame( demoPlay_t *play ) {
 	int			blockSize;
 	msg_t		msg;
