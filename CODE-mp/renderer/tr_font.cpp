@@ -678,36 +678,36 @@ CFontInfo *GetFont(int index)
 }
 
 
-int RE_Font_StrLenPixels(const char *psText, const int iFontHandle, const float fScale)
-{			
-	int x = 0;
+static float fontRatioFix = 1.0f;
+void RE_FontRatioFix(float ratio) {
+	if (ratio <= 0.0f)
+		fontRatioFix = 1.0f;
+	else
+		fontRatioFix = ratio;
+}
 
+int RE_Font_StrLenPixels(const char *psText, const int iFontHandle, const float fScale) {			
+	float x = 0;
 	CFontInfo *curfont = curfont = GetFont(iFontHandle);
-	if(!curfont)
-	{
+	if(!curfont) {
 		return(0);
 	}
-
 	float fScaleA = fScale;
-	if (Language_IsAsian())
-	{
+	if (Language_IsAsian()) {
 		fScaleA = fScale * 0.75f;
 	}
 
-	while(*psText)
-	{
+	while(*psText) {
 		int iAdvanceCount;
 		unsigned int uiLetter = AnyLanguage_ReadCharFromString( psText, &iAdvanceCount, NULL );
 		psText += iAdvanceCount;
-
 		if (demo15detected && ntModDetected && uiLetter == '^' && *psText >= 0x00 && *psText <= 0x7F) {
 			// then this is colour, so skip it from width considerations
 		} else if (!ntModDetected && uiLetter == '^' && *psText >= '0' && *psText <= '9') {
 			// then this is colour, so skip it from width considerations
 		} else {
-			int a = curfont->GetLetterHorizAdvance( uiLetter );
-
-			x += Round ( a * ((uiLetter > 255) ? fScaleA : fScale) );
+			float a = curfont->GetLetterHorizAdvance( uiLetter );
+			x += a * ((uiLetter > 255) ? fScaleA : fScale) * fontRatioFix;
 		}
 	}
 
@@ -757,9 +757,10 @@ int RE_Font_HeightPixels(const int iFontHandle, const float fScale)
 // iCharLimit is -1 for "all of string", else MBCS char count...
 //
 qboolean gbInShadow = qfalse;	// MUST default to this
-void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, const int iFontHandle, int iCharLimit, const float fScale)
+void RE_Font_DrawString(float ox, float oy, const char *psText, const float *rgba, const int iFontHandle, int iCharLimit, const float fScale)
 {		
-	int					x, y, colour, offset;
+	float				x, y, offset;
+	int					colour;
 	const glyphInfo_t	*pLetter;
 	qhandle_t			hShader;
 	qboolean			qbThisCharCountsAsLetter;	// logic for this bool must be kept same in this function and RE_Font_StrLenChars()
@@ -801,17 +802,17 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 	if(!demo15detected && iFontHandle & STYLE_DROPSHADOW) {
 		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba?rgba[3]:1.0f};
 
-		offset = Round(curfont->GetPointSize() * fScale * 0.075f);
+		offset = curfont->GetPointSize() * fScale * 0.075f;
 		
 		gbInShadow = qtrue;
-		RE_Font_DrawString(ox + offset, oy + offset, psText, v4DKGREY2, iFontHandle & SET_MASK, iCharLimit, fScale);
+		RE_Font_DrawString(ox + offset * fontRatioFix, oy + offset, psText, v4DKGREY2, iFontHandle & SET_MASK, iCharLimit, fScale);
 		gbInShadow = qfalse;
 	} else if (demo15detected && iFontHandle & STYLE_DROPSHADOW) {
 		int i = 0, r = 0;
 		char dropShadowText[1024];
 		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba[3]};
 
-		offset = Round(curfont->GetPointSize() * fScale * 0.075f);
+		offset = curfont->GetPointSize() * fScale * 0.075f;
 
 		//^blah stuff confuses shadows, so parse it out first
 		while (psText[i] && r < 1024) {
@@ -829,13 +830,13 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 		}
 		dropShadowText[r] = 0;
 
-		RE_Font_DrawString(ox + offset, oy + offset, dropShadowText, v4DKGREY2, iFontHandle & SET_MASK, iCharLimit, fScale);
+		RE_Font_DrawString(ox + offset * fontRatioFix, oy + offset, dropShadowText, v4DKGREY2, iFontHandle & SET_MASK, iCharLimit, fScale);
 	}
 
 	RE_SetColor( rgba );
 
 	x = ox;
-	oy += Round((curfont->GetHeight() - (curfont->GetDescender() >> 1)) * fScale);
+	oy += (curfont->GetHeight() - (curfont->GetDescender() >> 1)) * fScale;
 	
 	while(*psText)
 	{
@@ -868,7 +869,7 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 		break;
 		case 10:						//linefeed
 			x = ox;
-			oy += Round(curfont->GetPointSize() * fScale);
+			oy += curfont->GetPointSize() * fScale;
 //			if (Language_IsAsian())
 //			{
 //				oy += 4;	// this only comes into effect when playing in asian (for SP, though I'm going to keep it in MP probbly) "A long time ago in a galaxy" etc, all other text is line-broken in feeder functions
@@ -879,7 +880,7 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 		case 32:						// Space
 			qbThisCharCountsAsLetter = qtrue;
 			pLetter = curfont->GetLetter(' ');
-			x += Round(pLetter->horizAdvance * fScale);
+			x += pLetter->horizAdvance * fScale * fontRatioFix;
 			break;
 
 		default:
@@ -895,12 +896,12 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 			// this 'mbRoundCalcs' stuff is crap, but the only way to make the font code work. Sigh...
 			//
 			float fThisScale = uiLetter > 255 ? fScaleA : fScale;
-			y = oy - (curfont->mbRoundCalcs ? Round(pLetter->baseline * fThisScale) : pLetter->baseline * fThisScale);
+			y = oy - pLetter->baseline * fThisScale;
 
-			RE_StretchPic ( x + Round(pLetter->horizOffset * fThisScale), // float x
+			RE_StretchPic ( x + pLetter->horizOffset * fThisScale, // float x
 							(uiLetter > 255) ? y - iAsianYAdjust : y,	// float y
-							curfont->mbRoundCalcs ? Round(pLetter->width * fThisScale) : pLetter->width * fThisScale,	// float w
-							curfont->mbRoundCalcs ? Round(pLetter->height * fThisScale) : pLetter->height * fThisScale, // float h
+							pLetter->width * fThisScale * fontRatioFix,	// float w
+							pLetter->height * fThisScale, // float h
 							pLetter->s,						// float s1
 							pLetter->t,						// float t1
 							pLetter->s2,					// float s2
@@ -909,7 +910,7 @@ void RE_Font_DrawString(int ox, int oy, const char *psText, const float *rgba, c
 							hShader							// qhandle_t hShader
 							);
 
-			x += Round(pLetter->horizAdvance * fThisScale);
+			x += pLetter->horizAdvance * fThisScale * fontRatioFix;
 			break;
 		}		
 

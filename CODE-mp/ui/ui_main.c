@@ -500,7 +500,7 @@ void _UI_Refresh( int realtime )
 	// draw cursor
 	UI_SetColor( NULL );
 	if (Menu_Count() > 0) {
-		UI_DrawHandlePic( uiInfo.uiDC.cursorx, uiInfo.uiDC.cursory, 48, 48, uiInfo.uiDC.Assets.cursor);
+		UI_DrawHandlePic( uiInfo.uiDC.cursorx, uiInfo.uiDC.cursory, 48*uiInfo.uiDC.widthRatioCoef, 48, uiInfo.uiDC.Assets.cursor);
 	}
 
 #ifndef NDEBUG
@@ -6591,12 +6591,13 @@ void _UI_Init( qboolean inGameLoad ) {
 
 	UI_UpdateForcePowers();
 
-	UI_RegisterCvars();
 	UI_InitMemory();
 
 	// cache redundant calulations
 	trap_GetGlconfig( &uiInfo.uiDC.glconfig );
-
+	
+	UI_RegisterCvars();
+	
 	// for 640x480 virtualized screen
 	uiInfo.uiDC.yscale = uiInfo.uiDC.glconfig.vidHeight * (1.0/480.0);
 	uiInfo.uiDC.xscale = uiInfo.uiDC.glconfig.vidWidth * (1.0/640.0);
@@ -7308,6 +7309,19 @@ vmCvar_t	ui_realWarmUp;
 vmCvar_t	ui_serverStatusTimeOut;
 vmCvar_t	s_language;
 
+extern void trap_MME_FontRatioFix( float ratio );
+static vmCvar_t mov_ratioFix;
+static void CG_Set2DRatio(void) {
+	if (mov_ratioFix.integer)
+		uiInfo.uiDC.widthRatioCoef = (float)(SCREEN_WIDTH * uiInfo.uiDC.glconfig.vidHeight) / (float)(SCREEN_HEIGHT * uiInfo.uiDC.glconfig.vidWidth);
+	else
+		uiInfo.uiDC.widthRatioCoef = 1.0f;
+	if (mov_ratioFix.integer == 2)
+		trap_MME_FontRatioFix(1.0f);
+	else
+		trap_MME_FontRatioFix(uiInfo.uiDC.widthRatioCoef);
+}
+
 // bk001129 - made static to avoid aliasing
 static cvarTable_t		cvarTable[] = {
 	{ &ui_ffa_fraglimit, "ui_ffa_fraglimit", "20", CVAR_ARCHIVE },
@@ -7441,6 +7455,8 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_autodemo_startPos, "ui_autodemo_startPos", "0", CVAR_ROM|CVAR_INTERNAL },
 	{ &ui_autodemo_cursorPos, "ui_autodemo_cursorPos", "0", CVAR_ROM|CVAR_INTERNAL },
 	{ &ui_autodemo_folder, "ui_autodemo_folder", "", CVAR_ROM|CVAR_INTERNAL },
+
+	{ &mov_ratioFix, "mov_ratioFix", "1", CVAR_ARCHIVE },
 };
 
 // bk001129 - made static to avoid aliasing
@@ -7458,6 +7474,10 @@ void UI_RegisterCvars( void ) {
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
 		trap_Cvar_Register( cv->vmCvar, cv->cvarName, cv->defaultString, cv->cvarFlags );
+		if ( !Q_stricmp(cv->cvarName, "mov_ratioFix") ) {
+			trap_Cvar_Update( cv->vmCvar );
+			CG_Set2DRatio();
+		}
 	}
 }
 
@@ -7471,7 +7491,11 @@ void UI_UpdateCvars( void ) {
 	cvarTable_t	*cv;
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
+		int modCount = cv->vmCvar->modificationCount;
 		trap_Cvar_Update( cv->vmCvar );
+		if ( cv->vmCvar->modificationCount > modCount && !Q_stricmp(cv->cvarName, "mov_ratioFix") ) {
+			CG_Set2DRatio();
+		}
 	}
 }
 

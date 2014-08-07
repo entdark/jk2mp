@@ -1094,10 +1094,10 @@ void CG_DrawHUD(centity_t	*cent)
 		char ammoString[64];
 		int weapX = x;
 
-		UI_DrawProportionalString( x+16, y+40, va( "%i", cg.snap->ps.stats[STAT_HEALTH] ),
+		UI_DrawProportionalString( (x+16)*cgs.widthRatioCoef, y+40, va( "%i", cg.snap->ps.stats[STAT_HEALTH] ),
 			UI_SMALLFONT|UI_DROPSHADOW, colorTable[CT_HUD_RED] );
 
-		UI_DrawProportionalString( x+18+14, y+40+14, va( "%i", cg.snap->ps.stats[STAT_ARMOR] ),
+		UI_DrawProportionalString( (x+18+14)*cgs.widthRatioCoef, y+40+14, va( "%i", cg.snap->ps.stats[STAT_ARMOR] ),
 			UI_SMALLFONT|UI_DROPSHADOW, colorTable[CT_HUD_GREEN] );
 
 		if (cg.snap->ps.weapon == WP_SABER)
@@ -1105,16 +1105,17 @@ void CG_DrawHUD(centity_t	*cent)
 			if (cg.snap->ps.fd.saberDrawAnimLevel == FORCE_LEVEL_3)
 			{
 				Com_sprintf(ammoString, sizeof(ammoString), "STRONG");
-				weapX += 16;
+				weapX += 25;
 			}
 			else if (cg.snap->ps.fd.saberDrawAnimLevel == FORCE_LEVEL_2)
 			{
 				Com_sprintf(ammoString, sizeof(ammoString), "MEDIUM");
-				weapX += 16;
+				weapX += 25;
 			}
 			else
 			{
 				Com_sprintf(ammoString, sizeof(ammoString), "FAST");
+				weapX += 20;
 			}
 		}
 		else
@@ -1122,10 +1123,10 @@ void CG_DrawHUD(centity_t	*cent)
 			Com_sprintf(ammoString, sizeof(ammoString), "%i", cg.snap->ps.ammo[weaponData[cent->currentState.weapon].ammoIndex]);
 		}
 		
-		UI_DrawProportionalString( SCREEN_WIDTH-(weapX+16+32), y+40, va( "%s", ammoString ),
+		UI_DrawProportionalString( SCREEN_WIDTH-(weapX+16+32)*cgs.widthRatioCoef, y+40, va( "%s", ammoString ),
 			UI_SMALLFONT|UI_DROPSHADOW, colorTable[CT_HUD_ORANGE] );
 
-		UI_DrawProportionalString( SCREEN_WIDTH-(x+18+14+32), y+40+14, va( "%i", cg.snap->ps.fd.forcePower),
+		UI_DrawProportionalString( SCREEN_WIDTH-(x+18+14+32)*cgs.widthRatioCoef, y+40+14, va( "%i", cg.snap->ps.fd.forcePower),
 			UI_SMALLFONT|UI_DROPSHADOW, colorTable[CT_ICON_BLUE] );
 
 		return;
@@ -1199,7 +1200,7 @@ void CG_DrawHUD(centity_t	*cent)
 	{	// Don't draw a bias.
 		scoreStr = va("Score: %i", cg.snap->ps.persistant[PERS_SCORE]);
 	}
-	UI_DrawScaledProportionalString(SCREEN_WIDTH-124/*(strlen(scoreStr)*20.5)*/, SCREEN_HEIGHT-23, scoreStr, UI_RIGHT|UI_DROPSHADOW, colorTable[CT_WHITE], 0.7);
+	UI_DrawScaledProportionalString(SCREEN_WIDTH-124*cgs.widthRatioCoef/*(strlen(scoreStr)*20.5)*/, SCREEN_HEIGHT-23, scoreStr, UI_RIGHT|UI_DROPSHADOW, colorTable[CT_WHITE], 0.7);
 
 	menuHUD = Menus_FindByName("righthud");
 	if (menuHUD)
@@ -1739,7 +1740,7 @@ static float CG_DrawEnemyInfo ( float y )
 			CG_DrawPic( 640 - size*cgs.widthRatioCoef - 5, y, size*cgs.widthRatioCoef, size, cgs.media.weaponIcons[WP_SABER] );
 
 			y += size;
-			CG_Text_Paint( 630 - CG_Text_Width ( title, 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, title, 0, 0, 0, FONT_MEDIUM );
+			CG_Text_Paint( SCREEN_WIDTH - 10*cgs.widthRatioCoef - CG_Text_Width ( title, 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, title, 0, 0, 0, FONT_MEDIUM );
 
 			return y + BIGCHAR_HEIGHT + 2;
 		}
@@ -1783,17 +1784,17 @@ static float CG_DrawEnemyInfo ( float y )
 
 	y += size;
 
-	CG_Text_Paint( 630 - CG_Text_Width ( ci->name, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM )*cgs.widthRatioCoef, y, 0.7f, colorWhite, ci->name, 0, 0, 0, FONT_MEDIUM );
+	CG_Text_Paint( SCREEN_WIDTH - 10*cgs.widthRatioCoef - CG_Text_Width ( ci->name, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, ci->name, 0, 0, 0, FONT_MEDIUM );
 
 	y += 15;
-	CG_Text_Paint( 630 - CG_Text_Width ( title, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM )*cgs.widthRatioCoef, y, 0.7f, colorWhite, title, 0, 0, 0, FONT_MEDIUM );
+	CG_Text_Paint( SCREEN_WIDTH - 10*cgs.widthRatioCoef - CG_Text_Width ( title, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, title, 0, 0, 0, FONT_MEDIUM );
 
 	if ( cgs.gametype == GT_TOURNAMENT && cgs.clientinfo[cg.playerCent->currentState.number].team != TEAM_SPECTATOR) {
 		//also print their score
 		char text[1024];
 		y += 15;
 		Com_sprintf(text, sizeof(text), "%i/%i", cgs.clientinfo[clientNum].score, cgs.fraglimit );
-		CG_Text_Paint( 630 - CG_Text_Width ( text, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM )*cgs.widthRatioCoef, y, 0.7f, colorWhite, text, 0, 0, 0, FONT_MEDIUM );
+		CG_Text_Paint( SCREEN_WIDTH - 10*cgs.widthRatioCoef - CG_Text_Width ( text, 0.7f, FONT_MEDIUM ) + CG_Text_Width ( "s", 0.7f, FONT_MEDIUM ), y, 0.7f, colorWhite, text, 0, 0, 0, FONT_MEDIUM );
 	}
 
 	return y + BIGCHAR_HEIGHT + 2;
@@ -2186,12 +2187,12 @@ static void CG_DrawReward( void ) {
 
 	if ( cg.rewardCount[0] >= 10 ) {
 		y = 56;
-		x = 320 - (ICON_SIZE-4)*cgs.widthRatioCoef/2;
+		x = 320 - (ICON_SIZE/2)*cgs.widthRatioCoef;
 		CG_DrawPic( x, y, (ICON_SIZE-4)*cgs.widthRatioCoef, ICON_SIZE-4, cg.rewardShader[0] );
 		Com_sprintf(buf, sizeof(buf), "%d", cg.rewardCount[0]);
-		x = ( SCREEN_WIDTH - SMALLCHAR_WIDTH * CG_DrawStrlen( buf ) ) / 2;
+		x = ( SCREEN_WIDTH - SMALLCHAR_WIDTH * CG_DrawStrlen( buf )*cgs.widthRatioCoef ) / 2;
 		CG_DrawStringExt( x, y+ICON_SIZE, buf, color, qfalse, qtrue,
-								SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0 );
+								SMALLCHAR_WIDTH*cgs.widthRatioCoef, SMALLCHAR_HEIGHT, 0 );
 	}
 	else {
 
@@ -2352,7 +2353,7 @@ static void CG_DrawLagometer( void ) {
 	y = (float)SCREEN_HEIGHT - 165.0f;
 
 	trap_R_SetColor( NULL );
-	CG_DrawPic( x, y, 48*cgs.widthRatioCoef, 48.0f, cgs.media.lagometerShader );
+	CG_DrawPic( x, y, 48.0f*cgs.widthRatioCoef, 48.0f, cgs.media.lagometerShader );
 
 	ax = x-0.5f*cgs.widthRatioCoef;
 	ay = y;

@@ -82,7 +82,7 @@ typedef struct {
 	int		(*Font_StrLenPixels) (const char *text, const int iFontIndex, const float scale);
 	int		(*Font_StrLenChars) (const char *text);
 	int		(*Font_HeightPixels)(const int iFontIndex, const float scale);
-	void	(*Font_DrawString)(int ox, int oy, const char *text, const float *rgba, const int setIndex, int iCharLimit, const float scale);
+	void	(*Font_DrawString)(float ox, float oy, const char *text, const float *rgba, const int setIndex, int iCharLimit, const float scale);
 	qboolean (*Language_IsAsian)(void);
 	qboolean (*Language_UsesSpaces)(void);
 	unsigned int (*AnyLanguage_ReadCharFromString)( const char *psText, int *piAdvanceCount, qboolean *pbIsTrailingPunctuation/* = NULL*/ );
@@ -100,8 +100,9 @@ typedef struct {
 	void	(*Capture)( const char *baseName, float fps, float focus, float radius );
 	void	(*CaptureStereo)( const char *baseName, float fps, float focus, float radius );
 	void	(*BlurInfo)( int* total, int* index );
+	void	(*MMERegisterFont)(const char *fontName, int pointSize, mmeFontInfo_t *font);
+	void	(*FontRatioFix)( float ratio );
 	void	(*DemoRandomSeed)( int time, float timeFraction );
-	void	(*ClearDecals)( void );
 } refexport_t;
 
 //

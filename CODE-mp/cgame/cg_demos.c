@@ -16,7 +16,6 @@ extern void CG_Draw2D( void );
 extern void CG_SaberClashFlare( void );
 extern float CG_DrawFPS( float y );
 extern void CG_InterpolatePlayerState( qboolean grabAngles );
-extern void CG_Set2DRatio(void);
 
 extern void trap_FX_Reset ( void );
 extern void trap_MME_BlurInfo( int* total, int * index );
@@ -433,11 +432,6 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 			CG_Error( "No Initial demo snapshot found" );
 		}
 		demoPlaybackInit();
-	}
-
-	if (mov_ratioFix.integer != cg.lastRatioFix) {
-		CG_Set2DRatio();
-		cg.lastRatioFix = mov_ratioFix.integer;
 	}
 
 	cg.demoPlayback = 2;

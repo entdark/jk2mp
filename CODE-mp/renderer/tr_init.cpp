@@ -1380,6 +1380,10 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 	re.Capture = R_MME_Capture;
 	re.CaptureStereo = R_MME_CaptureStereo;
 	re.BlurInfo = R_MME_BlurInfo;
+
+	re.MMERegisterFont = R_MME_RegisterFont;
+	re.FontRatioFix = RE_FontRatioFix;
+
 	re.DemoRandomSeed = R_DemoRandomSeed;
 
 	return &re;

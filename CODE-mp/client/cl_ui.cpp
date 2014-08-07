@@ -1067,7 +1067,7 @@ int CL_UISystemCalls( int *args ) {
 		return re.Font_HeightPixels( args[1], VMF(2) );
 
 	case UI_R_FONT_DRAWSTRING:
-		re.Font_DrawString( args[1], args[2], (const char *)VMA(3), (const float *) VMA(4), args[5], args[6], VMF(7) );
+		re.Font_DrawString( VMF(1), VMF(2), (const char *)VMA(3), (const float *) VMA(4), args[5], args[6], VMF(7) );
 		return 0;
 
 	case UI_LANGUAGE_ISASIAN:
@@ -1183,6 +1183,9 @@ Ghoul2 Insert Start
 /*
 Ghoul2 Insert End
 */
+	case UI_MME_FONTRATIOFIX:
+		re.FontRatioFix(VMF(1));
+        return 0; 	
 	default:
 		Com_Error( ERR_DROP, "Bad UI system trap: %i", args[0] );
 
