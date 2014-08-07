@@ -3851,7 +3851,7 @@ void CG_ForcePushBlur( vec3_t org ) {
 			return;
 		}
 		if (!(cg.frametime > 0
-			&& ((cg.frametime < 8 && fmod((float)cg.time, 8.0f) <= cg.frametime)
+			&& ((cg.frametime < 8 && fmod((double)cg.time, 8.0) <= (double)cg.frametime)
 			|| cg.frametime >= 8)))
 			return;
 
@@ -3906,7 +3906,7 @@ void CG_ForceGripEffect( vec3_t org )
 		return;
 	}
 	if (!(cg.frametime > 0
-		&& ((cg.frametime < 8 && fmod((float)cg.time, 8.0f) <= cg.frametime)
+		&& ((cg.frametime < 8 && fmod((double)cg.time, 8.0) <= (double)cg.frametime)
 		|| cg.frametime >= 8)))
 		return;
 
@@ -4681,8 +4681,8 @@ void CG_AddSaberBlade( centity_t *cent, centity_t *scent, refEntity_t *saber, in
 
 	saberEnt = &cg_entities[cent->currentState.saberEntityNum];
 
-	if (cgs.clientinfo[ cent->currentState.clientNum ].team != TEAM_SPECTATOR &&
-		!(cg.snap->ps.pm_flags & PMF_FOLLOW)) {
+//	if (cgs.clientinfo[ cent->currentState.clientNum ].team != TEAM_SPECTATOR &&
+//		!(cg.snap->ps.pm_flags & PMF_FOLLOW)) {
 		if (cent->saberLength < 1) {
 			cent->saberLength = 1;
 			cent->saberExtendTime = cg.time;
@@ -4697,10 +4697,10 @@ void CG_AddSaberBlade( centity_t *cent, centity_t *scent, refEntity_t *saber, in
 		}
 
 		cent->saberExtendTime = cg.time;
-		saberLen = cent->saberLength;
-	} else {
-		saberLen = SABER_LENGTH_MAX;
-	}
+//		saberLen = cent->saberLength;
+//	} else {
+//		saberLen = SABER_LENGTH_MAX;
+//	}
 
 	if ((cg.time - cg.oldTime) == 0) {
 		if (cent->saberLengthOld != cent->saberLength) {
