@@ -130,9 +130,10 @@ and whenever the server updates any serverinfo flagged cvars
 ================
 */
 extern void trap_MME_NTDetection( qboolean ntDetected );
+extern void CG_ForceNTDemo(void);
 void CG_ParseServerinfo( void ) {
 	const char	*info;
-	char	*mapname, *gamename;
+	char	*mapname;
 
 	info = CG_ConfigString( CS_SERVERINFO );
 	cgs.gametype = atoi( Info_ValueForKey( info, "g_gametype" ) );
@@ -151,15 +152,14 @@ void CG_ParseServerinfo( void ) {
 	mapname = Info_ValueForKey( info, "mapname" );
 	
 	cg.ntModDetected = qfalse;
-	gamename = Info_ValueForKey(info, "gamename");
-	if (!Q_stricmp(gamename, "< NT XII >")
-		|| !Q_stricmp(gamename, "< NT XIII >")
-		|| !Q_stricmp(gamename, "< NT XIV >")
+	cgs.gamename = Info_ValueForKey(info, "gamename");
+	if (!Q_stricmp(cgs.gamename, "< NT XII >")
+		|| !Q_stricmp(cgs.gamename, "< NT XIII >")
+		|| !Q_stricmp(cgs.gamename, "< NT XIV >")
 		/* || !Q_stricmp(gamename, "JDFix.")*/) {
 		Com_Printf("\nNT mod detected\n\n");
-		trap_MME_NTDetection(qtrue);
-		cg.ntModDetected = qtrue;
 	}
+	CG_ForceNTDemo();
 
 	//rww - You must do this one here, Info_ValueForKey always uses the same memory pointer.
 	trap_Cvar_Set ( "ui_about_mapname", mapname );
