@@ -605,6 +605,7 @@ vmCvar_t	mov_saberTeamColour;
 vmCvar_t	mov_wallhack;
 
 vmCvar_t	mov_dismember;
+vmCvar_t	mov_forceNTdemo;
 
 vmCvar_t	mov_absorbVisibility;
 vmCvar_t	mov_absorbColour;
@@ -2757,6 +2758,8 @@ Ghoul2 Insert End
 
 	s = CG_ConfigString( CS_LEVEL_START_TIME );
 	cgs.levelStartTime = atoi( s );
+	
+	demo15detected = trap_MME_Demo15Detection();
 
 	CG_ParseServerinfo();
 
@@ -2781,8 +2784,6 @@ Ghoul2 Insert End
 
 	CG_LoadingString( "clients" );
 	
-	demo15detected = trap_MME_Demo15Detection();
-
 	CG_RegisterClients();		// if low on memory, some clients will be deferred
 
 	CG_AssetCache();
