@@ -700,7 +700,6 @@ static void CG_OffsetFirstPersonView( void ) {
 	float			*origin;
 	float			*angles;
 	float			bob;
-	float			ratio;
 	float			delta;
 	float			speed;
 	float			f;
@@ -735,7 +734,7 @@ static void CG_OffsetFirstPersonView( void ) {
 
 	// add angles based on damage kick
 	if (cg.damageTime && cg.playerPredicted) {
-		ratio = (cg.time - cg.damageTime) + cg.timeFraction;
+		float ratio = (cg.time - cg.damageTime) + cg.timeFraction;
 		if ( ratio < DAMAGE_DEFLECT_TIME ) {
 			ratio /= DAMAGE_DEFLECT_TIME;
 			angles[PITCH] += ratio * cg.v_dmg_pitch;
@@ -1623,8 +1622,7 @@ Generates and draws a game scene and status information at the given time.
 =================
 */
 extern void CG_SetPredictedThirdPerson(void);
-extern void trap_S_UpdatePitch( float pitch );
-extern void CG_Set2DRatio(void);
+extern void trap_S_UpdateScale( float scale );
 void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback ) {
 	int		inwater;
 
@@ -1760,7 +1758,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		AnglesToAxis(lookAng, cg.refdef.viewaxis);
 	}
 
-	trap_S_UpdatePitch( 1.0f );
+	trap_S_UpdateScale( 1.0f );
 	// update audio positions
 	trap_S_Respatialize( cg.snap->ps.clientNum, cg.refdef.vieworg, cg.refdef.viewaxis, inwater );
 

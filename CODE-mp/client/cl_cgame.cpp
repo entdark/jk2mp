@@ -1195,8 +1195,8 @@ Ghoul2 Insert End
 	case CG_FX_RESET:
 		FX_Free ( false );
 		return 0;
-	case CG_S_UPDATE_PITCH:
-		S_UpdatePitch(VMF(1));
+	case CG_S_UPDATE_SCALE:
+		S_UpdateScale(VMF(1));
 		return 0;
 	default:
 	        assert(0); // bk010102
