@@ -15,10 +15,11 @@ void FX_DisruptorMainShot( vec3_t start, vec3_t end )
 //	vec3_t	dir;
 //	float	len;
 
+	int killTime = (fx_disruptTime.integer < 0) ? 150 : fx_disruptTime.integer;
 	trap_FX_AddLine( start, end, 0.1f, 6.0f, 0.0f, 
 							1.0f, 0.0f, 0.0f,
 							WHITE, WHITE, 0.0f,
-							fx_disruptTime.integer, trap_R_RegisterShader( "gfx/effects/redLine" ), 
+							killTime, trap_R_RegisterShader( "gfx/effects/redLine" ), 
 							FX_SIZE_LINEAR | FX_ALPHA_LINEAR );
 
 //	VectorSubtract( end, start, dir );
@@ -40,12 +41,14 @@ FX_DisruptorAltShot
 */
 void FX_DisruptorAltShot( vec3_t start, vec3_t end, qboolean fullCharge )
 {
+	int killTime = (fx_disruptTime.integer < 0) ? 175 : fx_disruptTime.integer;
 	trap_FX_AddLine( start, end, 0.1f, 10.0f, 0.0f, 
 							1.0f, 0.0f, 0.0f,
 							WHITE, WHITE, 0.0f,
-							fx_disruptTime.integer, trap_R_RegisterShader( "gfx/effects/redLine" ), 
+							killTime, trap_R_RegisterShader( "gfx/effects/redLine" ), 
 							FX_SIZE_LINEAR | FX_ALPHA_LINEAR );
 
+	killTime = (fx_disruptTime.integer < 0) ? 150 : fx_disruptTime.integer;
 	if ( fullCharge )
 	{
 		vec3_t	YELLER={0.8f,0.7f,0.0f};
@@ -54,7 +57,7 @@ void FX_DisruptorAltShot( vec3_t start, vec3_t end, qboolean fullCharge )
 		trap_FX_AddLine( start, end, 0.1f, 7.0f, 0.0f, 
 							1.0f, 0.0f, 0.0f,
 							YELLER, YELLER, 0.0f,
-							fx_disruptTime.integer, trap_R_RegisterShader( "gfx/misc/whiteline2" ), 
+							killTime, trap_R_RegisterShader( "gfx/misc/whiteline2" ), 
 							FX_SIZE_LINEAR | FX_ALPHA_LINEAR );
 	}
 }
@@ -65,6 +68,7 @@ void FX_RailSpiral( clientInfo_t *ci, vec3_t start, vec3_t end ) {
 	float  len;
 	int    i, j, skip;
 	vec3_t coreColor, spiralColor;
+	int killTime = (fx_disruptTime.integer < 0) ? 175 : fx_disruptTime.integer;
 
 	localEntity_t *leCore = CG_AllocLocalEntity();
 	refEntity_t   *reCore = &leCore->refEntity;
@@ -102,7 +106,7 @@ void FX_RailSpiral( clientInfo_t *ci, vec3_t start, vec3_t end ) {
 	//Glow
 	leGlow->leType = LE_FADE_RGB;
 	leGlow->startTime = cg.time;
-	leGlow->endTime = cg.time + fx_disruptTime.integer;
+	leGlow->endTime = cg.time + killTime;
 	leGlow->lifeRate = 1.0 / (leGlow->endTime - leGlow->startTime);
 	reGlow->shaderTime = cg.time / 1600.0f;
 	reGlow->reType = RT_LINE;
@@ -122,7 +126,7 @@ void FX_RailSpiral( clientInfo_t *ci, vec3_t start, vec3_t end ) {
 	//Core
 	leCore->leType = LE_FADE_RGB;
 	leCore->startTime = cg.time;
-	leCore->endTime = cg.time + fx_disruptTime.integer;
+	leCore->endTime = cg.time + killTime;
 	leCore->lifeRate = 1.0 / (leCore->endTime - leCore->startTime);
 	reCore->shaderTime = cg.time / 1600.0f;
 	reCore->reType = RT_LINE;
@@ -157,7 +161,7 @@ void FX_RailSpiral( clientInfo_t *ci, vec3_t start, vec3_t end ) {
 			le->leFlags = LEF_PUFF_DONT_SCALE;
 			le->leType = LE_MOVE_SCALE_FADE;
 			le->startTime = cg.time;
-			le->endTime = cg.time + (i>>1) + fx_disruptTime.value / 1.337f;
+			le->endTime = cg.time + (i>>1) + killTime / 1.337f;
 			le->lifeRate = 1.0 / (le->endTime - le->startTime);
 
 			re->shaderTime = cg.time / 2000.0f;
