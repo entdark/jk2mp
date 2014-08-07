@@ -1557,6 +1557,7 @@ Ghoul2 Insert End
 	qboolean		textFontValid;
 
 	float widthRatioCoef;	//to make 2Ds be not stretched
+	char *gamename;
 } cgs_t;
 
 //==============================================================================
@@ -1731,6 +1732,7 @@ extern	vmCvar_t	mov_saberTeamColour;
 extern	vmCvar_t	mov_wallhack;
 
 extern	vmCvar_t	mov_dismember;
+extern	vmCvar_t	mov_forceNTdemo;
 
 extern	vmCvar_t	mov_absorbVisibility;
 extern	vmCvar_t	mov_absorbColour;
