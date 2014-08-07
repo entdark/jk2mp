@@ -592,6 +592,8 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 			cg.chatItems[i].time = 0;
 		for (i = 0; i < MAX_CLIENTS && mov_dismember.integer; i++)
 			CG_ReattachLimb(&cg_entities[i]);
+	} else if (cg.frametime > 100) {
+		hadSkip = qtrue;
 	} else {
 		hadSkip = qfalse;
 	}
