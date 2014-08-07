@@ -1963,6 +1963,10 @@ void RB_DrawSurfaceSprites( shaderStage_t *stage, shaderCommands_t *input);
 int SaveJPG( int quality, int image_width, int image_height, mmeShotType_t image_type, byte *image_buffer, byte *out_buffer, int out_size );
 int SaveTGA( int image_compressed, int image_width, int image_height, mmeShotType_t image_type, byte *image_buffer, byte *out_buffer, int out_size );
 int SavePNG( int compresslevel, int image_width, int image_height, mmeShotType_t image_type, byte *image_buffer, byte *out_buffer, int out_size );
+// font stuff
+void R_InitFreeType( void );
+void R_DoneFreeType( void );
+void R_MME_RegisterFont(const char *fontName, int pointSize, mmeFontInfo_t *font);
 
 void R_MME_Init(void);
 void R_MME_InitStereo(void);

@@ -33,8 +33,7 @@
 	TAGDEF(MODEL_GLA),					//	   "
 	TAGDEF(ICARUS),						// Memory used internally by the Icarus scripting system
 	TAGDEF(SHADERTEXT),
-	TAGDEF(SND_MP3STREAMHDR),			// specific MP3 struct for decoding (about 18..22K each?), not the actual MP3 binary
-	TAGDEF(SND_DYNAMICMUSIC),			// in-mem MP3 files
+	TAGDEF(FONT),
 	TAGDEF(SND_RAWDATA),				// raw sound data, either MP3 or WAV
 	TAGDEF(TEMP_WORKSPACE),				// anything like file loading or image workspace that's only temporary
 	TAGDEF(TEXTPOOL),					// for some special text-pool class thingy

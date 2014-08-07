@@ -530,6 +530,8 @@ vmCvar_t	mov_seekInterval;
 vmCvar_t	mov_musicFile;
 vmCvar_t	mov_musicStart;
 vmCvar_t	mov_chaseRange;
+vmCvar_t	mov_fontName;
+vmCvar_t	mov_fontSize;
 
 vmCvar_t	mov_deltaYaw;
 vmCvar_t	mov_deltaPitch;
@@ -2542,6 +2544,7 @@ Called after every level change or subsystem restart
 Will perform callbacks to make the loading info screen update.
 =================
 */
+extern void trap_MME_RegisterFont(const char *fontName, int pointSize, mmeFontInfo_t *font);
 extern qboolean trap_MME_Demo15Detection( void );
 void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	const char	*s;
@@ -2704,6 +2707,10 @@ Ghoul2 Insert End
 
 
 	CG_RegisterCvars();
+	//Load the fonts
+	cgs.textFont.glyphScale = 0;
+	trap_MME_RegisterFont( mov_fontName.string, mov_fontSize.integer, &cgs.textFont );
+	cgs.textFontValid = cgs.textFont.glyphScale > 0;
 
 	CG_InitConsoleCommands();
 

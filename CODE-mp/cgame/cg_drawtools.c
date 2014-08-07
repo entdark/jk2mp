@@ -198,6 +198,140 @@ void CG_DrawChar( int x, int y, int width, int height, int ch ) {
 
 }
 
+
+/* True Type functions */
+
+int CG_Text_Width2(const char *text, float scale, int limit) {
+  int count,len;
+	float out;
+	const mmeGlyphInfo_t *glyph;
+	float useScale;
+	const char *s = text;
+	const mmeFontInfo_t *font = &cgs.textFont;
+	useScale = scale * font->glyphScale;
+	out = 0;
+	if (text) {
+		len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( ( demo15detected && cg.ntModDetected && Q_IsColorStringNT( s ) ) || Q_IsColorString( s ) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(int)*s];
+				out += glyph->xSkip;
+				s++;
+				count++;
+			}
+		}
+	}
+	return out * useScale;
+}
+
+int CG_Text_Height2(const char *text, float scale, int limit) {
+	int len, count;
+	float max;
+	mmeGlyphInfo_t *glyph;
+	float useScale;
+	const char *s = text;
+	mmeFontInfo_t *font = &cgs.textFont;
+	useScale = scale * font->glyphScale;
+	max = 0;
+	if (text) {
+		len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( ( demo15detected && cg.ntModDetected && Q_IsColorStringNT( s ) ) || Q_IsColorString( s ) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(int)*s];
+
+				if (max < glyph->height) {
+					max = glyph->height;
+				}
+				s++;
+				count++;
+			}
+		}
+	}
+	return max * useScale;
+}
+
+static void CG_Text_PaintChar(float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader) {
+  float w, h;
+  w = width * scale;
+  h = height * scale;
+  trap_R_DrawStretchPic( x, y, w, h, s, t, s2, t2, hShader );
+}
+
+void CG_Text_Paint2(float x, float y, float scale, vec4_t color, const char *text, qboolean shadowed ) {
+	int len, count;
+	vec4_t newColor;
+	mmeGlyphInfo_t *glyph;
+	float useScale;
+	mmeFontInfo_t *font = &cgs.textFont;
+	useScale = scale * font->glyphScale;
+	if (text) {
+		const char *s = text;
+		trap_R_SetColor( color );
+		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
+		len = strlen(text);
+		count = 0;
+		while (s && *s && count < len) {
+			int colorLen;
+			glyph = &font->glyphs[(int)*s]; // TTimo: FIXME: getting nasty warnings without the cast, hopefully this doesn't break the VM build
+			//int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
+			//float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
+			if ( demo15detected && cg.ntModDetected && Q_IsColorStringNT( s ) ) {
+				memcpy( newColor, g_color_table_nt[ColorIndexNT(*(s+1))], sizeof( newColor ) );
+				newColor[3] = color[3];
+				trap_R_SetColor( newColor );
+				s += 2;
+				continue;
+			} else if ( Q_IsColorString( s ) ) {
+				memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
+				newColor[3] = color[3];
+				trap_R_SetColor( newColor );
+				s += 2;
+				continue;
+			} else {
+				float yadj = useScale * glyph->top;
+				if ( shadowed ) {
+					int ofs = 2;
+					colorBlack[3] = newColor[3];
+					trap_R_SetColor( colorBlack );
+					CG_Text_PaintChar(x + ofs, y - yadj + ofs, 
+														glyph->imageWidth,
+														glyph->imageHeight,
+														useScale, 
+														glyph->s,
+														glyph->t,
+														glyph->s2,
+														glyph->t2,
+														glyph->glyph);
+					colorBlack[3] = 1.0;
+					trap_R_SetColor( newColor );
+				}
+				CG_Text_PaintChar(x, y - yadj, 
+					glyph->imageWidth, glyph->imageHeight,
+					useScale, glyph->s,	glyph->t, glyph->s2, glyph->t2, glyph->glyph);
+				x += (glyph->xSkip * useScale);
+				s++;
+				count++;
+			}
+		}
+		trap_R_SetColor( NULL );
+	}
+}
+
+
 /*
 ==================
 CG_DrawStringExt

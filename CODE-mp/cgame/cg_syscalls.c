@@ -902,6 +902,9 @@ int trap_MME_SeekTime( int seekTime ) {
 void trap_MME_Music( const char *musicName, float time, float length ) {
 	syscall( CG_MME_MUSIC, musicName, PASSFLOAT(time), PASSFLOAT(length) );
 }
+void trap_MME_RegisterFont(const char *fontName, int pointSize, mmeFontInfo_t *font) {
+	syscall( CG_MME_FONT, fontName, pointSize, font );
+}
 void trap_MME_FontRatioFix( float ratio ) {
 	syscall( CG_MME_FONTRATIOFIX, PASSFLOAT(ratio) );
 }

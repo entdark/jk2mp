@@ -1132,6 +1132,7 @@ void R_Init( void ) {
 	R_InitShaders();
 	R_InitSkins();
 	R_InitFonts();
+	R_InitFreeType();
 #endif
 	R_ModelInit();
 #ifndef DEDICATED
@@ -1236,6 +1237,8 @@ void RE_Shutdown( qboolean destroyWindow ) {
 
 	R_MME_Shutdown();
 	R_MME_ShutdownStereo();
+	
+	R_DoneFreeType();
 
 	// shut down platform specific OpenGL stuff
 	if ( destroyWindow ) {

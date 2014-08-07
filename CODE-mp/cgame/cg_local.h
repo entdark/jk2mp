@@ -1552,6 +1552,9 @@ Ghoul2 Insert End
 
 	// effects
 	cgEffects_t		effects;
+	
+	mmeFontInfo_t	textFont;
+	qboolean		textFontValid;
 
 	float widthRatioCoef;	//to make 2Ds be not stretched
 } cgs_t;
@@ -1834,6 +1837,10 @@ void CG_DrawRotatePic2( float x, float y, float width, float height,float angle,
 void CG_DrawString( float x, float y, const char *string, 
 				   float charWidth, float charHeight, const float *modulate );
 
+int CG_Text_Width2(const char *text, float scale, int limit);
+int CG_Text_Height2(const char *text, float scale, int limit);
+void CG_Text_Paint2(float x, float y, float scale, vec4_t color, const char *text, qboolean shadowed );
+
 void CG_DrawNumField (float x, float y, int width, float value,float charWidth,float charHeight,int style,qboolean zeroFill);
 
 void CG_DrawStringExt( int x, int y, const char *string, const float *setColor, 
@@ -1891,7 +1898,6 @@ void CG_GetTeamColor(vec4_t *color);
 const char *CG_GetGameStatusText(void);
 const char *CG_GetKillerText(void);
 void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles );
-void CG_Text_PaintChar(float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader);
 void CG_CheckOrderPending(void);
 const char *CG_GameTypeString(void);
 qboolean CG_YourTeamHasFlag(void);

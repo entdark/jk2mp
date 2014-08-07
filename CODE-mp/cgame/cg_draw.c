@@ -2489,9 +2489,9 @@ static void CG_DrawCenterString( void ) {
 	char	*start;//, s[1024];
 	int		l;
 	int		x, y, w;
-	int h;
+	int		h;
 	float	*color;
-	const float scale = 1.0; //0.5
+	float	scale = 1.0; //0.5
 	qboolean broke = qfalse;
 
 	if ( !cg.centerPrintTime ) {
@@ -2524,7 +2524,10 @@ static void CG_DrawCenterString( void ) {
 		while (*start && *start == ' ') start++;
 
 	y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
-
+	if ( cgs.textFontValid ) {
+		scale *= 0.5;
+		y += scale * BIGCHAR_HEIGHT;
+	}
 	while ( 1 ) {
 		char linebuffer[1024];//, linebufferFix[1024];
 
@@ -2542,21 +2545,18 @@ static void CG_DrawCenterString( void ) {
 		}
 		linebuffer[l] = 0;
 
-/*		for ( l = 0; l < 50; l++ ) {
-			if ( !s[l] || s[l] == '\n' ) {
-				break;
-			}
-			linebufferFix[l] = s[l];
+		if ( cgs.textFontValid ) {
+			w = CG_Text_Width2( linebuffer, scale, 0 );
+			x = ( SCREEN_WIDTH - w ) / 2;
+			CG_Text_Paint2( x, y, scale, color, linebuffer, qtrue );
+			y += 1.3 * CG_Text_Height2( linebuffer, scale, 0 );;
+		} else {
+			w = CG_Text_Width(linebuffer, scale, FONT_MEDIUM);
+			h = CG_Text_Height(linebuffer, scale, FONT_MEDIUM);
+			x = (SCREEN_WIDTH - w) / 2;
+			CG_Text_Paint(x, y + h, scale, color, linebuffer, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE, FONT_MEDIUM);
+			y += h + 6;
 		}
-		linebufferFix[l] = 0;*/
-
-		w = CG_Text_Width(linebuffer, scale, FONT_MEDIUM);
-		h = CG_Text_Height(linebuffer, scale, FONT_MEDIUM);
-//		w = CG_Text_Width(linebufferFix, scale, FONT_MEDIUM);
-//		h = CG_Text_Height(linebufferFix, scale, FONT_MEDIUM);
-		x = (SCREEN_WIDTH - w) / 2;
-		CG_Text_Paint(x, y + h, scale, color, linebuffer, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE, FONT_MEDIUM);
-		y += h + 6;
 
 		while ( *start && ( *start != '\n' ) ) {
 			start++;

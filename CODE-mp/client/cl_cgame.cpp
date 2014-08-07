@@ -1178,6 +1178,9 @@ Ghoul2 Insert End
 	case CG_MME_MUSIC:
 		S_MMEMusic( (const char *)VMA(1), VMF(2), VMF(3) );
         return 0;
+	case CG_MME_FONT:
+		re.MMERegisterFont( (const char *)VMA(1), args[2], (mmeFontInfo_t *)VMA(3));
+        return 0;
 	case CG_MME_FONTRATIOFIX:
 		re.FontRatioFix(VMF(1));
         return 0; 	

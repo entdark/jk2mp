@@ -665,6 +665,9 @@
     <ClCompile Include="client\snd_main.cpp">
       <Filter>Sound</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\tr_mme_font.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="client\client.h">

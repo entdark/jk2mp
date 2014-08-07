@@ -270,6 +270,7 @@
     <ClCompile Include="renderer\tr_mme.cpp" />
     <ClCompile Include="renderer\tr_mme_avi.cpp" />
     <ClCompile Include="renderer\tr_mme_common.cpp" />
+    <ClCompile Include="renderer\tr_mme_font.cpp" />
     <ClCompile Include="renderer\tr_mme_sse2.cpp" />
     <ClCompile Include="renderer\tr_mme_stereo.cpp" />
     <ClCompile Include="renderer\tr_model.cpp" />
