@@ -332,6 +332,67 @@ static void C_ImpactMark(void)
 		data->mRed, data->mGreen, data->mBlue, data->mAlphaStart, qtrue, data->mSizeStart, qfalse);
 }
 
+extern void trap_MME_FontRatioFix( float ratio );
+static void CG_Set2DRatio(void) {
+	if (mov_ratioFix.integer)
+		cgs.widthRatioCoef = (float)(SCREEN_WIDTH * cgs.glconfig.vidHeight) / (float)(SCREEN_HEIGHT * cgs.glconfig.vidWidth);
+	else
+		cgs.widthRatioCoef = 1.0f;
+	if (mov_ratioFix.integer == 2)
+		trap_MME_FontRatioFix(1.0f);
+	else
+		trap_MME_FontRatioFix(cgs.widthRatioCoef);
+}
+void CG_ForceNTDemo(void) {
+	if (!demo15detected)
+		return;
+	if (mov_forceNTdemo.integer) {
+		cg.ntModDetected = qtrue;
+	} else if (!Q_stricmp(cgs.gamename, "< NT XII >")
+		|| !Q_stricmp(cgs.gamename, "< NT XIII >")
+		|| !Q_stricmp(cgs.gamename, "< NT XIV >")
+		/* || !Q_stricmp(gamename, "JDFix.")*/) {
+		cg.ntModDetected = qtrue;
+	} else {
+		cg.ntModDetected = qfalse;
+	}
+	trap_MME_NTDetection(cg.ntModDetected);
+}
+
+/*																																			
+===================
+CG_ForceModelChange
+===================
+*/
+static void CG_ForceModelChange( void ) {
+	int		i;
+
+	for (i=0 ; i<MAX_CLIENTS ; i++) {
+		const char		*clientInfo;
+		void	*oldGhoul2;
+
+		clientInfo = CG_ConfigString( CS_PLAYERS+i );
+		if ( !clientInfo[0] ) {
+			continue;
+		}
+
+		oldGhoul2 = cgs.clientinfo[i].ghoul2Model;
+		CG_NewClientInfo( i, qtrue);
+	}
+}
+
+static void CG_TeamOverlayChange( void ) {
+	// If team overlay is on, ask for updates from the server.  If its off,
+	// let the server know so we don't receive it
+	if ( cg_drawTeamOverlay.integer > 0 ) {
+		trap_Cvar_Set( "teamoverlay", "1" );
+	} else {
+		trap_Cvar_Set( "teamoverlay", "0" );
+	}
+	// FIXME E3 HACK
+	trap_Cvar_Set( "teamoverlay", "1" );
+}
+
 /*
 Ghoul2 Insert Start
 */
@@ -575,200 +636,204 @@ typedef struct {
 	vmCvar_t	*vmCvar;
 	char		*cvarName;
 	char		*defaultString;
+	void		(*update)( void );
 	int			cvarFlags;
 } cvarTable_t;
 
 static cvarTable_t cvarTable[] = { // bk001129
-	{ &cg_ignore, "cg_ignore", "0", 0 },	// used for debugging
-	{ &cg_autoswitch, "cg_autoswitch", "1", CVAR_ARCHIVE },
-	{ &cg_drawGun, "cg_drawGun", "1", CVAR_ARCHIVE },
-	{ &cg_zoomFov, "cg_zoomfov", "40.0", CVAR_ARCHIVE },
-	{ &cg_fov, "cg_fov", "80", CVAR_ARCHIVE },
-	{ &cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE },
-	{ &cg_stereoSeparation, "cg_stereoSeparation", "0.4", CVAR_ARCHIVE  },
-	{ &cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE  },
-	{ &cg_draw2D, "cg_draw2D", "1", CVAR_ARCHIVE  },
-	{ &cg_drawStatus, "cg_drawStatus", "1", CVAR_ARCHIVE  },
-	{ &cg_drawTimer, "cg_drawTimer", "0", CVAR_ARCHIVE  },
-	{ &cg_drawFPS, "cg_drawFPS", "0", CVAR_ARCHIVE  },
-	{ &cg_drawSnapshot, "cg_drawSnapshot", "0", CVAR_ARCHIVE  },
-	{ &cg_draw3dIcons, "cg_draw3dIcons", "1", CVAR_ARCHIVE  },
-	{ &cg_drawIcons, "cg_drawIcons", "1", CVAR_ARCHIVE  },
-	{ &cg_drawAmmoWarning, "cg_drawAmmoWarning", "0", CVAR_ARCHIVE  },
-	{ &cg_drawEnemyInfo, "cg_drawEnemyInfo", "1", CVAR_ARCHIVE  },
-	{ &cg_drawCrosshair, "cg_drawCrosshair", "1", CVAR_ARCHIVE },
-	{ &cg_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE },
-	{ &cg_drawScores, "cg_drawScores", "1", CVAR_ARCHIVE },
-	{ &cg_dynamicCrosshair, "cg_dynamicCrosshair", "1", CVAR_ARCHIVE },
-	{ &cg_drawRewards, "cg_drawRewards", "0", CVAR_ARCHIVE },
-	{ &cg_crosshairSize, "cg_crosshairSize", "24", CVAR_ARCHIVE },
-	{ &cg_crosshairHealth, "cg_crosshairHealth", "0", CVAR_ARCHIVE },
-	{ &cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE },
-	{ &cg_crosshairY, "cg_crosshairY", "0", CVAR_ARCHIVE },
-	{ &cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE },
-	{ &cg_addMarks, "cg_marks", "1", CVAR_ARCHIVE },
-	{ &cg_lagometer, "cg_lagometer", "0", CVAR_ARCHIVE },
-	{ &cg_gun_x, "cg_gunX", "0", CVAR_CHEAT },
-	{ &cg_gun_y, "cg_gunY", "0", CVAR_CHEAT },
-	{ &cg_gun_z, "cg_gunZ", "0", CVAR_CHEAT },
-	{ &cg_centertime, "cg_centertime", "3", CVAR_CHEAT },
-	{ &cg_runpitch, "cg_runpitch", "0.002", CVAR_ARCHIVE},
-	{ &cg_runroll, "cg_runroll", "0.005", CVAR_ARCHIVE },
-	{ &cg_bobup , "cg_bobup", "0.005", CVAR_ARCHIVE },
-	{ &cg_bobpitch, "cg_bobpitch", "0.002", CVAR_ARCHIVE },
-	{ &cg_bobroll, "cg_bobroll", "0.002", CVAR_ARCHIVE },
-	//{ &cg_swingSpeed, "cg_swingSpeed", "0.3", CVAR_CHEAT },
-	{ &cg_animSpeed, "cg_animspeed", "1", CVAR_CHEAT },
-	{ &cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT },
-	{ &cg_debugSaber, "cg_debugsaber", "0", CVAR_CHEAT },
-	{ &cg_debugPosition, "cg_debugposition", "0", CVAR_CHEAT },
-	{ &cg_debugEvents, "cg_debugevents", "0", CVAR_CHEAT },
-	{ &cg_errorDecay, "cg_errordecay", "100", 0 },
-	{ &cg_nopredict, "cg_nopredict", "0", 0 },
-	{ &cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT },
-	{ &cg_showmiss, "cg_showmiss", "0", 0 },
-	{ &cg_footsteps, "cg_footsteps", "1", CVAR_CHEAT },
-	{ &cg_tracerChance, "cg_tracerchance", "0.4", CVAR_CHEAT },
-	{ &cg_tracerWidth, "cg_tracerwidth", "1", CVAR_CHEAT },
-	{ &cg_tracerLength, "cg_tracerlength", "100", CVAR_CHEAT },
+	{ &cg_ignore, "cg_ignore", "0", NULL, 0 },	// used for debugging
+	{ &cg_autoswitch, "cg_autoswitch", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_drawGun, "cg_drawGun", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_zoomFov, "cg_zoomfov", "40.0", NULL, CVAR_ARCHIVE },
+	{ &cg_fov, "cg_fov", "80", NULL, CVAR_ARCHIVE },
+	{ &cg_viewsize, "cg_viewsize", "100", NULL, CVAR_ARCHIVE },
+	{ &cg_stereoSeparation, "cg_stereoSeparation", "0.4", NULL, CVAR_ARCHIVE  },
+	{ &cg_shadows, "cg_shadows", "1", NULL, CVAR_ARCHIVE  },
+	{ &cg_draw2D, "cg_draw2D", "1", NULL, CVAR_ARCHIVE  },
+	{ &cg_drawStatus, "cg_drawStatus", "1", NULL, CVAR_ARCHIVE  },
+	{ &cg_drawTimer, "cg_drawTimer", "0", NULL, CVAR_ARCHIVE  },
+	{ &cg_drawFPS, "cg_drawFPS", "0", NULL, CVAR_ARCHIVE  },
+	{ &cg_drawSnapshot, "cg_drawSnapshot", "0", NULL, CVAR_ARCHIVE  },
+	{ &cg_draw3dIcons, "cg_draw3dIcons", "1", NULL, CVAR_ARCHIVE  },
+	{ &cg_drawIcons, "cg_drawIcons", "1", NULL, CVAR_ARCHIVE  },
+	{ &cg_drawAmmoWarning, "cg_drawAmmoWarning", "0", NULL, CVAR_ARCHIVE  },
+	{ &cg_drawEnemyInfo, "cg_drawEnemyInfo", "1", NULL, CVAR_ARCHIVE  },
+	{ &cg_drawCrosshair, "cg_drawCrosshair", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_drawCrosshairNames, "cg_drawCrosshairNames", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_drawScores, "cg_drawScores", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_dynamicCrosshair, "cg_dynamicCrosshair", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_drawRewards, "cg_drawRewards", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_crosshairSize, "cg_crosshairSize", "24", NULL, CVAR_ARCHIVE },
+	{ &cg_crosshairHealth, "cg_crosshairHealth", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_crosshairX, "cg_crosshairX", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_crosshairY, "cg_crosshairY", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_simpleItems, "cg_simpleItems", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_addMarks, "cg_marks", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_lagometer, "cg_lagometer", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_gun_x, "cg_gunX", "0", NULL, CVAR_CHEAT },
+	{ &cg_gun_y, "cg_gunY", "0", NULL, CVAR_CHEAT },
+	{ &cg_gun_z, "cg_gunZ", "0", NULL, CVAR_CHEAT },
+	{ &cg_centertime, "cg_centertime", "3", NULL, CVAR_CHEAT },
+	{ &cg_runpitch, "cg_runpitch", "0.002", NULL, CVAR_ARCHIVE},
+	{ &cg_runroll, "cg_runroll", "0.005", NULL, CVAR_ARCHIVE },
+	{ &cg_bobup , "cg_bobup", "0.005", NULL, CVAR_ARCHIVE },
+	{ &cg_bobpitch, "cg_bobpitch", "0.002", NULL, CVAR_ARCHIVE },
+	{ &cg_bobroll, "cg_bobroll", "0.002", NULL, CVAR_ARCHIVE },
+	//{ &cg_swingSpeed, "cg_swingSpeed", "0.3", NULL, CVAR_CHEAT },
+	{ &cg_animSpeed, "cg_animspeed", "1", NULL, CVAR_CHEAT },
+	{ &cg_debugAnim, "cg_debuganim", "0", NULL, CVAR_CHEAT },
+	{ &cg_debugSaber, "cg_debugsaber", "0", NULL, CVAR_CHEAT },
+	{ &cg_debugPosition, "cg_debugposition", "0", NULL, CVAR_CHEAT },
+	{ &cg_debugEvents, "cg_debugevents", "0", NULL, CVAR_CHEAT },
+	{ &cg_errorDecay, "cg_errordecay", "100", NULL, 0 },
+	{ &cg_nopredict, "cg_nopredict", "0", NULL, 0 },
+	{ &cg_noPlayerAnims, "cg_noplayeranims", "0", NULL, CVAR_CHEAT },
+	{ &cg_showmiss, "cg_showmiss", "0", NULL, 0 },
+	{ &cg_footsteps, "cg_footsteps", "1", NULL, CVAR_CHEAT },
+	{ &cg_tracerChance, "cg_tracerchance", "0.4", NULL, CVAR_CHEAT },
+	{ &cg_tracerWidth, "cg_tracerwidth", "1", NULL, CVAR_CHEAT },
+	{ &cg_tracerLength, "cg_tracerlength", "100", NULL, CVAR_CHEAT },
 
-	{ &cg_swingAngles, "cg_swingAngles", "1", 0 },
+	{ &cg_swingAngles, "cg_swingAngles", "1", NULL, 0 },
 
-	{ &cg_oldPainSounds, "cg_oldPainSounds", "0", CVAR_ARCHIVE },
+	{ &cg_oldPainSounds, "cg_oldPainSounds", "0", NULL, CVAR_ARCHIVE },
 
 #ifdef G2_COLLISION_ENABLED
-	{ &cg_saberModelTraceEffect, "cg_saberModelTraceEffect", "0", 0 },
+	{ &cg_saberModelTraceEffect, "cg_saberModelTraceEffect", "0", NULL, 0 },
 #endif
 
-	{ &cg_fpls, "cg_fpls", "0", 0 },
+	{ &cg_fpls, "cg_fpls", "0", NULL, 0 },
 
-	{ &cg_saberDynamicMarks, "cg_saberDynamicMarks", "0", 0 },
-	{ &cg_saberDynamicMarkTime, "cg_saberDynamicMarkTime", "60000", 0 },
+	{ &cg_saberDynamicMarks, "cg_saberDynamicMarks", "0", NULL, 0 },
+	{ &cg_saberDynamicMarkTime, "cg_saberDynamicMarkTime", "60000", NULL, 0 },
 
-	{ &cg_saberContact, "cg_saberContact", "1", 0 },
-	{ &cg_saberTrail, "cg_saberTrail", "1", CVAR_ARCHIVE },
+	{ &cg_saberContact, "cg_saberContact", "1", NULL, 0 },
+	{ &cg_saberTrail, "cg_saberTrail", "1", NULL, CVAR_ARCHIVE },
 
-	{ &cg_duelHeadAngles, "cg_duelHeadAngles", "0", 0 },
+	{ &cg_duelHeadAngles, "cg_duelHeadAngles", "0", NULL, 0 },
 
-	{ &cg_speedTrail, "cg_speedTrail", "1", CVAR_ARCHIVE },
-	{ &cg_auraShell, "cg_auraShell", "1", CVAR_ARCHIVE },
+	{ &cg_speedTrail, "cg_speedTrail", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_auraShell, "cg_auraShell", "1", NULL, CVAR_ARCHIVE },
 
-	{ &cg_animBlend, "cg_animBlend", "1", 0 },
+	{ &cg_animBlend, "cg_animBlend", "1", NULL, 0 },
 
-	{ &cg_dismember, "cg_dismember", "0", CVAR_ARCHIVE },
+	{ &cg_dismember, "cg_dismember", "0", NULL, CVAR_ARCHIVE },
 
-	{ &cg_thirdPerson, "cg_thirdPerson", "0", CVAR_ARCHIVE },
-	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "80", CVAR_CHEAT },
-	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT },
-	{ &cg_thirdPersonPitchOffset, "cg_thirdPersonPitchOffset", "0", CVAR_CHEAT },
-	{ &cg_thirdPersonVertOffset, "cg_thirdPersonVertOffset", "16", CVAR_CHEAT },
-	{ &cg_thirdPersonCameraDamp, "cg_thirdPersonCameraDamp", "0.3", 0 },
-	{ &cg_thirdPersonTargetDamp, "cg_thirdPersonTargetDamp", "0.5", CVAR_CHEAT },
+	{ &cg_thirdPerson, "cg_thirdPerson", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "80", NULL, CVAR_CHEAT },
+	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", NULL, CVAR_CHEAT },
+	{ &cg_thirdPersonPitchOffset, "cg_thirdPersonPitchOffset", "0", NULL, CVAR_CHEAT },
+	{ &cg_thirdPersonVertOffset, "cg_thirdPersonVertOffset", "16", NULL, CVAR_CHEAT },
+	{ &cg_thirdPersonCameraDamp, "cg_thirdPersonCameraDamp", "0.3", NULL, 0 },
+	{ &cg_thirdPersonTargetDamp, "cg_thirdPersonTargetDamp", "0.5", NULL, CVAR_CHEAT },
 	
-	{ &cg_thirdPersonHorzOffset, "cg_thirdPersonHorzOffset", "0", CVAR_CHEAT },
-	{ &cg_thirdPersonAlpha,	"cg_thirdPersonAlpha",	"1.0", CVAR_CHEAT },
+	{ &cg_thirdPersonHorzOffset, "cg_thirdPersonHorzOffset", "0", NULL, CVAR_CHEAT },
+	{ &cg_thirdPersonAlpha,	"cg_thirdPersonAlpha",	"1.0", NULL, CVAR_CHEAT },
 
-	{ &cg_teamChatTime, "cg_teamChatTime", "3000", CVAR_ARCHIVE  },
-	{ &cg_teamChatHeight, "cg_teamChatHeight", "0", CVAR_ARCHIVE  },
-	{ &cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE  },
-	{ &cg_predictItems, "cg_predictItems", "1", CVAR_ARCHIVE },
-	{ &cg_deferPlayers, "cg_deferPlayers", "1", CVAR_ARCHIVE },
-	{ &cg_drawTeamOverlay, "cg_drawTeamOverlay", "0", CVAR_ARCHIVE },
-	{ &cg_teamOverlayUserinfo, "teamoverlay", "0", CVAR_ROM | CVAR_USERINFO },
-	{ &cg_stats, "cg_stats", "0", 0 },
-	{ &cg_drawFriend, "cg_drawFriend", "1", CVAR_ARCHIVE },
-	{ &cg_teamChatsOnly, "cg_teamChatsOnly", "0", CVAR_ARCHIVE },
-	{ &cg_noVoiceChats, "cg_noVoiceChats", "0", CVAR_ARCHIVE },
-	{ &cg_noVoiceText, "cg_noVoiceText", "0", CVAR_ARCHIVE },
+	{ &cg_teamChatTime, "cg_teamChatTime", "3000", NULL, CVAR_ARCHIVE  },
+	{ &cg_teamChatHeight, "cg_teamChatHeight", "0", NULL, CVAR_ARCHIVE  },
+	{ &cg_forceModel, "cg_forceModel", "0", CG_ForceModelChange, CVAR_ARCHIVE  },
+	{ &cg_predictItems, "cg_predictItems", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_deferPlayers, "cg_deferPlayers", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_drawTeamOverlay, "cg_drawTeamOverlay", "0", CG_TeamOverlayChange, CVAR_ARCHIVE },
+	{ &cg_teamOverlayUserinfo, "teamoverlay", "0", NULL, CVAR_ROM | CVAR_USERINFO },
+	{ &cg_stats, "cg_stats", "0", NULL, 0 },
+	{ &cg_drawFriend, "cg_drawFriend", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_teamChatsOnly, "cg_teamChatsOnly", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_noVoiceChats, "cg_noVoiceChats", "0", NULL, CVAR_ARCHIVE },
+	{ &cg_noVoiceText, "cg_noVoiceText", "0", NULL, CVAR_ARCHIVE },
 	// the following variables are created in other parts of the system,
 	// but we also reference them here
-	{ &cg_buildScript, "com_buildScript", "0", 0 },	// force loading of all possible data amd error on failures
-	{ &cg_paused, "cl_paused", "0", CVAR_ROM },
-	{ &cg_blood, "com_blood", "1", CVAR_ARCHIVE },
-	{ &cg_synchronousClients, "g_synchronousClients", "0", 0 },	// communicated by systeminfo
+	{ &cg_buildScript, "com_buildScript", "0", NULL, 0 },	// force loading of all possible data amd error on failures
+	{ &cg_paused, "cl_paused", "0", NULL, CVAR_ROM },
+	{ &cg_blood, "com_blood", "1", NULL, CVAR_ARCHIVE },
+	{ &cg_synchronousClients, "g_synchronousClients", "0", NULL, 0 },	// communicated by systeminfo
 
-	{ &cg_redTeamName, "g_redteam", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO },
-	{ &cg_blueTeamName, "g_blueteam", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO },
-	{ &cg_currentSelectedPlayer, "cg_currentSelectedPlayer", "0", CVAR_ARCHIVE},
-	{ &cg_currentSelectedPlayerName, "cg_currentSelectedPlayerName", "", CVAR_ARCHIVE},
-	{ &cg_singlePlayer, "ui_singlePlayerActive", "0", CVAR_USERINFO},
-	{ &cg_enableDust, "g_enableDust", "0", 0},
-	{ &cg_enableBreath, "g_enableBreath", "0", 0},
-	{ &cg_singlePlayerActive, "ui_singlePlayerActive", "0", CVAR_USERINFO},
-	{ &cg_recordSPDemo, "ui_recordSPDemo", "0", CVAR_ARCHIVE},
-	{ &cg_recordSPDemoName, "ui_recordSPDemoName", "", CVAR_ARCHIVE},
+	{ &cg_redTeamName, "g_redteam", DEFAULT_REDTEAM_NAME, NULL, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO },
+	{ &cg_blueTeamName, "g_blueteam", DEFAULT_BLUETEAM_NAME, NULL, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO },
+	{ &cg_currentSelectedPlayer, "cg_currentSelectedPlayer", "0", NULL, CVAR_ARCHIVE},
+	{ &cg_currentSelectedPlayerName, "cg_currentSelectedPlayerName", "", NULL, CVAR_ARCHIVE},
+	{ &cg_singlePlayer, "ui_singlePlayerActive", "0", NULL, CVAR_USERINFO},
+	{ &cg_enableDust, "g_enableDust", "0", NULL, 0},
+	{ &cg_enableBreath, "g_enableBreath", "0", NULL, 0},
+	{ &cg_singlePlayerActive, "ui_singlePlayerActive", "0", NULL, CVAR_USERINFO},
+	{ &cg_recordSPDemo, "ui_recordSPDemo", "0", NULL, CVAR_ARCHIVE},
+	{ &cg_recordSPDemoName, "ui_recordSPDemoName", "", NULL, CVAR_ARCHIVE},
 
-	{ &cg_cameraOrbit, "cg_cameraOrbit", "0", CVAR_CHEAT},
-	{ &cg_cameraOrbitDelay, "cg_cameraOrbitDelay", "50", CVAR_ARCHIVE},
-	{ &cg_timescaleFadeEnd, "cg_timescaleFadeEnd", "1", 0},
-	{ &cg_timescaleFadeSpeed, "cg_timescaleFadeSpeed", "0", 0},
-	{ &cg_timescale, "timescale", "1", 0},
-	{ &cg_scorePlum, "cg_scorePlums", "1", CVAR_USERINFO | CVAR_ARCHIVE},
-	{ &cg_hudFiles, "cg_hudFiles", "0", CVAR_USERINFO | CVAR_ARCHIVE},
-	{ &cg_smoothClients, "cg_smoothClients", "0", CVAR_USERINFO | CVAR_ARCHIVE},
-	{ &cg_cameraMode, "com_cameraMode", "0", CVAR_CHEAT},
+	{ &cg_cameraOrbit, "cg_cameraOrbit", "0", NULL, CVAR_CHEAT},
+	{ &cg_cameraOrbitDelay, "cg_cameraOrbitDelay", "50", NULL, CVAR_ARCHIVE},
+	{ &cg_timescaleFadeEnd, "cg_timescaleFadeEnd", "1", NULL, 0},
+	{ &cg_timescaleFadeSpeed, "cg_timescaleFadeSpeed", "0", NULL, 0},
+	{ &cg_timescale, "timescale", "1", NULL, 0},
+	{ &cg_scorePlum, "cg_scorePlums", "1", NULL, CVAR_USERINFO | CVAR_ARCHIVE},
+	{ &cg_hudFiles, "cg_hudFiles", "0", NULL, CVAR_USERINFO | CVAR_ARCHIVE},
+	{ &cg_smoothClients, "cg_smoothClients", "0", NULL, CVAR_USERINFO | CVAR_ARCHIVE},
+	{ &cg_cameraMode, "com_cameraMode", "0", NULL, CVAR_CHEAT},
 
-	{ &pmove_fixed, "pmove_fixed", "0", 0},
-	{ &pmove_msec, "pmove_msec", "8", 0},
-	{ &cg_noTaunt, "cg_noTaunt", "0", CVAR_ARCHIVE},
-	{ &cg_noProjectileTrail, "cg_noProjectileTrail", "0", CVAR_ARCHIVE},
-	{ &cg_smallFont, "ui_smallFont", "0.25", CVAR_ARCHIVE},
-	{ &cg_bigFont, "ui_bigFont", "0.4", CVAR_ARCHIVE},
-	{ &cg_trueLightning, "cg_trueLightning", "0.0", CVAR_ARCHIVE},
+	{ &pmove_fixed, "pmove_fixed", "0", NULL, 0},
+	{ &pmove_msec, "pmove_msec", "8", NULL, 0},
+	{ &cg_noTaunt, "cg_noTaunt", "0", NULL, CVAR_ARCHIVE},
+	{ &cg_noProjectileTrail, "cg_noProjectileTrail", "0", NULL, CVAR_ARCHIVE},
+	{ &cg_smallFont, "ui_smallFont", "0.25", NULL, CVAR_ARCHIVE},
+	{ &cg_bigFont, "ui_bigFont", "0.4", NULL, CVAR_ARCHIVE},
+	{ &cg_trueLightning, "cg_trueLightning", "0.0", NULL, CVAR_ARCHIVE},
 
-	{ &ui_myteam, "ui_myteam", "0", CVAR_ROM|CVAR_INTERNAL},
+	{ &ui_myteam, "ui_myteam", "0", NULL, CVAR_ROM|CVAR_INTERNAL},
 
-//	{ &cg_pmove_fixed, "cg_pmove_fixed", "0", CVAR_USERINFO | CVAR_ARCHIVE }
+//	{ &cg_pmove_fixed, "cg_pmove_fixed", "0", NULL, CVAR_USERINFO | CVAR_ARCHIVE }
 /*
 Ghoul2 Insert Start
 */
-	{ &cg_debugBB, "debugBB", "0", 0},
+	{ &cg_debugBB, "debugBB", "0", NULL, 0},
 /*
 Ghoul2 Insert End
 */
 	//JA
-	{ &cg_chatBox,			"cg_chatBox",			"0",		CVAR_ARCHIVE	},
-	{ &cg_chatBoxHeight,	"cg_chatBoxHeight",		"350",		CVAR_ARCHIVE	},
+	{ &cg_chatBox,			"cg_chatBox",			"0",			NULL,	CVAR_ARCHIVE	},
+	{ &cg_chatBoxHeight,	"cg_chatBoxHeight",		"350",			NULL,	CVAR_ARCHIVE	},
 	//mme
-	{ &mme_demoFileName,	"mme_demoFileName",		"",			0				},
-	{ &mov_chatBeep,		"mov_chatBeep",			"1",		CVAR_ARCHIVE	},
-	{ &mov_fragsOnly,		"mov_fragsOnly",		"0",		CVAR_ARCHIVE	},
-	{ &mov_filterMask,		"mov_filterMask",		"0",		CVAR_ARCHIVE	},
-	{ &mov_seekInterval,	"mov_seekInterval",		"4",		CVAR_ARCHIVE	},
-	{ &mov_deltaYaw,		"mov_deltaYaw",			"0",		CVAR_ARCHIVE	},
-	{ &mov_deltaPitch,		"mov_deltaPitch",		"0",		CVAR_ARCHIVE	},
-	{ &mov_deltaRoll,		"mov_deltaRoll",		"0",		CVAR_ARCHIVE	},
-	{ &mov_captureName,		"mov_captureName",		"",			CVAR_ARCHIVE	},
-	{ &mov_captureFPS,		"mov_captureFPS",		"25",		CVAR_ARCHIVE	},
-	{ &mov_musicFile,		"mov_musicFile",		"",			CVAR_TEMP		},
-	{ &mov_musicStart,		"mov_musicStart",		"0",		CVAR_TEMP		},
-	{ &mov_chaseRange,		"mov_chaseRange",		"20",		CVAR_ARCHIVE	},
-	{ &mov_smoothQuat,		"mov_smoothQuat",		"0",		CVAR_ARCHIVE	},
-	{ &mov_captureCvars,	"mov_captureCvars",		"",			CVAR_TEMP		},
-	{ &mov_ratioFix,		"mov_ratioFix",			"1",		CVAR_ARCHIVE	},
-	{ &mov_saberTeamColour,	"mov_saberTeamColour",	"1",		CVAR_ARCHIVE	},
-	{ &mov_wallhack,		"mov_wallhack",			"0",		CVAR_ARCHIVE	},
-	{ &mov_dismember,		"mov_dismember",		"0",		CVAR_ARCHIVE	},
-	{ &mov_absorbVisibility,"mov_absorbVisibility",	"0",		CVAR_ARCHIVE	},
-	{ &mov_absorbColour,	"mov_absorbColour",		"0",		CVAR_ARCHIVE	},
-	{ &mov_protectColour,	"mov_protectColour",	"0",		CVAR_ARCHIVE	},
-	{ &mov_rageColour,		"mov_rageColour",		"0",		CVAR_ARCHIVE	},
-	{ &fx_Vibrate,			"fx_Vibrate",			"1",		CVAR_ARCHIVE	},
-	{ &fx_vfps,				"fx_vfps",				"1000",		CVAR_ARCHIVE	},
-	{ &fx_disruptTime,		"fx_disruptTime",		"150",		CVAR_ARCHIVE	},	//from smod
-	{ &fx_disruptTeamColour,"fx_disruptTeamColour",	"0",		CVAR_ARCHIVE	},
-	{ &fx_disruptSpiral,	"fx_disruptSpiral",		"0",		CVAR_ARCHIVE	},
-	{ &fx_disruptCoreColor,	"fx_disruptCoreColor",	"xff4400",	CVAR_ARCHIVE	},
-	{ &fx_disruptSpiralColor,"fx_disruptSpiralColor","xff2200",	CVAR_ARCHIVE	},
+	{ &mme_demoFileName,	"mme_demoFileName",		"",				NULL,	0				},
+	{ &mov_chatBeep,		"mov_chatBeep",			"1",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_fragsOnly,		"mov_fragsOnly",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_filterMask,		"mov_filterMask",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_seekInterval,	"mov_seekInterval",		"4",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_deltaYaw,		"mov_deltaYaw",			"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_deltaPitch,		"mov_deltaPitch",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_deltaRoll,		"mov_deltaRoll",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_captureName,		"mov_captureName",		"",				NULL,	CVAR_ARCHIVE	},
+	{ &mov_captureFPS,		"mov_captureFPS",		"25",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_musicFile,		"mov_musicFile",		"",				NULL,	CVAR_TEMP		},
+	{ &mov_musicStart,		"mov_musicStart",		"0",			NULL,	CVAR_TEMP		},
+	{ &mov_chaseRange,		"mov_chaseRange",		"20",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_fontName,		"mov_fontName",			"",				NULL,	CVAR_ARCHIVE	},
+	{ &mov_fontSize,		"mov_fontSize",			"20",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_smoothQuat,		"mov_smoothQuat",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_captureCvars,	"mov_captureCvars",		"",				NULL,	CVAR_TEMP		},
+	{ &mov_ratioFix,		"mov_ratioFix",			"1",   CG_Set2DRatio,	CVAR_ARCHIVE	},
+	{ &mov_saberTeamColour,	"mov_saberTeamColour",	"1",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_wallhack,		"mov_wallhack",			"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_dismember,		"mov_dismember",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_forceNTdemo,		"mov_forceNTdemo",		"0",  CG_ForceNTDemo,	CVAR_ARCHIVE	},
+	{ &mov_absorbVisibility,"mov_absorbVisibility",	"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_absorbColour,	"mov_absorbColour",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_protectColour,	"mov_protectColour",	"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_rageColour,		"mov_rageColour",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &fx_Vibrate,			"fx_Vibrate",			"1",			NULL,	CVAR_ARCHIVE	},
+	{ &fx_vfps,				"fx_vfps",				"1000",			NULL,	CVAR_ARCHIVE	},
+	{ &fx_disruptTime,		"fx_disruptTime",		"-1",			NULL,	CVAR_ARCHIVE	},	//from smod
+	{ &fx_disruptTeamColour,"fx_disruptTeamColour",	"0",			NULL,	CVAR_ARCHIVE	},
+	{ &fx_disruptSpiral,	"fx_disruptSpiral",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &fx_disruptCoreColor,	"fx_disruptCoreColor",	"xff4400",		NULL,	CVAR_ARCHIVE	},
+	{ &fx_disruptSpiralColor,"fx_disruptSpiralColor","xff2200",		NULL,	CVAR_ARCHIVE	},
 
-	{ &cg_trueEyePosition,	"cg_trueEyePosition",	"-2",		CVAR_ARCHIVE	},
-	{ &cg_trueFlip,			"cg_trueFlip",			"2",		CVAR_ARCHIVE	},
-	{ &cg_trueFOV,			"cg_trueFOV",			"0",		CVAR_ARCHIVE	},
-	{ &cg_trueGuns,			"cg_trueGuns",			"0",		CVAR_ARCHIVE	},
-	{ &cg_trueMoveRoll,		"cg_trueMoveRoll",		"0",		CVAR_ARCHIVE	},
-	{ &cg_trueRoll,			"cg_trueRoll",			"2",		CVAR_ARCHIVE	},
-	{ &cg_trueSaber,		"cg_trueSaber",			"0",		CVAR_ARCHIVE	},
-	{ &cg_trueSpin,			"cg_trueSpin",			"1",		CVAR_ARCHIVE	},
+	{ &cg_trueEyePosition,	"cg_trueEyePosition",	"-2",			NULL,	CVAR_ARCHIVE	},
+	{ &cg_trueFlip,			"cg_trueFlip",			"2",			NULL,	CVAR_ARCHIVE	},
+	{ &cg_trueFOV,			"cg_trueFOV",			"0",			NULL,	CVAR_ARCHIVE	},
+	{ &cg_trueGuns,			"cg_trueGuns",			"0",			NULL,	CVAR_ARCHIVE	},
+	{ &cg_trueMoveRoll,		"cg_trueMoveRoll",		"0",			NULL,	CVAR_ARCHIVE	},
+	{ &cg_trueRoll,			"cg_trueRoll",			"2",			NULL,	CVAR_ARCHIVE	},
+	{ &cg_trueSaber,		"cg_trueSaber",			"0",			NULL,	CVAR_ARCHIVE	},
+	{ &cg_trueSpin,			"cg_trueSpin",			"1",			NULL,	CVAR_ARCHIVE	},
 };
 
 static int  cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
@@ -784,8 +849,9 @@ void CG_RegisterCvars( void ) {
 	char		var[MAX_TOKEN_CHARS];
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
-		trap_Cvar_Register( cv->vmCvar, cv->cvarName,
-			cv->defaultString, cv->cvarFlags );
+		trap_Cvar_Register( cv->vmCvar, cv->cvarName, cv->defaultString, cv->cvarFlags );
+		if ( cv->update )
+			cv->update();
 	}
 
 	// see if we are also running the server on this machine
@@ -814,28 +880,6 @@ void CG_RegisterCvars( void ) {
 	trap_Cvar_Register(NULL, "ui_about_botminplayers",	"0", CVAR_ROM|CVAR_INTERNAL );
 }
 
-/*																																			
-===================
-CG_ForceModelChange
-===================
-*/
-static void CG_ForceModelChange( void ) {
-	int		i;
-
-	for (i=0 ; i<MAX_CLIENTS ; i++) {
-		const char		*clientInfo;
-		void	*oldGhoul2;
-
-		clientInfo = CG_ConfigString( CS_PLAYERS+i );
-		if ( !clientInfo[0] ) {
-			continue;
-		}
-
-		oldGhoul2 = cgs.clientinfo[i].ghoul2Model;
-		CG_NewClientInfo( i, qtrue);
-	}
-}
-
 /*
 =================
 CG_UpdateCvars
@@ -844,31 +888,15 @@ CG_UpdateCvars
 void CG_UpdateCvars( void ) {
 	int			i;
 	cvarTable_t	*cv;
-
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
-		trap_Cvar_Update( cv->vmCvar );
-	}
-
-	// check for modications here
-
-	// If team overlay is on, ask for updates from the server.  If its off,
-	// let the server know so we don't receive it
-	if ( drawTeamOverlayModificationCount != cg_drawTeamOverlay.modificationCount ) {
-		drawTeamOverlayModificationCount = cg_drawTeamOverlay.modificationCount;
-
-		if ( cg_drawTeamOverlay.integer > 0 ) {
-			trap_Cvar_Set( "teamoverlay", "1" );
-		} else {
-			trap_Cvar_Set( "teamoverlay", "0" );
+		if ( cv->vmCvar ) {
+			int modCount = cv->vmCvar->modificationCount;
+			trap_Cvar_Update( cv->vmCvar );
+			if ( cv->vmCvar->modificationCount > modCount ) {
+				if ( cv->update )
+					cv->update();
+			}
 		}
-		// FIXME E3 HACK
-		trap_Cvar_Set( "teamoverlay", "1" );
-	}
-
-	// if force model changed
-	if ( forceModelModificationCount != cg_forceModel.modificationCount ) {
-		forceModelModificationCount = cg_forceModel.modificationCount;
-		CG_ForceModelChange();
 	}
 }
 
@@ -954,13 +982,6 @@ const char *CG_Argv( int arg ) {
 	return buffer;
 }
 
-
-void CG_Set2DRatio(void) {
-	if (mov_ratioFix.integer)
-		cgs.widthRatioCoef = (float)(SCREEN_WIDTH * cgs.glconfig.vidHeight) / (float)(SCREEN_HEIGHT * cgs.glconfig.vidWidth);
-	else
-		cgs.widthRatioCoef = 1.0f;
-}
 
 //========================================================================
 
@@ -2704,7 +2725,11 @@ Ghoul2 Insert End
 		forceTicPos[i].tic		= trap_R_RegisterShaderNoMip( forceTicPos[i].file );
 		ammoTicPos[i].tic		= trap_R_RegisterShaderNoMip( ammoTicPos[i].file );
 	}
-
+	
+	// get the rendering configuration from the client system
+	trap_GetGlconfig( &cgs.glconfig );
+	cgs.screenXScale = cgs.glconfig.vidWidth / 640.0;
+	cgs.screenYScale = cgs.glconfig.vidHeight / 480.0;
 
 	CG_RegisterCvars();
 	//Load the fonts
@@ -2719,11 +2744,6 @@ Ghoul2 Insert End
 	cgs.redflag = cgs.blueflag = -1; // For compatibily, default to unset for
 	cgs.flagStatus = -1;
 	// old servers
-
-	// get the rendering configuration from the client system
-	trap_GetGlconfig( &cgs.glconfig );
-	cgs.screenXScale = cgs.glconfig.vidWidth / 640.0;
-	cgs.screenYScale = cgs.glconfig.vidHeight / 480.0;
 
 	// get the gamestate from the client system
 	trap_GetGameState( &cgs.gameState );
