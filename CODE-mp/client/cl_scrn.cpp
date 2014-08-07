@@ -242,7 +242,8 @@ static void SCR_DrawStringExt2( float x, float y, float charWidth, float charHei
 	s = string;
 	xx = x;
 	while ( *s ) {
-		if ( !noColorEscape && Q_IsColorString( s ) ) {
+		if ( ( demo15detected && ntModDetected && Q_IsColorStringNT( s ) )
+			|| Q_IsColorString( s ) ) {
 			s += 2;
 			continue;
 		}
@@ -257,7 +258,15 @@ static void SCR_DrawStringExt2( float x, float y, float charWidth, float charHei
 	xx = x;
 	re.SetColor( setColor );
 	while ( *s ) {
-		if ( Q_IsColorString( s ) ) {
+		if ( demo15detected && ntModDetected && Q_IsColorStringNT( s ) ) {
+			if ( !forceColor ) {
+				Com_Memcpy( color, g_color_table_nt[ColorIndexNT(*(s+1))], sizeof( color ) );
+				color[3] = setColor[3];
+				re.SetColor( color );
+			}
+			s += 2;
+			continue;
+		} else if ( Q_IsColorString( s ) ) {
 			if ( !forceColor ) {
 				Com_Memcpy( color, g_color_table[ColorIndex(*(s+1))], sizeof( color ) );
 				color[3] = setColor[3];

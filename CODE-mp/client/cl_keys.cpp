@@ -438,7 +438,7 @@ void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int size, q
 		cursorChar = 10;
 	}
 
-	if (demo15detected)
+	if (demo15detected && ntModDetected)
 		i = drawLen - ( Q_PrintStrlenNT( str ) + 1 );
 	else
 		i = drawLen - ( Q_PrintStrlen( str ) + 1 );
