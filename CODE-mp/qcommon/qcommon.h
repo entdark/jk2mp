@@ -203,7 +203,6 @@ PROTOCOL
 // NOTE: that stuff only works with two digits protocols
 extern qboolean demo15detected;
 extern qboolean ntModDetected;
-extern int demo_protocols[];
 
 #define	UPDATE_SERVER_NAME		"updatejk2.ravensoft.com"
 #define MASTER_SERVER_NAME		"masterjk2.ravensoft.com"

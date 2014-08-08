@@ -10,8 +10,6 @@
 
 qboolean demo15detected = qfalse;
 qboolean ntModDetected = qfalse;
-int demo_protocols[] =
-{ 15, 16, NULL };
 
 #define	MAXPRINTMSG	4096
 

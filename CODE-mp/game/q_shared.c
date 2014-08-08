@@ -1688,3 +1688,5 @@ int Q_irand(int value1, int value2)
 //====================================================================
 
 //qboolean demo15detected;
+int demo_protocols[] =
+{ 15, 16, NULL };

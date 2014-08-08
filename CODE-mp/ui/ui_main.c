@@ -3752,19 +3752,23 @@ vmCvar_t	ui_autodemo_folder;
 static char uiCurrentDemoFolder[256] = "";
 
 void UI_SetDemoListPosition(menuDef_t *menu, int startPos, int cursorPos) {
-	itemDef_t *item = NULL;
-	int i;
-
-
 	if (menu){
+		itemDef_t *item = NULL;
+		int i;
 		for (i = 0; i < menu->itemCount; i++) {
 			if (!strcmp(menu->items[i]->window.name,"demolist")) {
 				item = menu->items[i];
 				break;
 			}
 		}
+		// Ignore if disabled
+		if (item) {
+			listBoxDef_t *listPtr = (listBoxDef_t*)item->typeData;
+			listPtr->startPos = startPos;
+			item->cursorPos = cursorPos;
+			uiInfo.demoIndex = cursorPos;
+		} 
 	}
-
 }
 
 //muj pokus o upravu
@@ -3804,8 +3808,6 @@ static int UI_GetDemos( char *folder, char *demolist, int demolistSize, char *de
 	return ret;
 }
 
-static int ui_demo_protocols[] =
-{ 15, 16, NULL };
 static void UI_LoadDemos( void ) {
 	int d = 0;
 	char demolist[4096*20];
@@ -3816,19 +3818,19 @@ static void UI_LoadDemos( void ) {
 	int bottom = 0, top = 0;
 
 	uiInfo.demoCount = 0;
-	while(ui_demo_protocols[d]) {
+	while(demo_protocols[d]) {
 		trap_Cvar_VariableStringBuffer("fs_game",game,sizeof(game));
 
 		if (!strcmp(game, ""))
 			strcpy(game,"base");
 
-		Com_sprintf(demoExt, sizeof(demoExt), "dm_%d", ui_demo_protocols[d]);
+		Com_sprintf(demoExt, sizeof(demoExt), "dm_%d", demo_protocols[d]);
 
 		//SMod - fix for specific jka mod, we go back and forth so we end up in desired folder
 		//(otherwise we would always end up in base/demos)
 		uiInfo.demoCount = UI_GetDemos( va("..\\%s\\demos%s",game,uiCurrentDemoFolder), demolist, sizeof( demolist ), demoExt, (d>0)?qtrue:qfalse );
 
-		Com_sprintf(demoExt, sizeof(demoExt), ".dm_%d", ui_demo_protocols[d]);
+		Com_sprintf(demoExt, sizeof(demoExt), ".dm_%d", demo_protocols[d]);
 
 		if (uiInfo.demoCount) 
 		{
@@ -4203,25 +4205,27 @@ static void UI_RunDemo(){
 
 		UI_SetDemoListPosition(menu, 0, 0);
 
-	} else	{
+	} else {
 		//demo file, run it, but save list parameters so we can reopen demo window
 		int startPos = uiInfo.demoIndex;
-		menuDef_t *menu = NULL;
-		itemDef_t *item = NULL;
-		int i;
-
-		menu = Menus_FindByName("demo");
+		menuDef_t *menu = Menus_FindByName("demo");
 
 		//extracting startPos of list
-		if (menu){ //we do this shit only to find out startPos....
+		if (menu) { //we do this shit only to find out startPos....
+			itemDef_t *item = NULL;
+			int i;
 			for (i = 0; i < menu->itemCount; i++) {
 				if (!strcmp(menu->items[i]->window.name,"demolist")) {
 					item = menu->items[i];
 					break;
 				}
 			}
+			// Ignore if disabled
+			if (item) {
+				listBoxDef_t *listPtr = (listBoxDef_t*)item->typeData;
+				startPos = listPtr->startPos;
+			}
 		}
-
 		trap_Cvar_Set( "ui_autodemo", "1" );
 		trap_Cvar_Set( "ui_autodemo_cursorPos", va("%i",uiInfo.demoIndex) );
 		trap_Cvar_Set( "ui_autodemo_startPos", va("%i",startPos) );
