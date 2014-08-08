@@ -14,29 +14,29 @@ float WAVEVALUENEW(genFunc_t func, float base, float amplitude, float phase, flo
 			t = tr.refdef.time * 0.001;
 		else
 			t = tess.shaderTime;
-	double angle = (double)phase + t * (double)freq + (double)tr.refdef.timeFraction * (double)freq * 0.001;
-	angle = fmod(angle, 1.0);
+	double index = (double)phase + t * (double)freq + (double)tr.refdef.timeFraction * (double)freq * 0.001;
+	index = fmod(index, 1.0);
 
 	switch (func) {
 	case GF_SIN:
-		return base + sin(DEG2RAD(angle * 360.0)) * amplitude;
+		return base + sin(DEG2RAD(index * 360.0)) * amplitude;
 	case GF_TRIANGLE:
-		if (angle < 0.25) {
-			angle = angle / 0.25;
-		} else if (angle < 0.5) {
-			angle = 1.0 - ((angle - 0.25) / 0.25);
-		} else if (angle < 0.75) {
-			angle = -((angle - 0.5) / 0.25);
-		} else if (angle <= 1.0) {
-			angle = -(1.0 - ((angle - 0.75) / 0.25));
+		if (index < 0.25) {
+			index = index / 0.25;
+		} else if (index < 0.5) {
+			index = 1.0 - ((index - 0.25) / 0.25);
+		} else if (index < 0.75) {
+			index = -((index - 0.5) / 0.25);
+		} else if (index <= 1.0) {
+			index = -(1.0 - ((index - 0.75) / 0.25));
 		}
-		return base + angle * amplitude;
+		return base + index * amplitude;
 	case GF_SQUARE:
 		return WAVEVALUE(tr.squareTable, base, amplitude, phase, freq);
 	case GF_SAWTOOTH:
-		return base + angle * amplitude;
+		return base + index * amplitude;
 	case GF_INVERSE_SAWTOOTH:
-		return base + (1.0 - angle) * amplitude;
+		return base + (1.0 - index) * amplitude;
 	case GF_NONE:
 	default:
 		break;
@@ -262,8 +262,8 @@ void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 		// I guess do some extra dumb stuff..the fact that it uses ST seems bad though because skin pages may be set up in certain ways that can cause
 		//	very noticeable seams on sufaces ( like on the huge ion_cannon ).
 		const float *st = ( const float * ) tess.texCoords[0];
-		float		now;
-		int			off;
+		double		now;
+		double		off;
 
 		now = backEnd.refdef.time * ds->bulgeSpeed * 0.001 + tr.refdef.timeFraction * ds->bulgeSpeed * 0.001;
 
@@ -738,7 +738,7 @@ void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors ) {
 	byte	color[4];
 
 
-  if ( wf->func == GF_NOISE ) {
+	if ( wf->func == GF_NOISE ) {
 		glow = wf->base + R_NoiseGet4f( 0, 0, 0, ( (!tr.refdef.time ? tess.shaderTime : (tr.refdef.time * 0.001)) + wf->phase + tr.refdef.timeFraction * 0.001 ) * wf->frequency ) * wf->amplitude;
 	} else {
 		glow = EvalWaveForm( wf ) * tr.identityLight;
