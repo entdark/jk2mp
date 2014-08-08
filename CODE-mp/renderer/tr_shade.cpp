@@ -228,7 +228,7 @@ void R_BindAnimatedImage( textureBundle_t *bundle ) {
 	// exactly with waveforms of the same frequency
 //	index = myftol( tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE );
 //	index >>= FUNCTABLE_SIZE2;
-	index = (uint64_t)(tess.shaderTime * (double)bundle->imageAnimationSpeed * (double)FUNCTABLE_SIZE / 1024.0);
+	index = (uint64_t)(tess.shaderTime * (double)bundle->imageAnimationSpeed);
 
 	if ( index < 0 ) {
 		index = 0;	// may happen with shader time offsets
