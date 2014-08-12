@@ -3771,7 +3771,7 @@ void CG_DrawFlagStatus() {
 	int myFlagTakenShader = 0;
 	int theirFlagShader = 0;
 	int team = 0;
-	float startDrawPos = 2.0f;
+	float startDrawPos = 2.0f*cgs.widthRatioCoef;
 	int ico_size = 32;
 
 	if (!cg.snap)
@@ -3802,22 +3802,22 @@ void CG_DrawFlagStatus() {
 	trap_R_SetColor( NULL );
 
 	if (CG_YourTeamHasFlag()) {
-		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, theirFlagShader );
+		CG_DrawPic( startDrawPos, 365.0f, ico_size*cgs.widthRatioCoef, ico_size, theirFlagShader );
 		startDrawPos += (ico_size+2)*cgs.widthRatioCoef;
 	} else if (CG_OtherFlagDropped()) {
 		vec4_t c = {1.0f, 1.0f, 1.0f, 0.5f};
 		trap_R_SetColor(c);
-		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, theirFlagShader );
+		CG_DrawPic( startDrawPos, 365.0f, ico_size*cgs.widthRatioCoef, ico_size, theirFlagShader );
 		startDrawPos += (ico_size+2)*cgs.widthRatioCoef;
 		trap_R_SetColor( NULL );
 	}
 
 	if (CG_OtherTeamHasFlag()) {
-		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, myFlagTakenShader );
+		CG_DrawPic( startDrawPos, 365.0f, ico_size*cgs.widthRatioCoef, ico_size, myFlagTakenShader );
 	} else if (CG_YourFlagDropped()) {
 		vec4_t c = {1.0f, 1.0f, 1.0f, 0.5f};
 		trap_R_SetColor(c);
-		CG_DrawPic( startDrawPos, 365, ico_size*cgs.widthRatioCoef, ico_size, myFlagTakenShader );
+		CG_DrawPic( startDrawPos, 365.0f, ico_size*cgs.widthRatioCoef, ico_size, myFlagTakenShader );
 		trap_R_SetColor( NULL );
 	}
 }
