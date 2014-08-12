@@ -413,6 +413,7 @@ CG_Draw3DModel
 
 ================
 */
+extern void trap_MME_TimeFraction( float timeFraction );
 void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, vec3_t origin, vec3_t angles ) {
 	refdef_t		refdef;
 	refEntity_t		ent;
@@ -443,7 +444,7 @@ void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandl
 	refdef.height = h;
 
 	refdef.time = cg.time;
-	refdef.timeFraction = cg.timeFraction;
+	trap_MME_TimeFraction(cg.timeFraction);
 
 	trap_R_ClearScene();
 	trap_R_AddRefEntityToScene( &ent );

@@ -1741,7 +1741,6 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		CG_AddTestModel();
 	}
 	cg.refdef.time = cg.time;
-	cg.refdef.timeFraction = 0.0f;
 	memcpy( cg.refdef.areamask, cg.snap->areamask, sizeof( cg.refdef.areamask ) );
 
 	// warning sounds when powerup is wearing off

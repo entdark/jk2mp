@@ -22,6 +22,7 @@ extern void trap_MME_BlurInfo( int* total, int * index );
 extern void trap_MME_Capture( const char *baseName, float fps, float focus, float radius );
 extern int trap_MME_SeekTime( int seekTime );
 extern void trap_MME_Music( const char *musicName, float time, float length );
+extern void trap_MME_TimeFraction( float timeFraction );
 extern qboolean trap_MME_Demo15Detection( void );
 extern void trap_R_RandomSeed( int time, float timeFraction );
 extern void trap_FX_RandomSeed( int time, float timeFraction );
@@ -685,7 +686,6 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	trap_FX_AddScheduledEffects();
 
 	cg.refdef.time = cg.time;
-	cg.refdef.timeFraction = cg.timeFraction;
 	memcpy( cg.refdef.areamask, cg.snap->areamask, sizeof( cg.refdef.areamask ) );
 	/* Render some extra demo related stuff */
 	if (!captureFrame) {
@@ -757,6 +757,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	if (captureFrame && stereoSep > 0.0f)
 		trap_Cvar_Set("r_stereoSeparation", va("%f", -stereoSep));
 	CG_TileClear();
+	trap_MME_TimeFraction(cg.timeFraction);
 	trap_R_RenderScene( &cg.refdef );
 
 	CG_FillRect(0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, hcolor);

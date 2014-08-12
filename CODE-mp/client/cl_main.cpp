@@ -2588,7 +2588,9 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("demo", CL_PlayDemo_f);
 	Cmd_AddCommand ("cinematic", CL_PlayCinematic_f);
 	Cmd_AddCommand ("stoprecord", CL_StopRecord_f);
-//	Cmd_AddCommand ("connect", CL_Connect_f);
+	cvar_t *fs_game = Cvar_FindVar("fs_game");
+	if (!(fs_game && !Q_stricmp(fs_game->string, "mme")))
+		Cmd_AddCommand ("connect", CL_Connect_f);
 	Cmd_AddCommand ("reconnect", CL_Reconnect_f);
 	Cmd_AddCommand ("localservers", CL_LocalServers_f);
 	Cmd_AddCommand ("globalservers", CL_GlobalServers_f);

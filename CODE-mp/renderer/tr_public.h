@@ -100,6 +100,7 @@ typedef struct {
 	void	(*Capture)( const char *baseName, float fps, float focus, float radius );
 	void	(*CaptureStereo)( const char *baseName, float fps, float focus, float radius );
 	void	(*BlurInfo)( int* total, int* index );
+	void	(*TimeFraction)( float timeFraction );
 	void	(*MMERegisterFont)(const char *fontName, int pointSize, mmeFontInfo_t *font);
 	void	(*FontRatioFix)( float ratio );
 	void	(*DemoRandomSeed)( int time, float timeFraction );

@@ -1989,6 +1989,8 @@ int R_MME_MultiPassNextStereo( );
 
 void R_MME_DoNotTake( );
 
+void R_MME_TimeFraction(float timeFraction);
+
 extern qboolean finishStereo;
 extern qboolean r_capturingDofOrStereo;
 extern qboolean r_latestDofOrStereoFrame;
