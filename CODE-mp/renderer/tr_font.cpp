@@ -800,7 +800,7 @@ void RE_Font_DrawString(float ox, float oy, const char *psText, const float *rgb
 	
 	// Draw a dropshadow if required
 	if(!demo15detected && iFontHandle & STYLE_DROPSHADOW) {
-		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba?rgba[3]:1.0f};
+		const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba?rgba[3]:1.0f};
 
 		offset = curfont->GetPointSize() * fScale * 0.075f;
 		
@@ -810,7 +810,7 @@ void RE_Font_DrawString(float ox, float oy, const char *psText, const float *rgb
 	} else if (demo15detected && iFontHandle & STYLE_DROPSHADOW) {
 		int i = 0, r = 0;
 		char dropShadowText[1024];
-		static const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba[3]};
+		const vec4_t v4DKGREY2 = {0.15f, 0.15f, 0.15f, rgba?rgba[3]:1.0f};
 
 		offset = curfont->GetPointSize() * fScale * 0.075f;
 
