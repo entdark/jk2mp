@@ -7224,7 +7224,7 @@ skipEffectOverride:
 	else if ((cent->currentState.eFlags & EF_DEAD) || cent->torsoBolt)
 	{
 		cent->ghoul2weapon = NULL; //be sure to update after respawning/getting limb regrown
-		if (demo15detected && mov_dismember.integer && trap_G2API_HasGhoul2ModelOnIndex(&(cent->ghoul2), 1))
+		if (mov_dismember.integer && trap_G2API_HasGhoul2ModelOnIndex(&(cent->ghoul2), 1))
 			trap_G2API_RemoveGhoul2Model(&(cent->ghoul2), 1);
 	}
 
