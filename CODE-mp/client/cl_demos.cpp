@@ -673,6 +673,8 @@ static void demoPlayForwardFrame( demoPlay_t *play ) {
 
 	if (play->filePos + 4 > play->fileSize) {
 		if (mme_demoAutoQuit->integer && !demoPrecaching) {
+			if (mme_demoAutoQuit->integer == 2)
+				Cbuf_ExecuteText( EXEC_APPEND, "quit" );
 			CL_Disconnect_f();
 			S_StopAllSounds();
 			VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_MAIN );
