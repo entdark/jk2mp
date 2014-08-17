@@ -1900,7 +1900,7 @@ CG_DrawTeamOverlay
 */
 
 static float CG_DrawTeamOverlay( float y, qboolean right, qboolean upper ) {
-	int x, w, h, xx;
+	float x, w, h, xx;
 	int i, j, len;
 	const char *p;
 	vec4_t		hcolor;
@@ -1957,7 +1957,7 @@ static float CG_DrawTeamOverlay( float y, qboolean right, qboolean upper ) {
 	w = (pwidth + lwidth + 4 + 7) * TINYCHAR_WIDTH*cgs.widthRatioCoef;
 
 	if ( right )
-		x = 640 - w;
+		x = SCREEN_WIDTH - w;
 	else
 		x = 0;
 
