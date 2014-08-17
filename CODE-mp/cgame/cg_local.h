@@ -833,6 +833,7 @@ typedef struct {
 
 	// crosshair client ID
 	int			crosshairClientNum;
+	int			crosshairClientNumLeft;
 	int			crosshairClientTime;
 
 	// powerup active flashing

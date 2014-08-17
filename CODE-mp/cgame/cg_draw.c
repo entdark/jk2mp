@@ -3175,7 +3175,7 @@ static void CG_ScanForCrosshairEntity( void ) {
 
 	if ( trace.entityNum >= MAX_CLIENTS ) {
 		cg.crosshairClientNum = trace.entityNum;
-		cg.crosshairClientTime = cg.time;
+//		cg.crosshairClientTime = cg.time;
 		return;
 	}
 
@@ -3195,22 +3195,26 @@ static void CG_DrawCrosshairNames( void ) {
 	vec4_t		tcolor;
 	char		*name;
 	int			baseColor;
+	qboolean	magicFix = (((cg.time - cg.crosshairClientTime) + cg.timeFraction) > 1000.0f || (cg.time - cg.crosshairClientTime) < 0);
 
 	if ( !cg_drawCrosshair.integer ) {
 		return;
 	}
-
-	// scan the known entities to see if the crosshair is sighted on one
-	CG_ScanForCrosshairEntity();
-
 	if ( !cg_drawCrosshairNames.integer ) {
 		return;
 	}
-	//rww - still do the trace, our dynamic crosshair depends on it
+	// scan the known entities to see if the crosshair is sighted on one
+	CG_ScanForCrosshairEntity();
 
+	//rww - still do the trace, our dynamic crosshair depends on it
 	if (cg.crosshairClientNum >= MAX_CLIENTS) {
-		return;
+		if (magicFix)
+			return;
+		else
+			cg.crosshairClientNum = cg.crosshairClientNumLeft;
 	}
+
+	cg.crosshairClientNumLeft = cg.crosshairClientNum;
 
 	// draw the name of the player being looked at
 	color = CG_FadeColor( cg.crosshairClientTime, 1000 );
