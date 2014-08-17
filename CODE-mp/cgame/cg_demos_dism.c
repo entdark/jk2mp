@@ -12,6 +12,7 @@ void demoSaberDismember(centity_t *cent, vec3_t dir) {
 	localEntity_t	*le;
 	refEntity_t		*re;
 	vec3_t saberorigin, saberangles;
+	clientInfo_t *ci;
 	
 	if (!cent->ghoul2)
 		return;
@@ -49,7 +50,11 @@ void demoSaberDismember(centity_t *cent, vec3_t dir) {
 	le->leFragmentType = LEFT_SABER;
 
 	/////////SABER GHOUL2
-	trap_G2API_InitGhoul2Model(&re->ghoul2, "models/weapons2/saber/saber_w.glm", 0, 0, 0, 0, 0);
+	ci = &cgs.clientinfo[cent->currentState.clientNum];
+	if (ci->saberModel && ci->saberModel[0])
+		trap_G2API_InitGhoul2Model(&re->ghoul2, va("models/weapons2/%s/saber_w.glm", ci->saberModel), 0, 0, 0, 0, 0);
+	else
+		trap_G2API_InitGhoul2Model(&re->ghoul2, "models/weapons2/saber/saber_w.glm", 0, 0, 0, 0, 0);
 	
 	/////REMOVE SABER FROM PLAYERMODEL
 	trap_G2API_RemoveGhoul2Model(&(cent->ghoul2), 1);
