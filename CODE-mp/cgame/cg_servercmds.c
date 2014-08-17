@@ -405,7 +405,7 @@ static void CG_ConfigStringModified( void ) {
 		cgs.skins[ num-CS_CHARSKINS ] = trap_R_RegisterSkin( str );
 // Ghoul2 Insert end
 	} else if ( num >= CS_SOUNDS && num < CS_SOUNDS+MAX_SOUNDS ) {
-		if ( str[0] != '*' ) {	// player specific sounds don't register here
+		if ( str[0] && str[0] != '*' ) {	// player specific sounds don't register here
 			cgs.gameSounds[ num-CS_SOUNDS] = trap_S_RegisterSound( str );
 		}
 	} else if ( num >= CS_EFFECTS && num < CS_SOUNDS+MAX_SOUNDS ) {
