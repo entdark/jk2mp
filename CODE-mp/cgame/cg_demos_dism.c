@@ -57,7 +57,8 @@ void demoSaberDismember(centity_t *cent, vec3_t dir) {
 		trap_G2API_InitGhoul2Model(&re->ghoul2, "models/weapons2/saber/saber_w.glm", 0, 0, 0, 0, 0);
 	
 	/////REMOVE SABER FROM PLAYERMODEL
-	trap_G2API_RemoveGhoul2Model(&(cent->ghoul2), 1);
+	if (trap_G2API_HasGhoul2ModelOnIndex(&(cent->ghoul2), 1))
+		trap_G2API_RemoveGhoul2Model(&(cent->ghoul2), 1);
 }
 
 //Main dismemberment function
