@@ -3223,33 +3223,21 @@ static void CG_DrawCrosshairNames( void ) {
 		return;
 	}
 
-	name = cgs.clientinfo[ cg.crosshairClientNum ].name;
+	name = va("^7%s", cgs.clientinfo[ cg.crosshairClientNum ].name);
 
-	if (cgs.gametype >= GT_TEAM)
-	{
-		if (cgs.clientinfo[cg.crosshairClientNum].team == TEAM_RED)
-		{
+	if (cgs.gametype >= GT_TEAM) {
+		if (cgs.clientinfo[cg.crosshairClientNum].team == TEAM_RED) {
 			baseColor = CT_RED;
-		}
-		else
-		{
+		} else {
 			baseColor = CT_BLUE;
-		}
-
-		/*
+		}		
 		//For now instead of team-based we'll make it oriented based on which team we're on
-		if (cgs.clientinfo[cg.crosshairClientNum].team == cgs.clientinfo[cg.snap->ps.clientNum].team)
-		{
+/*		if (cgs.clientinfo[cg.crosshairClientNum].team == cgs.clientinfo[cg.snap->ps.clientNum].team) {
 			baseColor = CT_GREEN;
-		}
-		else
-		{
+		} else {
 			baseColor = CT_RED;
-		}
-		*/
-	}
-	else
-	{
+		}*/
+	} else {
 		//baseColor = CT_WHITE;
 		baseColor = CT_RED; //just make it red in nonteam modes since everyone is hostile and crosshair will be red on them too
 	}
@@ -3259,9 +3247,8 @@ static void CG_DrawCrosshairNames( void ) {
 			//grey out crosshair for everyone but your foe if you're in a duel
 			baseColor = CT_BLACK;
 		}
-	}
-	else if (cg_entities[cg.crosshairClientNum].currentState.bolt1)
-	{ //this fellow is in a duel. We just checked if we were in a duel above, so
+	} else if (cg_entities[cg.crosshairClientNum].currentState.bolt1) {
+	//this fellow is in a duel. We just checked if we were in a duel above, so
 	  //this means we aren't and he is. Which of course means our crosshair greys out over him.
 		baseColor = CT_BLACK;
 	}
