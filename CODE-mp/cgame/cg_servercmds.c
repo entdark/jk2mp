@@ -408,7 +408,7 @@ static void CG_ConfigStringModified( void ) {
 		if ( str[0] && str[0] != '*' ) {	// player specific sounds don't register here
 			cgs.gameSounds[ num-CS_SOUNDS] = trap_S_RegisterSound( str );
 		}
-	} else if ( num >= CS_EFFECTS && num < CS_SOUNDS+MAX_SOUNDS ) {
+	} else if ( num >= CS_EFFECTS && num < CS_EFFECTS+MAX_FX ) {
 		if ( str[0] != '*' ) {	// player specific sounds don't register here
 			cgs.gameEffects[ num-CS_EFFECTS] = trap_FX_RegisterEffect( str );
 		}
@@ -419,7 +419,7 @@ static void CG_ConfigStringModified( void ) {
 		if( cgs.gametype == GT_CTF || cgs.gametype == GT_CTY ) {
 			// format is rb where its red/blue, 0 is at base, 1 is taken, 2 is dropped
 			int redflagId = str[0] - '0', blueflagId = str[1] - '0';
-			//Raz: improved flag status remapping
+			//ent: Raz: improved flag status remapping
 			if ( redflagId >= 0 && redflagId < ARRAY_LEN( ctfFlagStatusRemap ) ) 
 				cgs.redflag = ctfFlagStatusRemap[redflagId];
 			if ( blueflagId >= 0 && blueflagId < ARRAY_LEN( ctfFlagStatusRemap ) )  
