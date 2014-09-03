@@ -3990,8 +3990,27 @@ int cgYsalTime = 0;
 int cgYsalFadeTime = 0;
 float cgYsalFadeVal = 0;
 
-qboolean gCGHasFallVector = qfalse;
-vec3_t gCGFallVector;
+void CG_Clear2DTintsTimes(void) {
+	cgRageTime = 0;
+	cgRageFadeTime = 0;
+	cgRageFadeVal = 0;
+
+	cgRageRecTime = 0;
+	cgRageRecFadeTime = 0;
+	cgRageRecFadeVal = 0;
+
+	cgAbsorbTime = 0;
+	cgAbsorbFadeTime = 0;
+	cgAbsorbFadeVal = 0;
+
+	cgProtectTime = 0;
+	cgProtectFadeTime = 0;
+	cgProtectFadeVal = 0;
+
+	cgYsalTime = 0;
+	cgYsalFadeTime = 0;
+	cgYsalFadeVal = 0;
+}
 
 static qboolean CG_HasYsalamiri(int gametype, entityState_t *es) {
 	if (gametype == GT_CTY && ((es->powerups & (1 << PW_REDFLAG)) || (es->powerups & (1 << PW_BLUEFLAG)))) {
@@ -4299,6 +4318,9 @@ static void CG_Draw2DScreenTints(void) {
 	}
 }
 
+qboolean gCGHasFallVector = qfalse;
+vec3_t gCGFallVector;
+
 static void CG_UpdateFallVector (void) {
 	if (!cg.playerCent)
 		goto clearFallVector;
@@ -4359,25 +4381,7 @@ void CG_Draw2D( void ) {
 	}
 
 	if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR) {
-		cgRageTime = 0;
-		cgRageFadeTime = 0;
-		cgRageFadeVal = 0;
-
-		cgRageRecTime = 0;
-		cgRageRecFadeTime = 0;
-		cgRageRecFadeVal = 0;
-
-		cgAbsorbTime = 0;
-		cgAbsorbFadeTime = 0;
-		cgAbsorbFadeVal = 0;
-
-		cgProtectTime = 0;
-		cgProtectFadeTime = 0;
-		cgProtectFadeVal = 0;
-
-		cgYsalTime = 0;
-		cgYsalFadeTime = 0;
-		cgYsalFadeVal = 0;
+		CG_Clear2DTintsTimes();
 	}
 
 	if ( cg_draw2D.integer == 0 ) {

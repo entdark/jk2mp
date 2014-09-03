@@ -12,6 +12,7 @@ extern void CG_CalcScreenEffects( void );
 extern void CG_PlayBufferedSounds( void );
 extern void CG_PowerupTimerSounds( void );
 extern void CG_UpdateSoundTrackers();
+extern void CG_Clear2DTintsTimes(void);
 extern void CG_Draw2D( void );
 extern void CG_SaberClashFlare( void );
 extern float CG_DrawFPS( float y );
@@ -560,6 +561,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		CG_InitLocalEntities();
 		CG_InitMarkPolys();
 		CG_ClearParticles ();
+		CG_Clear2DTintsTimes();
 		trap_FX_Reset();
 		
 		cg.eventRadius = cg.eventOldRadius = 0;
