@@ -2259,7 +2259,6 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			cg_entities[es->trickedentindex2].currentState.eFlags -= EF_SOUNDTRACKER;
 		}
 		trap_S_StopSound(es->trickedentindex2, es->trickedentindex, -1);
-		trap_S_MuteSound(es->trickedentindex2, es->trickedentindex);
 		trap_S_StopLoopingSound(es->trickedentindex2);
 		break;
 

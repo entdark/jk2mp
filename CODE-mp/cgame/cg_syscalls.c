@@ -155,12 +155,8 @@ int		trap_CM_MarkFragments( int numPoints, const vec3_t *points,
 	return syscall( CG_CM_MARKFRAGMENTS, numPoints, points, projection, maxPoints, pointBuffer, maxFragments, fragmentBuffer );
 }
 
-void	trap_S_MuteSound( int entityNum, int entchannel ) {
-	syscall( CG_S_MUTESOUND, entityNum, entchannel );
-}
-
 void	trap_S_StopSound( int entityNum, int entchannel, sfxHandle_t sfx ) {
-	syscall( CG_S_STOPSOUND, entityNum, entchannel, sfx );
+	syscall( CG_S_MUTESOUND, entityNum, entchannel, sfx );
 }
 
 void	trap_S_StartSound( vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx ) {

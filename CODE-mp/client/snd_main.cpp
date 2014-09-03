@@ -272,16 +272,6 @@ sfxHandle_t	S_RegisterSound( const char *name) {
 
 /*
 ====================
-S_MuteSound
-
-Gets the specified ent/channel and mutes any sound currently playing on it
-====================
-*/
-void S_MuteSound(int entityNum, int entchannel) {
-}
-
-/*
-====================
 S_StopSound
 
 Stops sound on specified channel for specified entity with specified sfx.

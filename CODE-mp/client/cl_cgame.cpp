@@ -592,13 +592,15 @@ int CL_CgameSystemCalls( int *args ) {
 	case CG_CM_MARKFRAGMENTS:
 		return re.MarkFragments( args[1], (const vec3_t *)VMA(2), (const float *)VMA(3), args[4], (float *)VMA(5), args[6], (markFragment_t *)VMA(7) );
 	case CG_S_MUTESOUND:
-		S_MuteSound( args[1], args[2] );
+		{cvar_t *fs_game = Cvar_FindVar("fs_game");
+		if (fs_game && !Q_stricmp(fs_game->string, "mme")) {
+			S_StopSound(args[1], args[2], args[3] );
+		} else {
+			S_StopSound(args[1], args[2], -1 );
+		}}
 		return 0;
 	case CG_S_STARTSOUND:
 		S_StartSound( (float *)VMA(1), args[2], args[3], args[4] );
-		return 0;
-	case CG_S_STOPSOUND:
-		S_StopSound(args[1], args[2], args[3] );
 		return 0;
 	case CG_S_STARTLOCALSOUND:
 		S_StartLocalSound( args[1], args[2] );
