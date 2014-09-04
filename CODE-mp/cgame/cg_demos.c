@@ -1052,6 +1052,11 @@ void demoPlaybackInit(void) {
 	demo.media.mouseCursor = trap_R_RegisterShaderNoMip( "cursor" );
 	demo.media.switchOn = trap_R_RegisterShaderNoMip( "mme_message_on" );
 	demo.media.switchOff = trap_R_RegisterShaderNoMip( "mme_message_off" );
+	
+	// Weather
+	demo.media.heavyRain = trap_S_RegisterSound("sound/ambient/rain_hard");
+	demo.media.regularRain = trap_S_RegisterSound("sound/ambient/rain_mid");
+	demo.media.lightRain = trap_S_RegisterSound("sound/ambient/rain_light");
 
 	trap_SendConsoleCommand("exec mmedemos.cfg\n");
 //	trap_Cvar_Set( "mov_captureName", "" );

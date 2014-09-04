@@ -1349,9 +1349,6 @@ typedef struct {
 
 	// Weather
 	qhandle_t	saberFlare; //and used for sun
-	sfxHandle_t heavyRain;
-	sfxHandle_t regularRain;
-	sfxHandle_t lightRain;
 } cgMedia_t;
 
 
