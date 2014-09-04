@@ -622,13 +622,6 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 	trap_S_ClearLoopingSounds(qfalse);
 	trap_R_ClearScene();
 	
-	if (cg.snap && cg.snap->ps.saberLockTime > cg.time) {
-		trap_SetUserCmdValue( cg.weaponSelect, 0.01, cg.forceSelect, cg.itemSelect );
-	} else if (cg.snap && cg.snap->ps.usingATST) {
-		trap_SetUserCmdValue( cg.weaponSelect, 0.2, cg.forceSelect, cg.itemSelect );
-	} else {
-		trap_SetUserCmdValue( cg.weaponSelect, cg.zoomSensitivity, cg.forceSelect, cg.itemSelect );
-	}
 	/* Update demo related information */
 	demoProcessSnapShots( hadSkip );
 	trap_ROFF_UpdateEntities();
@@ -1057,6 +1050,8 @@ void demoPlaybackInit(void) {
 	demo.media.heavyRain = trap_S_RegisterSound("sound/ambient/rain_hard");
 	demo.media.regularRain = trap_S_RegisterSound("sound/ambient/rain_mid");
 	demo.media.lightRain = trap_S_RegisterSound("sound/ambient/rain_light");
+
+	trap_SetUserCmdValue( 0, 1.0f, 0.0f, 0.0f, 0.0f, 0, 0, qfalse );
 
 	trap_SendConsoleCommand("exec mmedemos.cfg\n");
 //	trap_Cvar_Set( "mov_captureName", "" );
