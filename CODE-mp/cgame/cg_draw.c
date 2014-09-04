@@ -1251,7 +1251,7 @@ void CG_DrawForceSelect( void )
 	int		i;
 	int		count;
 	int		smallIconSize,bigIconSize;
-	int		holdX,x,y,x2,y2,pad,length;
+	float	holdX,x,y,x2,y2,pad,length;
 	int		sideLeftIconCnt,sideRightIconCnt;
 	int		sideMax,holdCount,iconCnt;
 
@@ -1409,7 +1409,7 @@ void CG_DrawInvenSelect( void )
 	int				smallIconSize,bigIconSize;
 	int				sideLeftIconCnt,sideRightIconCnt;
 	int				count;
-	int				holdX,x,y,y2,pad;
+	float			holdX,x,y,y2,pad;
 	int				height;
 	float			addX;
 
