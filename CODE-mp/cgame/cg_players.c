@@ -1038,6 +1038,8 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 	int			psTeam;
 
 	ci = &cgs.clientinfo[clientNum];
+	
+	oldGhoul2 = ci->ghoul2Model;
 
 	strings[5] = CG_ConfigString( clientNum + CS_PLAYERS );
 	if ( !strings[5][0] ) {
@@ -1052,8 +1054,6 @@ void CG_NewClientInfo( int clientNum, qboolean entitiesInitialized ) {
 	strings[2] = "";
 	strings[3] = "";
 	strings[4] = cgs.allOverride;
-
-	oldGhoul2 = ci->ghoul2Model;
 
 	if (ci) {
 		wasATST = ci->ATST;
