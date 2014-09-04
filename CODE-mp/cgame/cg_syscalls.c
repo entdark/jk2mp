@@ -165,8 +165,8 @@ void	trap_S_StartSound( vec3_t origin, int entityNum, int entchannel, sfxHandle_
 
 void	trap_S_StartLocalSound( sfxHandle_t sfx, int channelNum ) {
 	//announcer is always hearable, rite?
-	if ( channelNum == CHAN_ANNOUNCER )
-		syscall( CG_S_STARTSOUND, 0, ENTITYNUM_NONE, CHAN_ANNOUNCER, sfx );
+	if ( channelNum == CHAN_ANNOUNCER || channelNum == CHAN_LOCAL_SOUND )
+		syscall( CG_S_STARTSOUND, 0, ENTITYNUM_NONE, channelNum, sfx );
 	else
 		syscall( CG_S_STARTLOCALSOUND, sfx, channelNum );
 }
