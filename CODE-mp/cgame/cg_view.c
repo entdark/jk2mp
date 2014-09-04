@@ -789,21 +789,14 @@ static void CG_OffsetFirstPersonView( void ) {
 //===================================
 
 	// add view height
-//	origin[2] += cg.predictedPlayerState.viewheight;
 	//mme
 	origin[2] += pe->viewHeight;
 
 	// smooth out duck height changes
-/*	timeDelta = cg.time - cg.duckTime;
-	if ( timeDelta < DUCK_TIME) {
-		cg.refdef.vieworg[2] -= cg.duckChange 
-			* (DUCK_TIME - timeDelta) / DUCK_TIME;
-	}
-*/	
 	//mme
 	timeDelta = (cg.time - pe->duckTime) + cg.timeFraction;
 	if ( timeDelta >= 0 && timeDelta < DUCK_TIME) {
-		cg.refdef.vieworg[2] -= pe->duckChange 
+		origin[2] -= pe->duckChange 
 			* (DUCK_TIME - timeDelta) / DUCK_TIME;
 	}
 
@@ -816,18 +809,7 @@ static void CG_OffsetFirstPersonView( void ) {
 	if (cg.playerPredicted)
 		origin[2] += bob;
 
-
 	// add fall height
-/*	delta = cg.time - cg.landTime;
-	if ( delta < LAND_DEFLECT_TIME ) {
-		f = delta / LAND_DEFLECT_TIME;
-		cg.refdef.vieworg[2] += cg.landChange * f;
-	} else if ( delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME ) {
-		delta -= LAND_DEFLECT_TIME;
-		f = 1.0 - ( delta / LAND_RETURN_TIME );
-		cg.refdef.vieworg[2] += cg.landChange * f;
-	}
-*/
 	//mme
 	delta = (cg.time - pe->landTime) + cg.timeFraction;
 	if ( delta < LAND_DEFLECT_TIME ) {
@@ -1274,7 +1256,7 @@ int CG_DemosCalcViewValues( void ) {
 		}
 	}
 
-	if ( cg.renderingThirdPerson && !cg.snap->ps.zoomMode) {
+	if ( cg.renderingThirdPerson && !cg.zoomMode) {
 		// back away from character
 		CG_OffsetThirdPersonView();
 	} else {
