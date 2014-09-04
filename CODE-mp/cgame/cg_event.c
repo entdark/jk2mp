@@ -982,8 +982,7 @@ void CG_GetCTFMessageEvent(entityState_t *es)
 void DoFall(centity_t *cent, entityState_t *es, int clientNum)
 {
 	int delta = es->eventParm;
-	playerEntity_t  *pe;
-	pe = &cent->pe;
+	playerEntity_t *pe = &cent->pe;
 
 	if (cent->currentState.eFlags & EF_DEAD)
 	{ //corpses crack into the ground ^_^
@@ -1265,11 +1264,9 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_STEP_16:		// smooth out step up transitions
 		DEBUGNAME("EV_STEP");
 	{
-		float	oldStep;
-		float	delta;
-		float	step;
+		float oldStep, delta, step;
 
-		if ( clientNum != cg.predictedPlayerState.clientNum ) {
+		if ( cg.playerCent && clientNum == cg.playerCent->currentState.clientNum ) {
 			break;
 		}
 		// if we are interpolating, we don't need to smooth steps
@@ -1278,13 +1275,6 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			break;
 		}
 		// check for stepping up before a previous step is completed
-/*		delta = cg.time - cg.stepTime;
-		if (delta < STEP_TIME) {
-			oldStep = cg.stepChange * (STEP_TIME - delta) / STEP_TIME;
-		} else {
-			oldStep = 0;
-		}
-*/
 		//mme
 		delta = (cg.time - pe->stepTime) + cg.timeFraction;
 		if (delta < STEP_TIME) {
@@ -1295,12 +1285,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 		// add this amount
 		step = 4 * (event - EV_STEP_4 + 1 );
-/*		cg.stepChange = oldStep + step;
-		if ( cg.stepChange > MAX_STEP_CHANGE ) {
-			cg.stepChange = MAX_STEP_CHANGE;
-		}
-		cg.stepTime = cg.time;
-*/		//mme
+		//mme
 		pe->stepChange = oldStep + step;
 		if ( pe->stepChange > MAX_STEP_CHANGE ) {
 			pe->stepChange = MAX_STEP_CHANGE;
@@ -1337,14 +1322,10 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_ROLL:
 		DEBUGNAME("EV_ROLL");
-		if (es->number == cg.snap->ps.clientNum && cg.snap->ps.fallingToDeath)
-		{
+		if (cg.playerCent && es->number == cg.playerCent->currentState.clientNum && cg.fallingToDeath)
 			break;
-		}
-		if (es->eventParm)
-		{ //fall-roll-in-one event
+		if (es->eventParm) //fall-roll-in-one event
 			DoFall(cent, es, clientNum);
-		}
 
 		trap_S_StartSound (NULL, es->number, CHAN_VOICE, CG_CustomSound( es->number, "*jump1.wav" ) );
 		trap_S_StartSound( NULL, es->number, CHAN_BODY, cgs.media.rollSound  );
