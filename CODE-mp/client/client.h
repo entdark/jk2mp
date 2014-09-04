@@ -399,6 +399,7 @@ extern	cvar_t	*mme_demoStartProject;
 extern	cvar_t	*mme_demoAutoQuit;
 extern	cvar_t	*mme_demoRemove;
 extern	cvar_t	*mme_demoPrecache;
+extern	cvar_t	*mme_demoAutoNext;
 
 //=================================================
 // cl_demos

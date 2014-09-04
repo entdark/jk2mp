@@ -2572,6 +2572,7 @@ void CL_Init( void ) {
 	mme_demoAutoQuit = Cvar_Get ("mme_demoAutoQuit", "0", CVAR_ARCHIVE );
 	mme_demoRemove = Cvar_Get ("mme_demoRemove", "0", CVAR_ARCHIVE );
 	mme_demoPrecache = Cvar_Get ("mme_demoPrecache", "0", CVAR_ARCHIVE );
+	mme_demoAutoNext = Cvar_Get ("mme_demoAutoNext", "1", CVAR_ARCHIVE );
 
 	demo15detected = qfalse;
 
