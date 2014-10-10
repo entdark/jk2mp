@@ -156,46 +156,6 @@
 
 #define GL_TEXTURE_RECTANGLE_EXT			0x84F5
 
-// TTimo: FIXME
-// linux needs those prototypes
-// GL_VERSION_1_2 is defined after #include <gl.h>
-#if !defined(GL_VERSION_1_2) || defined(__linux__)
-typedef void (APIENTRY * PFNGLMULTITEXCOORD1DARBPROC) (GLenum target, GLdouble s);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD1DVARBPROC) (GLenum target, const GLdouble *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD1FARBPROC) (GLenum target, GLfloat s);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD1FVARBPROC) (GLenum target, const GLfloat *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD1IARBPROC) (GLenum target, GLint s);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD1IVARBPROC) (GLenum target, const GLint *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD1SARBPROC) (GLenum target, GLshort s);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD1SVARBPROC) (GLenum target, const GLshort *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD2DARBPROC) (GLenum target, GLdouble s, GLdouble t);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD2DVARBPROC) (GLenum target, const GLdouble *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD2FARBPROC) (GLenum target, GLfloat s, GLfloat t);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD2FVARBPROC) (GLenum target, const GLfloat *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD2IARBPROC) (GLenum target, GLint s, GLint t);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD2IVARBPROC) (GLenum target, const GLint *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD2SARBPROC) (GLenum target, GLshort s, GLshort t);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD2SVARBPROC) (GLenum target, const GLshort *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD3DARBPROC) (GLenum target, GLdouble s, GLdouble t, GLdouble r);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD3DVARBPROC) (GLenum target, const GLdouble *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD3FARBPROC) (GLenum target, GLfloat s, GLfloat t, GLfloat r);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD3FVARBPROC) (GLenum target, const GLfloat *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD3IARBPROC) (GLenum target, GLint s, GLint t, GLint r);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD3IVARBPROC) (GLenum target, const GLint *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD3SARBPROC) (GLenum target, GLshort s, GLshort t, GLshort r);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD3SVARBPROC) (GLenum target, const GLshort *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD4DARBPROC) (GLenum target, GLdouble s, GLdouble t, GLdouble r, GLdouble q);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD4DVARBPROC) (GLenum target, const GLdouble *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD4FARBPROC) (GLenum target, GLfloat s, GLfloat t, GLfloat r, GLfloat q);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD4FVARBPROC) (GLenum target, const GLfloat *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD4IARBPROC) (GLenum target, GLint s, GLint t, GLint r, GLint q);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD4IVARBPROC) (GLenum target, const GLint *v);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD4SARBPROC) (GLenum target, GLshort s, GLshort t, GLshort r, GLshort q);
-typedef void (APIENTRY * PFNGLMULTITEXCOORD4SVARBPROC) (GLenum target, const GLshort *v);
-typedef void (APIENTRY * PFNGLACTIVETEXTUREARBPROC) (GLenum target);
-typedef void (APIENTRY * PFNGLCLIENTACTIVETEXTUREARBPROC) (GLenum target);
-#endif
-
 /*
 ** extension constants
 */
@@ -205,19 +165,17 @@ typedef void (APIENTRY * PFNGLCLIENTACTIVETEXTUREARBPROC) (GLenum target);
 #define GL_RGB_S3TC							0x83A0
 #define GL_RGB4_S3TC						0x83A1
 
-
 // extensions will be function pointers on all platforms
 
-extern	void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
-extern	void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
-extern	void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
+extern void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
+extern void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
+extern void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
 
-extern	void ( APIENTRY * qglLockArraysEXT) (GLint, GLint);
-extern	void ( APIENTRY * qglUnlockArraysEXT) (void);
+extern void ( APIENTRY * qglLockArraysEXT) (GLint, GLint);
+extern void ( APIENTRY * qglUnlockArraysEXT) (void);
 
-extern	void ( APIENTRY * qglPointParameterfEXT)( GLenum, GLfloat);
-extern	void ( APIENTRY * qglPointParameterfvEXT)( GLenum, GLfloat *);
-
+extern void ( APIENTRY * qglPointParameterfEXT)( GLenum, GLfloat);
+extern void ( APIENTRY * qglPointParameterfvEXT)( GLenum, GLfloat *);
 
 #ifdef _WIN32
 #ifndef WGL_ARB_pbuffer
@@ -327,48 +285,6 @@ typedef void (APIENTRY *PFNGLGETCOMBINEROUTPUTPARAMETERIVNV) (GLenum stage,GLenu
 typedef void (APIENTRY *PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV) (GLenum variable,GLenum pname,GLfloat *params);
 typedef void (APIENTRY *PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV) (GLenum variable,GLenum pname,GLfloat *params);
 
-// Declare Vertex and Fragment Program function pointers.
-extern PFNGLCOMBINERPARAMETERFVNV				qglCombinerParameterfvNV;
-extern PFNGLCOMBINERPARAMETERIVNV				qglCombinerParameterivNV;
-extern PFNGLCOMBINERPARAMETERFNV				qglCombinerParameterfNV;
-extern PFNGLCOMBINERPARAMETERINV				qglCombinerParameteriNV;
-extern PFNGLCOMBINERINPUTNV						qglCombinerInputNV;
-extern PFNGLCOMBINEROUTPUTNV					qglCombinerOutputNV;
-extern PFNGLFINALCOMBINERINPUTNV				qglFinalCombinerInputNV;
-extern PFNGLGETCOMBINERINPUTPARAMETERFVNV		qglGetCombinerInputParameterfvNV;
-extern PFNGLGETCOMBINERINPUTPARAMETERIVNV		qglGetCombinerInputParameterivNV;
-extern PFNGLGETCOMBINEROUTPUTPARAMETERFVNV		qglGetCombinerOutputParameterfvNV;
-extern PFNGLGETCOMBINEROUTPUTPARAMETERIVNV		qglGetCombinerOutputParameterivNV;
-extern PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV	qglGetFinalCombinerInputParameterfvNV;
-extern PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV	qglGetFinalCombinerInputParameterivNV;
-
-// Declare Vertex and Fragment Program function pointers.
-extern PFNGLPROGRAMSTRINGARBPROC qglProgramStringARB;
-extern PFNGLBINDPROGRAMARBPROC qglBindProgramARB;
-extern PFNGLDELETEPROGRAMSARBPROC qglDeleteProgramsARB;
-extern PFNGLGENPROGRAMSARBPROC qglGenProgramsARB;
-extern PFNGLPROGRAMENVPARAMETER4DARBPROC qglProgramEnvParameter4dARB;
-extern PFNGLPROGRAMENVPARAMETER4DVARBPROC qglProgramEnvParameter4dvARB;
-extern PFNGLPROGRAMENVPARAMETER4FARBPROC qglProgramEnvParameter4fARB;
-extern PFNGLPROGRAMENVPARAMETER4FVARBPROC qglProgramEnvParameter4fvARB;
-extern PFNGLPROGRAMLOCALPARAMETER4DARBPROC qglProgramLocalParameter4dARB;
-extern PFNGLPROGRAMLOCALPARAMETER4DVARBPROC qglProgramLocalParameter4dvARB;
-extern PFNGLPROGRAMLOCALPARAMETER4FARBPROC qglProgramLocalParameter4fARB;
-extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC qglProgramLocalParameter4fvARB;
-extern PFNGLGETPROGRAMENVPARAMETERDVARBPROC qglGetProgramEnvParameterdvARB;
-extern PFNGLGETPROGRAMENVPARAMETERFVARBPROC qglGetProgramEnvParameterfvARB;
-extern PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC qglGetProgramLocalParameterdvARB;
-extern PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC qglGetProgramLocalParameterfvARB;
-extern PFNGLGETPROGRAMIVARBPROC qglGetProgramivARB;
-extern PFNGLGETPROGRAMSTRINGARBPROC qglGetProgramStringARB;
-extern PFNGLISPROGRAMARBPROC qglIsProgramARB;
-//teh's PBO
-extern PFNGLGENBUFFERSARBPROC qglGenBuffersARB;
-extern PFNGLBINDBUFFERARBPROC qglBindBufferARB;
-extern PFNGLBUFFERDATAARBPROC qglBufferDataARB;
-extern PFNGLMAPBUFFERARBPROC qglMapBufferARB;
-extern PFNGLUNMAPBUFFERARBPROC qglUnmapBufferARB;
-
 typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues);
 typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBFVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
 typedef BOOL (WINAPI * PFNWGLCHOOSEPIXELFORMATARBPROC) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
@@ -402,12 +318,55 @@ typedef BOOL (WINAPI * PFNWGLSETPBUFFERATTRIBARBPROC) (HPBUFFERARB hPbuffer, con
 extern PFNWGLBINDTEXIMAGEARBPROC			qwglBindTexImageARB;
 extern PFNWGLRELEASETEXIMAGEARBPROC			qwglReleaseTexImageARB;
 extern PFNWGLSETPBUFFERATTRIBARBPROC		qwglSetPbufferAttribARB;
-#endif
+#endif // _WIN32
+
+// Declare Vertex and Fragment Program function pointers.
+extern PFNGLCOMBINERPARAMETERFVNVPROC				qglCombinerParameterfvNV;
+extern PFNGLCOMBINERPARAMETERIVNVPROC				qglCombinerParameterivNV;
+extern PFNGLCOMBINERPARAMETERFNVPROC				qglCombinerParameterfNV;
+extern PFNGLCOMBINERPARAMETERINVPROC				qglCombinerParameteriNV;
+extern PFNGLCOMBINERINPUTNVPROC					qglCombinerInputNV;
+extern PFNGLCOMBINEROUTPUTNVPROC					qglCombinerOutputNV;
+extern PFNGLFINALCOMBINERINPUTNVPROC				qglFinalCombinerInputNV;
+extern PFNGLGETCOMBINERINPUTPARAMETERFVNVPROC		qglGetCombinerInputParameterfvNV;
+extern PFNGLGETCOMBINERINPUTPARAMETERIVNVPROC		qglGetCombinerInputParameterivNV;
+extern PFNGLGETCOMBINEROUTPUTPARAMETERFVNVPROC		qglGetCombinerOutputParameterfvNV;
+extern PFNGLGETCOMBINEROUTPUTPARAMETERIVNVPROC		qglGetCombinerOutputParameterivNV;
+extern PFNGLGETFINALCOMBINERINPUTPARAMETERFVNVPROC	qglGetFinalCombinerInputParameterfvNV;
+extern PFNGLGETFINALCOMBINERINPUTPARAMETERIVNVPROC	qglGetFinalCombinerInputParameterivNV;
+
+// Declare Vertex and Fragment Program function pointers.
+extern PFNGLPROGRAMSTRINGARBPROC qglProgramStringARB;
+extern PFNGLBINDPROGRAMARBPROC qglBindProgramARB;
+extern PFNGLDELETEPROGRAMSARBPROC qglDeleteProgramsARB;
+extern PFNGLGENPROGRAMSARBPROC qglGenProgramsARB;
+extern PFNGLPROGRAMENVPARAMETER4DARBPROC qglProgramEnvParameter4dARB;
+extern PFNGLPROGRAMENVPARAMETER4DVARBPROC qglProgramEnvParameter4dvARB;
+extern PFNGLPROGRAMENVPARAMETER4FARBPROC qglProgramEnvParameter4fARB;
+extern PFNGLPROGRAMENVPARAMETER4FVARBPROC qglProgramEnvParameter4fvARB;
+extern PFNGLPROGRAMLOCALPARAMETER4DARBPROC qglProgramLocalParameter4dARB;
+extern PFNGLPROGRAMLOCALPARAMETER4DVARBPROC qglProgramLocalParameter4dvARB;
+extern PFNGLPROGRAMLOCALPARAMETER4FARBPROC qglProgramLocalParameter4fARB;
+extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC qglProgramLocalParameter4fvARB;
+extern PFNGLGETPROGRAMENVPARAMETERDVARBPROC qglGetProgramEnvParameterdvARB;
+extern PFNGLGETPROGRAMENVPARAMETERFVARBPROC qglGetProgramEnvParameterfvARB;
+extern PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC qglGetProgramLocalParameterdvARB;
+extern PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC qglGetProgramLocalParameterfvARB;
+extern PFNGLGETPROGRAMIVARBPROC qglGetProgramivARB;
+extern PFNGLGETPROGRAMSTRINGARBPROC qglGetProgramStringARB;
+extern PFNGLISPROGRAMARBPROC qglIsProgramARB;
+//teh's PBO
+extern PFNGLGENBUFFERSARBPROC qglGenBuffersARB;
+extern PFNGLBINDBUFFERARBPROC qglBindBufferARB;
+extern PFNGLBUFFERDATAARBPROC qglBufferDataARB;
+extern PFNGLMAPBUFFERARBPROC qglMapBufferARB;
+extern PFNGLUNMAPBUFFERARBPROC qglUnmapBufferARB;
+
+
+//===========================================================================
 
 
 #ifdef DYNAMIC_LINK_GL
-
-//===========================================================================
 
 #if defined(MACOS_X)
 // This includes #ifdefs for optional logging and GL error checking after every GL call as well as #defines to prevent incorrect usage of the non-'qgl' versions of the GL API.

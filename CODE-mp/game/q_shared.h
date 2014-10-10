@@ -45,8 +45,11 @@
 #include <time.h>
 #include <ctype.h>
 #include <limits.h>
+#include <stddef.h>
 
 #endif
+
+
 
 #if defined(Q3_VM) || defined(CGAME) || defined(QAGAME) || defined(UI_EXPORTS)
 

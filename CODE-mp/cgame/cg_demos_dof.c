@@ -483,7 +483,7 @@ void demoDofCommand_f(void) {
 		demo.play.time = point->time;
 		demo.play.fraction = 0;
 	} else if (!Q_stricmp(cmd, "lock")) {
-		demo.dof.locked = !demo.dof.locked;
+		demo.dof.locked = (qboolean) !demo.dof.locked;
 		if (demo.dof.locked) 
 			CG_DemosAddLog("Depth of field locked");
 		else 

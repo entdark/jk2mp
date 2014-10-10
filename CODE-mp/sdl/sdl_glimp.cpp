@@ -21,9 +21,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #ifdef USE_LOCAL_HEADERS
-#	include "SDL.h"
+#      include "SDL.h"
 #else
-#	include <SDL.h>
+#      include <SDL.h>
 #endif
 
 #include <stdarg.h>
@@ -37,8 +37,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "sdl_icon.h"
 #endif
 
-#define CLIENT_WINDOW_TITLE	"Jedi Outcast"
-#define CLIENT_WINDOW_MIN_TITLE	"JO"
+#define CLIENT_WINDOW_TITLE	"Jedi Knight 2: Jedi Outcast Movie Maker's Edition"
+#define CLIENT_WINDOW_MIN_TITLE	"JOMME"
 
 /* Just hack it for now. */
 #ifdef MACOS_X
@@ -72,7 +72,45 @@ cvar_t *r_allowSoftwareGL; // Don't abort out if a hardware visual can't be obta
 cvar_t *r_allowResize; // make window resizable
 cvar_t *r_centerWindow;
 cvar_t *r_sdlDriver;
-cvar_t *r_noborder;
+
+// void (APIENTRYP qglActiveTextureARB) (GLenum texture);
+// void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
+// void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+// PFNGLCOMBINERPARAMETERFVNVPROC qglCombinerParameterfvNV;
+// PFNGLCOMBINERPARAMETERIVNVPROC qglCombinerParameterivNV;
+// PFNGLCOMBINERPARAMETERFNVPROC qglCombinerParameterfNV;
+// PFNGLCOMBINERPARAMETERINVPROC qglCombinerParameteriNV;
+// PFNGLCOMBINERINPUTNVPROC qglCombinerInputNV;
+// PFNGLCOMBINEROUTPUTNVPROC qglCombinerOutputNV;
+// PFNGLFINALCOMBINERINPUTNVPROC qglFinalCombinerInputNV;
+// PFNGLGETCOMBINERINPUTPARAMETERFVNVPROC qglGetCombinerInputParameterfvNV;
+// PFNGLGETCOMBINERINPUTPARAMETERIVNVPROC qglGetCombinerInputParameterivNV;
+// PFNGLGETCOMBINEROUTPUTPARAMETERFVNVPROC qglGetCombinerOutputParameterfvNV;
+// PFNGLGETCOMBINEROUTPUTPARAMETERIVNVPROC qglGetCombinerOutputParameterivNV;
+// PFNGLGETFINALCOMBINERINPUTPARAMETERFVNVPROC qglGetFinalCombinerInputParameterfvNV;
+// PFNGLGETFINALCOMBINERINPUTPARAMETERIVNVPROC qglGetFinalCombinerInputParameterivNV;
+
+// PFNGLPROGRAMSTRINGARBPROC qglProgramStringARB;
+// PFNGLBINDPROGRAMARBPROC qglBindProgramARB;
+// PFNGLDELETEPROGRAMSARBPROC qglDeleteProgramsARB;
+// PFNGLGENPROGRAMSARBPROC qglGenProgramsARB;
+// PFNGLPROGRAMENVPARAMETER4DARBPROC qglProgramEnvParameter4dARB;
+// PFNGLPROGRAMENVPARAMETER4DVARBPROC qglProgramEnvParameter4dvARB;
+// PFNGLPROGRAMENVPARAMETER4FARBPROC qglProgramEnvParameter4fARB;
+// PFNGLPROGRAMENVPARAMETER4FVARBPROC qglProgramEnvParameter4fvARB;
+// PFNGLPROGRAMLOCALPARAMETER4DARBPROC qglProgramLocalParameter4dARB;
+// PFNGLPROGRAMLOCALPARAMETER4DVARBPROC qglProgramLocalParameter4dvARB;
+// PFNGLPROGRAMLOCALPARAMETER4FARBPROC qglProgramLocalParameter4fARB;
+// PFNGLPROGRAMLOCALPARAMETER4FVARBPROC qglProgramLocalParameter4fvARB;
+// PFNGLGETPROGRAMENVPARAMETERDVARBPROC qglGetProgramEnvParameterdvARB;
+// PFNGLGETPROGRAMENVPARAMETERFVARBPROC qglGetProgramEnvParameterfvARB;
+// PFNGLGETPROGRAMLOCALPARAMETERDVARBPROC qglGetProgramLocalParameterdvARB;
+// PFNGLGETPROGRAMLOCALPARAMETERFVARBPROC qglGetProgramLocalParameterfvARB;
+// PFNGLGETPROGRAMIVARBPROC qglGetProgramivARB;
+// PFNGLGETPROGRAMSTRINGARBPROC qglGetProgramStringARB;
+// PFNGLISPROGRAMARBPROC qglIsProgramARB;
+// void ( * qglLockArraysEXT)( int, int);
+// void ( * qglUnlockArraysEXT) ( void );
 
 /*
 ===============
@@ -612,12 +650,23 @@ static void GLW_InitTextureCompression( void )
 	}
 }
 
+static qboolean GLimp_HaveExtension(const char *ext)
+{
+	const char *ptr = Q_stristr( glConfig.extensions_string, ext );
+	if (ptr == NULL)
+		return qfalse;
+	ptr += strlen(ext);
+	return (qboolean) (((*ptr == ' ') || (*ptr == '\0')));  // verify it's complete string.
+}
+
 /*
 ** GLW_InitExtensions
 */
 cvar_t *r_ATI_NPATCH_available = NULL;
 static void GLimp_InitExtensions( void )
 {
+	char *extension;
+
 	if ( !r_allowExtensions->integer )
 	{
 		ri.Printf( PRINT_ALL, "*** IGNORING OPENGL EXTENSIONS ***\n" );
@@ -629,62 +678,62 @@ static void GLimp_InitExtensions( void )
 	// Select our tc scheme
 	GLW_InitTextureCompression();
 
-	// GL_EXT_texture_env_add
+	extension = "GL_EXT_texture_env_add";
 	glConfig.textureEnvAddAvailable = qfalse;
-	if ( strstr( glConfig.extensions_string, "EXT_texture_env_add" ) )
+	if ( GLimp_HaveExtension( extension ) )
 	{
 		if ( r_ext_texture_env_add->integer )
 		{
 			glConfig.textureEnvAddAvailable = qtrue;
-			ri.Printf( PRINT_ALL, "...using GL_EXT_texture_env_add\n" );
+			ri.Printf( PRINT_ALL, "...using %s\n", extension );
 		}
 		else
 		{
 			glConfig.textureEnvAddAvailable = qfalse;
-			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_env_add\n" );
+			ri.Printf( PRINT_ALL, "...ignoring %s\n", extension );
 		}
 	}
 	else
 	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_texture_env_add not found\n" );
+		ri.Printf( PRINT_ALL, "...%s not found\n", extension );
 	}
 
-	// GL_EXT_texture_filter_anisotropic
+	extension = "GL_EXT_texture_filter_anisotropic";
 	glConfig.textureFilterAnisotropicAvailable = qfalse;
-	if ( strstr( glConfig.extensions_string, "EXT_texture_filter_anisotropic" ) )
+	if ( GLimp_HaveExtension( extension ) )
 	{
 		glConfig.textureFilterAnisotropicAvailable = qtrue;
-		ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic available\n" );
+		ri.Printf( PRINT_ALL, "...%s available\n", extension );
 
 		if ( r_ext_texture_filter_anisotropic->integer )
 		{
-			ri.Printf( PRINT_ALL, "...using GL_EXT_texture_filter_anisotropic\n" );
+			ri.Printf( PRINT_ALL, "...using %s\n", extension );
 		}
 		else
 		{
-			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_filter_anisotropic\n" );
+			ri.Printf( PRINT_ALL, "...ignoring %s\n", extension );
 		}
 		ri.Cvar_Set( "r_ext_texture_filter_anisotropic_avail", "1" );
 	}
 	else
 	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not found\n" );
+		ri.Printf( PRINT_ALL, "...%s not found\n", extension );
 		ri.Cvar_Set( "r_ext_texture_filter_anisotropic_avail", "0" );
 	}
 
-	// GL_EXT_clamp_to_edge
+	extension = "GL_EXT_clamp_to_edge";
 	glConfig.clampToEdgeAvailable = qfalse;
-	if ( strstr( glConfig.extensions_string, "GL_EXT_texture_edge_clamp" ) )
+	if ( GLimp_HaveExtension( extension ) )
 	{
 		glConfig.clampToEdgeAvailable = qtrue;
-		ri.Printf( PRINT_ALL, "...Using GL_EXT_texture_edge_clamp\n" );
+		ri.Printf( PRINT_ALL, "...using %s\n", extension );
 	}
 
-	// GL_ARB_multitexture
+	extension = "GL_ARB_multitexture";
 	qglMultiTexCoord2fARB = NULL;
 	qglActiveTextureARB = NULL;
 	qglClientActiveTextureARB = NULL;
-	if ( strstr( glConfig.extensions_string, "GL_ARB_multitexture" )  )
+	if ( GLimp_HaveExtension( extension ) )
 	{
 		if ( r_ext_multitexture->integer )
 		{
@@ -698,35 +747,35 @@ static void GLimp_InitExtensions( void )
 
 				if ( glConfig.maxActiveTextures > 1 )
 				{
-					ri.Printf( PRINT_ALL, "...using GL_ARB_multitexture\n" );
+					ri.Printf( PRINT_ALL, "...using %s\n", extension );
 				}
 				else
 				{
 					qglMultiTexCoord2fARB = NULL;
 					qglActiveTextureARB = NULL;
 					qglClientActiveTextureARB = NULL;
-					ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
+					ri.Printf( PRINT_ALL, "...not using %s, < 2 texture units\n", extension );
 				}
 			}
 		}
 		else
 		{
-			ri.Printf( PRINT_ALL, "...ignoring GL_ARB_multitexture\n" );
+			ri.Printf( PRINT_ALL, "...ignoring %s\n", extension );
 		}
 	}
 	else
 	{
-		ri.Printf( PRINT_ALL, "...GL_ARB_multitexture not found\n" );
+		ri.Printf( PRINT_ALL, "...%s not found\n", extension );
 	}
 
-	// GL_EXT_compiled_vertex_array
+	extension = "GL_EXT_compiled_vertex_array";
 	qglLockArraysEXT = NULL;
 	qglUnlockArraysEXT = NULL;
-	if ( strstr( glConfig.extensions_string, "GL_EXT_compiled_vertex_array" ) )
+	if ( GLimp_HaveExtension( extension ) )
 	{
 		if ( r_ext_compiled_vertex_array->integer )
 		{
-			ri.Printf( PRINT_ALL, "...using GL_EXT_compiled_vertex_array\n" );
+			ri.Printf( PRINT_ALL, "...using %s\n", extension );
 			qglLockArraysEXT = ( void ( APIENTRY * )( int, int ) ) SDL_GL_GetProcAddress( "glLockArraysEXT" );
 			qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) SDL_GL_GetProcAddress( "glUnlockArraysEXT" );
 			if (!qglLockArraysEXT || !qglUnlockArraysEXT) {
@@ -735,21 +784,22 @@ static void GLimp_InitExtensions( void )
 		}
 		else
 		{
-			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_compiled_vertex_array\n" );
+			ri.Printf( PRINT_ALL, "...ignoring %s\n", extension );
 		}
 	}
 	else
 	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n" );
+		ri.Printf( PRINT_ALL, "...%s not found\n", extension );
 	}
 
+	extension = "GL_EXT_point_parameters";
 	qglPointParameterfEXT = NULL;
 	qglPointParameterfvEXT = NULL;
-	if ( strstr( glConfig.extensions_string, "GL_EXT_point_parameters" ) )
+	if ( GLimp_HaveExtension( extension ) )
 	{
 		if ( r_ext_compiled_vertex_array->integer || 1)
 		{
-			ri.Printf( PRINT_ALL, "...using GL_EXT_point_parameters\n" );
+			ri.Printf( PRINT_ALL, "...using %s\n", extension );
 			qglPointParameterfEXT = ( void ( APIENTRY * )( GLenum, GLfloat) ) SDL_GL_GetProcAddress( "glPointParameterfEXT" );
 			qglPointParameterfvEXT = ( void ( APIENTRY * )( GLenum, GLfloat *) ) SDL_GL_GetProcAddress( "glPointParameterfvEXT" );
 			if (!qglPointParameterfEXT || !qglPointParameterfvEXT) 
@@ -759,12 +809,91 @@ static void GLimp_InitExtensions( void )
 		}
 		else
 		{
-			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_point_parameters\n" );
+			ri.Printf( PRINT_ALL, "...ignoring %s\n", extension );
 		}
 	}
 	else
 	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_point_parameters not found\n" );
+		ri.Printf( PRINT_ALL, "...%s not found\n", extension );
+	}
+
+
+	// GL_ARB_vertex_program
+	extension = "GL_ARB_vertex_program";
+	qglBindProgramARB = NULL;
+	qglDeleteProgramsARB = NULL;
+	qglGenProgramsARB = NULL;
+	qglProgramEnvParameter4fARB = NULL;
+	qglProgramStringARB = NULL;
+	if ( GLimp_HaveExtension( extension ) )
+	{
+		ri.Printf( PRINT_ALL, "...using %s\n", extension );
+		qglBindProgramARB = ( PFNGLBINDPROGRAMARBPROC ) SDL_GL_GetProcAddress( "glBindProgramARB" );
+		qglDeleteProgramsARB = ( PFNGLDELETEPROGRAMSARBPROC ) SDL_GL_GetProcAddress( "glDeleteProgramsARB" );
+		qglGenProgramsARB = ( PFNGLGENPROGRAMSARBPROC ) SDL_GL_GetProcAddress( "glGenProgramsARB" );
+		qglProgramEnvParameter4fARB = ( PFNGLPROGRAMENVPARAMETER4FARBPROC ) SDL_GL_GetProcAddress( "glProgramEnvParameter4fARB" );
+		qglProgramStringARB = ( PFNGLPROGRAMSTRINGARBPROC ) SDL_GL_GetProcAddress( "glProgramStringARB" );
+		if (!qglBindProgramARB || !qglDeleteProgramsARB || !qglGenProgramsARB
+		    || !qglProgramEnvParameter4fARB || !qglProgramStringARB )
+		{
+				ri.Error (ERR_FATAL, "bad getprocaddress");
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...%s not found\n", extension );
+	}
+
+	// GL_ARB_vertex_buffer_object
+	extension = "GL_ARB_vertex_buffer_object";
+	qglBindBufferARB = NULL;
+	qglBufferDataARB = NULL;
+	qglGenBuffersARB = NULL;
+	qglMapBufferARB = NULL;
+	qglUnmapBufferARB = NULL;
+	if ( GLimp_HaveExtension( extension ) )
+	{
+		ri.Printf( PRINT_ALL, "...using %s\n", extension );
+		qglBindBufferARB = ( PFNGLBINDBUFFERARBPROC ) SDL_GL_GetProcAddress ( "glBindBufferARB" );
+		qglBufferDataARB = ( PFNGLBUFFERDATAARBPROC ) SDL_GL_GetProcAddress ( "glBufferDataARB" );
+		qglGenBuffersARB = ( PFNGLGENBUFFERSARBPROC ) SDL_GL_GetProcAddress ( "glGenBuffersARB" );
+		qglMapBufferARB = ( PFNGLMAPBUFFERARBPROC ) SDL_GL_GetProcAddress ( "glMapBufferARB" );
+		qglUnmapBufferARB = ( PFNGLUNMAPBUFFERARBPROC ) SDL_GL_GetProcAddress ( "glUnmapBufferARB" );
+		if ( !qglBindBufferARB || !qglBufferDataARB || !qglGenBuffersARB
+		     || !qglMapBufferARB || !qglUnmapBufferARB )
+		{
+			ri.Error (ERR_FATAL, "bad getprocaddress");
+		}
+	}
+	else
+	{
+
+	}
+
+	// GL_NV_register_combiners
+	extension = "GL_NV_register_combiners";
+	qglCombinerInputNV = NULL;
+	qglCombinerOutputNV = NULL;
+	qglFinalCombinerInputNV = NULL;
+	qglCombinerParameterfvNV = NULL;
+	qglCombinerParameteriNV = NULL;
+	if ( GLimp_HaveExtension( extension ) )
+	{
+		ri.Printf( PRINT_ALL, "...using %s\n", extension );
+		qglCombinerInputNV = ( PFNGLCOMBINERINPUTNVPROC ) SDL_GL_GetProcAddress( "glCombinerInputNV" );
+		qglCombinerOutputNV = ( PFNGLCOMBINEROUTPUTNVPROC ) SDL_GL_GetProcAddress( "glCombinerOutputNV" );
+		qglFinalCombinerInputNV = ( PFNGLFINALCOMBINERINPUTNVPROC ) SDL_GL_GetProcAddress( "glFinalCombinerInputNV" );
+		qglCombinerParameterfvNV = ( PFNGLCOMBINERPARAMETERFVNVPROC ) SDL_GL_GetProcAddress( "glCombinerParameterfvNV" );
+		qglCombinerParameteriNV = ( PFNGLCOMBINERPARAMETERINVPROC ) SDL_GL_GetProcAddress( "glCombinerParameteriNV" );
+		if ( !qglCombinerInputNV || !qglCombinerOutputNV || !qglFinalCombinerInputNV
+		     || !qglCombinerParameterfvNV || !qglCombinerParameteriNV )
+		{
+			ri.Error (ERR_FATAL, "bad getprocaddress");
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...%s not found\n", extension );
 	}
 
 #ifdef _NPATCH

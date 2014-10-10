@@ -1,5 +1,5 @@
-#include "game/q_shared.h"
-#include "game/bg_public.h"
+#include "../game/q_shared.h"
+#include "../game/bg_public.h"
 
 void demoCommandValue( const char *cmd, float * oldVal );
 

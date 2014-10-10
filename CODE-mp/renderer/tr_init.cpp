@@ -204,43 +204,31 @@ Ghoul2 Insert End
 */
 
 #ifndef DEDICATED
+
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
 void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
 
-void ( APIENTRY * qglLockArraysEXT)( GLint, GLint);
-void ( APIENTRY * qglUnlockArraysEXT) ( void );
+void ( APIENTRY * qglLockArraysEXT) (GLint, GLint);
+void ( APIENTRY * qglUnlockArraysEXT) (void);
 
 void ( APIENTRY * qglPointParameterfEXT)( GLenum, GLfloat);
 void ( APIENTRY * qglPointParameterfvEXT)( GLenum, GLfloat *);
 
-void RE_SetLightStyle(int style, int color);
-
-void RE_GetBModelVerts( int bmodelIndex, vec3_t *verts, vec3_t normal );
-
-#endif // !DEDICATED
-
-
-#ifdef _WIN32
 // Declare Register Combiners function pointers.
-PFNGLCOMBINERPARAMETERFVNV				qglCombinerParameterfvNV = NULL;
-PFNGLCOMBINERPARAMETERIVNV				qglCombinerParameterivNV = NULL;
-PFNGLCOMBINERPARAMETERFNV				qglCombinerParameterfNV = NULL;
-PFNGLCOMBINERPARAMETERINV				qglCombinerParameteriNV = NULL;
-PFNGLCOMBINERINPUTNV					qglCombinerInputNV = NULL;
-PFNGLCOMBINEROUTPUTNV					qglCombinerOutputNV = NULL;
-PFNGLFINALCOMBINERINPUTNV				qglFinalCombinerInputNV = NULL;
-PFNGLGETCOMBINERINPUTPARAMETERFVNV		qglGetCombinerInputParameterfvNV = NULL;
-PFNGLGETCOMBINERINPUTPARAMETERIVNV		qglGetCombinerInputParameterivNV = NULL;
-PFNGLGETCOMBINEROUTPUTPARAMETERFVNV		qglGetCombinerOutputParameterfvNV = NULL;
-PFNGLGETCOMBINEROUTPUTPARAMETERIVNV		qglGetCombinerOutputParameterivNV = NULL;
-PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV	qglGetFinalCombinerInputParameterfvNV = NULL;
-PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV	qglGetFinalCombinerInputParameterivNV = NULL;
-
-// Declare Render-Texture function pointers.
-PFNWGLBINDTEXIMAGEARBPROC				qwglBindTexImageARB = NULL;
-PFNWGLRELEASETEXIMAGEARBPROC			qwglReleaseTexImageARB = NULL;
-PFNWGLSETPBUFFERATTRIBARBPROC			qwglSetPbufferAttribARB = NULL;
+PFNGLCOMBINERPARAMETERFVNVPROC				qglCombinerParameterfvNV = NULL;
+PFNGLCOMBINERPARAMETERIVNVPROC				qglCombinerParameterivNV = NULL;
+PFNGLCOMBINERPARAMETERFNVPROC				qglCombinerParameterfNV = NULL;
+PFNGLCOMBINERPARAMETERINVPROC				qglCombinerParameteriNV = NULL;
+PFNGLCOMBINERINPUTNVPROC				qglCombinerInputNV = NULL;
+PFNGLCOMBINEROUTPUTNVPROC				qglCombinerOutputNV = NULL;
+PFNGLFINALCOMBINERINPUTNVPROC				qglFinalCombinerInputNV = NULL;
+PFNGLGETCOMBINERINPUTPARAMETERFVNVPROC			qglGetCombinerInputParameterfvNV = NULL;
+PFNGLGETCOMBINERINPUTPARAMETERIVNVPROC			qglGetCombinerInputParameterivNV = NULL;
+PFNGLGETCOMBINEROUTPUTPARAMETERFVNVPROC			qglGetCombinerOutputParameterfvNV = NULL;
+PFNGLGETCOMBINEROUTPUTPARAMETERIVNVPROC			qglGetCombinerOutputParameterivNV = NULL;
+PFNGLGETFINALCOMBINERINPUTPARAMETERFVNVPROC		qglGetFinalCombinerInputParameterfvNV = NULL;
+PFNGLGETFINALCOMBINERINPUTPARAMETERIVNVPROC		qglGetFinalCombinerInputParameterivNV = NULL;
 
 // Declare Vertex and Fragment Program function pointers.
 PFNGLPROGRAMSTRINGARBPROC qglProgramStringARB = NULL;
@@ -268,7 +256,19 @@ PFNGLBINDBUFFERARBPROC qglBindBufferARB = NULL;
 PFNGLBUFFERDATAARBPROC qglBufferDataARB = NULL;
 PFNGLMAPBUFFERARBPROC qglMapBufferARB = NULL;
 PFNGLUNMAPBUFFERARBPROC qglUnmapBufferARB = NULL;
+
+#ifdef _WIN32
+// Declare Render-Texture function pointers.
+PFNWGLBINDTEXIMAGEARBPROC				qwglBindTexImageARB = NULL;
+PFNWGLRELEASETEXIMAGEARBPROC			qwglReleaseTexImageARB = NULL;
+PFNWGLSETPBUFFERATTRIBARBPROC			qwglSetPbufferAttribARB = NULL;
 #endif
+
+void RE_SetLightStyle(int style, int color);
+
+void RE_GetBModelVerts( int bmodelIndex, vec3_t *verts, vec3_t normal );
+
+#endif // !DEDICATED
 
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral )
@@ -677,8 +677,6 @@ void GL_SetDefaultState( void ) {
 	qglDisable( GL_BLEND );
 }
 
-extern bool g_bTextureRectangleHack;
-
 /*
 ================
 R_PrintLongString
@@ -820,7 +818,7 @@ void GfxInfo_f( void )
 
 void R_AtiHackToggle_f(void)
 {
-	g_bTextureRectangleHack = !g_bTextureRectangleHack;
+	g_bTextureRectangleHack = (qboolean) !g_bTextureRectangleHack;
 }
 
 #endif // !DEDICATED

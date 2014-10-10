@@ -379,7 +379,7 @@ lastOne:
 			haveQuote = qfalse;
 			word[index++] = 0;
 			if (doName) {
-				goodDemo = !Q_stricmp( word, demoName );
+				goodDemo = (qboolean) !Q_stricmp( word, demoName );
 				doName = qfalse;
 			} else {
 				if (goodDemo && !Q_stricmp( word, projectName )) {
@@ -460,7 +460,7 @@ void demoLoadCommand_f(void) {
 void demoCaptureCommand_f(void) {
 	const char *cmd = CG_Argv(1);
 	if (!Q_stricmp(cmd, "lock")) {
-		demo.capture.locked = !demo.capture.locked;
+		demo.capture.locked = (qboolean) !demo.capture.locked;
 		CG_DemosAddLog( "Capture range %s", demo.capture.locked ? "locked" : "unlocked" );
 	} else if (!Q_stricmp(cmd, "start")) {
 		demoLineCommand_f();

@@ -19,6 +19,7 @@ bool g_bRenderGlowingObjects = false;
 
 // Whether the current hardware supports dynamic glows/flares.
 bool g_bDynamicGlowSupported = false;
+qboolean g_bTextureRectangleHack;
 #endif
 
 static float	s_flipMatrix[16] = {
@@ -1200,12 +1201,12 @@ const void	*RB_DrawSurfs( const void *data ) {
 		float x, y;
 		if ( (r_stereoSeparation->value <= 0 && R_MME_JitterOrigin( &x, &y ))
 			|| (r_stereoSeparation->value > 0 && R_MME_JitterOriginStereo( &x, &y ))) {
-			orientationr_t* or = &backEnd.viewParms.ori;
+			orientationr_t* wor = &backEnd.viewParms.ori;
 			orientationr_t* world = &backEnd.viewParms.world;
 
-			VectorMA( or->origin, x, or->axis[1], or->origin );
-			VectorMA( or->origin, y, or->axis[2], or->origin );
-			R_RotateForWorld( or, world );
+			VectorMA( wor->origin, x, wor->axis[1], wor->origin );
+			VectorMA( wor->origin, y, wor->axis[2], wor->origin );
+			R_RotateForWorld( wor, world );
 		}
 	}
 	RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
@@ -1511,7 +1512,7 @@ again:
 			break;
 		case RC_SWAP_BUFFERS:
 			data = RB_SwapBuffers( data );
-			if ( (int)data == NULL)
+			if ( (int)data == 0 )
 				goto again;
 			break;
 		case RC_SCREENSHOT:
@@ -1614,7 +1615,6 @@ void EndPixelShader()
 #ifdef JEDIACADEMY_GLOW
 // Hack variable for deciding which kind of texture rectangle thing to do (for some
 // reason it acts different on radeon! It's against the spec!).
-extern bool g_bTextureRectangleHack;
 
 static inline void RB_BlurGlowTexture()
 {

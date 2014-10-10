@@ -8,17 +8,19 @@
  *****************************************************************************/
 #include "snd_local.h"
 
+#ifndef __linux__
 #define HAVE_LIBMAD
+#endif
 
 extern	cvar_t* s_language;
 qboolean S_FileExists(char *fileName) {
 	char *voice = strstr(fileName, "chars");
 	fileHandle_t f;
 	if (voice && s_language) {
-		if (stricmp("DEUTSCH", s_language->string)==0) {				
-			strncpy(voice, "chr_d", 5);	// same number of letters as "chars"
-		} else if (stricmp("FRANCAIS", s_language->string)==0) {				
-			strncpy(voice, "chr_f", 5);	// same number of letters as "chars"
+		if (Q_stricmp("DEUTSCH", s_language->string)==0) {
+			Q_strncpyz(voice, "chr_d", 5);	// same number of letters as "chars"
+		} else if (Q_stricmp("FRANCAIS", s_language->string)==0) {
+			Q_strncpyz(voice, "chr_f", 5);	// same number of letters as "chars"
 		} else {
 			voice = NULL;	// use this ptr as a flag as to whether or not we substituted with a foreign version
 		}
