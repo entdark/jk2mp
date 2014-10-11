@@ -87,12 +87,13 @@ set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
 add_definitions( -D_M_IX86=1 )  # tested to mean little endian...
-add_definitions( -D_IMMERSION_DISABLE )
 add_definitions( -DNDEBUG )
-add_definitions( -DFINAL_BUILD )
 add_definitions( -D_JK2 )
 add_definitions( -D_JK2MP )
 add_definitions( -DDONT_TYPEDEF_INT32 )
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+	add_definitions( -DFINAL_BUILD )
+endif()
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "mme")
 
