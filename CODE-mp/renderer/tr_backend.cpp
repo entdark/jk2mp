@@ -19,7 +19,10 @@ bool g_bRenderGlowingObjects = false;
 
 // Whether the current hardware supports dynamic glows/flares.
 bool g_bDynamicGlowSupported = false;
-qboolean g_bTextureRectangleHack;
+
+// Hack variable for deciding which kind of texture rectangle thing to do (for some
+// reason it acts different on radeon! It's against the spec!).
+bool g_bTextureRectangleHack = false;
 #endif
 
 static float	s_flipMatrix[16] = {

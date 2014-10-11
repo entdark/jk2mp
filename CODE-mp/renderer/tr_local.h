@@ -1994,4 +1994,4 @@ void R_MME_TimeFraction(float timeFraction);
 extern qboolean finishStereo;
 extern qboolean r_capturingDofOrStereo;
 extern qboolean r_latestDofOrStereoFrame;
-extern qboolean g_bTextureRectangleHack;
+extern bool g_bTextureRectangleHack;

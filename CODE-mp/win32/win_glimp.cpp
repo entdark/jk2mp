@@ -171,11 +171,6 @@ static int GLW_ChoosePixelFormatARB( int colorBits, int depthBits, int stencilBi
 		return pixelformat;
 }
 
-
-// Hack variable for deciding which kind of texture rectangle thing to do (for some
-// reason it acts different on radeon! It's against the spec!).
-bool g_bTextureRectangleHack = false;
-
 /*
 ** GLW_StartDriverAndSetMode
 */
@@ -1378,9 +1373,9 @@ static void GLW_InitExtensions( void )
 	{
 		if ( r_ext_multitexture->integer )
 		{
-			qglMultiTexCoord2fARB = ( PFNGLMULTITEXCOORD2FARBPROC ) qwglGetProcAddress( "glMultiTexCoord2fARB" );
-			qglActiveTextureARB = ( PFNGLACTIVETEXTUREARBPROC ) qwglGetProcAddress( "glActiveTextureARB" );
-			qglClientActiveTextureARB = ( PFNGLCLIENTACTIVETEXTUREARBPROC ) qwglGetProcAddress( "glClientActiveTextureARB" );
+			qglMultiTexCoord2fARB = ( void ( APIENTRY * ) ( GLenum, GLfloat, GLfloat ) ) qwglGetProcAddress( "glMultiTexCoord2fARB" );
+			qglActiveTextureARB = ( void ( APIENTRY * ) ( GLenum ) ) qwglGetProcAddress( "glActiveTextureARB" );
+			qglClientActiveTextureARB = ( void ( APIENTRY * ) ( GLenum ) ) qwglGetProcAddress( "glClientActiveTextureARB" );
 
 			if ( qglActiveTextureARB )
 			{
@@ -1474,19 +1469,19 @@ static void GLW_InitExtensions( void )
 			// NOTE: VV guys will _definetly_ not be able to use regcoms. Pixel Shaders are just as good though :-)
 			// NOTE: Also, this is an nVidia specific extension (of course), so fragment shaders would serve the same purpose
 			// if we needed some kind of fragment/pixel manipulation support.
-			qglCombinerParameterfvNV = ( PFNGLCOMBINERPARAMETERFVNV ) qwglGetProcAddress( "glCombinerParameterfvNV" );
-			qglCombinerParameterivNV = ( PFNGLCOMBINERPARAMETERIVNV ) qwglGetProcAddress( "glCombinerParameterivNV" );
-			qglCombinerParameterfNV = ( PFNGLCOMBINERPARAMETERFNV ) qwglGetProcAddress( "glCombinerParameterfNV" );
-			qglCombinerParameteriNV = ( PFNGLCOMBINERPARAMETERINV ) qwglGetProcAddress( "glCombinerParameteriNV" );
-			qglCombinerInputNV = ( PFNGLCOMBINERINPUTNV ) qwglGetProcAddress( "glCombinerInputNV" );
-			qglCombinerOutputNV = ( PFNGLCOMBINEROUTPUTNV ) qwglGetProcAddress( "glCombinerOutputNV" );
-			qglFinalCombinerInputNV = ( PFNGLFINALCOMBINERINPUTNV ) qwglGetProcAddress( "glFinalCombinerInputNV" );
-			qglGetCombinerInputParameterfvNV	= ( PFNGLGETCOMBINERINPUTPARAMETERFVNV ) qwglGetProcAddress( "glGetCombinerInputParameterfvNV" );
-			qglGetCombinerInputParameterivNV	= ( PFNGLGETCOMBINERINPUTPARAMETERIVNV ) qwglGetProcAddress( "glGetCombinerInputParameterivNV" );
-			qglGetCombinerOutputParameterfvNV = ( PFNGLGETCOMBINEROUTPUTPARAMETERFVNV ) qwglGetProcAddress( "glGetCombinerOutputParameterfvNV" );
-			qglGetCombinerOutputParameterivNV = ( PFNGLGETCOMBINEROUTPUTPARAMETERIVNV ) qwglGetProcAddress( "glGetCombinerOutputParameterivNV" );
-			qglGetFinalCombinerInputParameterfvNV = ( PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV ) qwglGetProcAddress( "glGetFinalCombinerInputParameterfvNV" );
-			qglGetFinalCombinerInputParameterivNV = ( PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV ) qwglGetProcAddress( "glGetFinalCombinerInputParameterivNV" );
+			qglCombinerParameterfvNV = ( PFNGLCOMBINERPARAMETERFVNVPROC ) qwglGetProcAddress( "glCombinerParameterfvNV" );
+			qglCombinerParameterivNV = ( PFNGLCOMBINERPARAMETERIVNVPROC ) qwglGetProcAddress( "glCombinerParameterivNV" );
+			qglCombinerParameterfNV = ( PFNGLCOMBINERPARAMETERFNVPROC ) qwglGetProcAddress( "glCombinerParameterfNV" );
+			qglCombinerParameteriNV = ( PFNGLCOMBINERPARAMETERINVPROC ) qwglGetProcAddress( "glCombinerParameteriNV" );
+			qglCombinerInputNV = ( PFNGLCOMBINERINPUTNVPROC ) qwglGetProcAddress( "glCombinerInputNV" );
+			qglCombinerOutputNV = ( PFNGLCOMBINEROUTPUTNVPROC ) qwglGetProcAddress( "glCombinerOutputNV" );
+			qglFinalCombinerInputNV = ( PFNGLFINALCOMBINERINPUTNVPROC ) qwglGetProcAddress( "glFinalCombinerInputNV" );
+			qglGetCombinerInputParameterfvNV	= ( PFNGLGETCOMBINERINPUTPARAMETERFVNVPROC ) qwglGetProcAddress( "glGetCombinerInputParameterfvNV" );
+			qglGetCombinerInputParameterivNV	= ( PFNGLGETCOMBINERINPUTPARAMETERIVNVPROC ) qwglGetProcAddress( "glGetCombinerInputParameterivNV" );
+			qglGetCombinerOutputParameterfvNV = ( PFNGLGETCOMBINEROUTPUTPARAMETERFVNVPROC ) qwglGetProcAddress( "glGetCombinerOutputParameterfvNV" );
+			qglGetCombinerOutputParameterivNV = ( PFNGLGETCOMBINEROUTPUTPARAMETERIVNVPROC ) qwglGetProcAddress( "glGetCombinerOutputParameterivNV" );
+			qglGetFinalCombinerInputParameterfvNV = ( PFNGLGETFINALCOMBINERINPUTPARAMETERFVNVPROC ) qwglGetProcAddress( "glGetFinalCombinerInputParameterfvNV" );
+			qglGetFinalCombinerInputParameterivNV = ( PFNGLGETFINALCOMBINERINPUTPARAMETERIVNVPROC ) qwglGetProcAddress( "glGetFinalCombinerInputParameterivNV" );
 
 			// Validate the functions we need.
 			if ( !qglCombinerParameterfvNV || !qglCombinerParameterivNV || !qglCombinerParameterfNV || !qglCombinerParameteriNV || !qglCombinerInputNV ||

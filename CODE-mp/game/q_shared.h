@@ -1134,8 +1134,8 @@ char	*Q_strrchr( const char* string, int c );
 
 // NON-portable (but faster) versions
 #ifdef WIN32
-//static inline int	Q_strnicmp (const char *s1, const char *s2, int n) { return strnicmp(s1, s2, n); }
-//static inline int	Q_strcmpi (const char *s1, const char *s2) { return strcmpi(s1, s2); }
+static __inline int	Q_strnicmp (const char *s1, const char *s2, int n) { return strnicmp(s1, s2, n); }
+static __inline int	Q_strcmpi (const char *s1, const char *s2) { return strcmpi(s1, s2); }
 #else
 static inline int	Q_strnicmp (const char *s1, const char *s2, int n) { return strncasecmp(s1, s2, n); }
 static inline int	Q_strcmpi (const char *s1, const char *s2) { return strcasecmp(s1, s2); }

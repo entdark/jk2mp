@@ -818,7 +818,7 @@ void GfxInfo_f( void )
 
 void R_AtiHackToggle_f(void)
 {
-	g_bTextureRectangleHack = (qboolean) !g_bTextureRectangleHack;
+	g_bTextureRectangleHack = !g_bTextureRectangleHack;
 }
 
 #endif // !DEDICATED

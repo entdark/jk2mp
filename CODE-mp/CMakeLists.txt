@@ -92,6 +92,7 @@ add_definitions( -DNDEBUG )
 add_definitions( -DFINAL_BUILD )
 add_definitions( -D_JK2 )
 add_definitions( -D_JK2MP )
+add_definitions( -DDONT_TYPEDEF_INT32 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "mme")
 

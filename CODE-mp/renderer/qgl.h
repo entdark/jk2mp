@@ -29,6 +29,7 @@
 #pragma warning (disable: 4214)
 #include <windows.h>
 #include <gl/gl.h>
+#include "glext.h"
 
 #elif defined(MACOS_X)
 
@@ -160,7 +161,6 @@
 ** extension constants
 */
 
-
 // S3TC compression constants
 #define GL_RGB_S3TC							0x83A0
 #define GL_RGB4_S3TC						0x83A1
@@ -267,27 +267,29 @@ typedef GLboolean (APIENTRY * PFNGLUNMAPBUFFERARBPROC) (GLenum target);
 #define GL_STREAM_READ_ARB                0x88E1
 #define GL_PIXEL_PACK_BUFFER_ARB          0x88EB
 
-typedef void (APIENTRY *PFNGLCOMBINERPARAMETERFVNV) (GLenum pname,const GLfloat *params);
-typedef void (APIENTRY *PFNGLCOMBINERPARAMETERIVNV) (GLenum pname,const GLint *params);
-typedef void (APIENTRY *PFNGLCOMBINERPARAMETERFNV) (GLenum pname,GLfloat param);
-typedef void (APIENTRY *PFNGLCOMBINERPARAMETERINV) (GLenum pname,GLint param);
-typedef void (APIENTRY *PFNGLCOMBINERINPUTNV) (GLenum stage,GLenum portion,GLenum variable,GLenum input,GLenum mapping,
+/* Already in glext.h
+typedef void (APIENTRY *PFNGLCOMBINERPARAMETERFVNVPROC) (GLenum pname,const GLfloat *params);
+typedef void (APIENTRY *PFNGLCOMBINERPARAMETERIVNVPROC) (GLenum pname,const GLint *params);
+typedef void (APIENTRY *PFNGLCOMBINERPARAMETERFNVPROC) (GLenum pname,GLfloat param);
+typedef void (APIENTRY *PFNGLCOMBINERPARAMETERINVPROC) (GLenum pname,GLint param);
+typedef void (APIENTRY *PFNGLCOMBINERINPUTNVPROC) (GLenum stage,GLenum portion,GLenum variable,GLenum input,GLenum mapping,
 											   GLenum componentUsage);
-typedef void (APIENTRY *PFNGLCOMBINEROUTPUTNV) (GLenum stage,GLenum portion,GLenum abOutput,GLenum cdOutput,GLenum sumOutput,
+typedef void (APIENTRY *PFNGLCOMBINEROUTPUTNVPROC) (GLenum stage,GLenum portion,GLenum abOutput,GLenum cdOutput,GLenum sumOutput,
 												GLenum scale, GLenum bias,GLboolean abDotProduct,GLboolean cdDotProduct,
 												GLboolean muxSum);
-typedef void (APIENTRY *PFNGLFINALCOMBINERINPUTNV) (GLenum variable,GLenum input,GLenum mapping,GLenum componentUsage);
+typedef void (APIENTRY *PFNGLFINALCOMBINERINPUTNVPROC) (GLenum variable,GLenum input,GLenum mapping,GLenum componentUsage);
 
-typedef void (APIENTRY *PFNGLGETCOMBINERINPUTPARAMETERFVNV) (GLenum stage,GLenum portion,GLenum variable,GLenum pname,GLfloat *params);
-typedef void (APIENTRY *PFNGLGETCOMBINERINPUTPARAMETERIVNV) (GLenum stage,GLenum portion,GLenum variable,GLenum pname,GLint *params);
-typedef void (APIENTRY *PFNGLGETCOMBINEROUTPUTPARAMETERFVNV) (GLenum stage,GLenum portion,GLenum pname,GLfloat *params);
-typedef void (APIENTRY *PFNGLGETCOMBINEROUTPUTPARAMETERIVNV) (GLenum stage,GLenum portion,GLenum pname,GLint *params);
-typedef void (APIENTRY *PFNGLGETFINALCOMBINERINPUTPARAMETERFVNV) (GLenum variable,GLenum pname,GLfloat *params);
-typedef void (APIENTRY *PFNGLGETFINALCOMBINERINPUTPARAMETERIVNV) (GLenum variable,GLenum pname,GLfloat *params);
-
+typedef void (APIENTRY *PFNGLGETCOMBINERINPUTPARAMETERFVNVPROC) (GLenum stage,GLenum portion,GLenum variable,GLenum pname,GLfloat *params);
+typedef void (APIENTRY *PFNGLGETCOMBINERINPUTPARAMETERIVNVPROC) (GLenum stage,GLenum portion,GLenum variable,GLenum pname,GLint *params);
+typedef void (APIENTRY *PFNGLGETCOMBINEROUTPUTPARAMETERFVNVPROC) (GLenum stage,GLenum portion,GLenum pname,GLfloat *params);
+typedef void (APIENTRY *PFNGLGETCOMBINEROUTPUTPARAMETERIVNVPROC) (GLenum stage,GLenum portion,GLenum pname,GLint *params);
+typedef void (APIENTRY *PFNGLGETFINALCOMBINERINPUTPARAMETERFVNVPROC) (GLenum variable,GLenum pname,GLfloat *params);
+typedef void (APIENTRY *PFNGLGETFINALCOMBINERINPUTPARAMETERIVNVPROC) (GLenum variable,GLenum pname,GLfloat *params);
+*/
 typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues);
 typedef BOOL (WINAPI * PFNWGLGETPIXELFORMATATTRIBFVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
 typedef BOOL (WINAPI * PFNWGLCHOOSEPIXELFORMATARBPROC) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+
 /***********************************************************************************************************/
 
 // Declare Pixel Format function pointers.
