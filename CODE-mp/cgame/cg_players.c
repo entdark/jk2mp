@@ -7196,7 +7196,7 @@ void CG_Player( centity_t *cent ) {
 
 		if (VectorNormalize2(cent->currentState.pos.trDelta, forward) == 0.0f)
 			forward[2] = 1.0f;
-		// trap_FX_PlayEffectID(ci->effectOverride, cent->lerpOrigin, forward, -1, -1);
+		trap_FX_PlayEffectID(ci->effectOverride, cent->lerpOrigin, forward); //, -1, -1);
 	}
 
 skipEffectOverride:

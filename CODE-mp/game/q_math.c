@@ -458,7 +458,7 @@ This is not implemented very well...
 */
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,
 							 float degrees ) {
-	float	m[3][3];
+	vec3_t	m[3];
 	float	c, s, t;
 
 	degrees = DEG2RAD( degrees );
@@ -477,7 +477,7 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,
 	m[2][0] = t*dir[0]*dir[2] + s*dir[1];
 	m[2][1] = t*dir[1]*dir[2] - s*dir[0];
 	m[2][2] = t*dir[2]*dir[2] + c;
-	VectorRotate( point, m, dst );
+	VectorRotate( point, (const vec3_t*) m, dst );
 }
 
 /*

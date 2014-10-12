@@ -7,8 +7,6 @@
 /* #define void char */
 /* #define const */
 #define CHAR_IS_UNSIGNED
-#define HAVE_STDDEF_H
-#define HAVE_STDLIB_H
 #undef NEED_BSD_STRINGS
 #undef NEED_SYS_TYPES_H
 #undef NEED_FAR_POINTERS	/* Watcom uses flat 32-bit addressing */

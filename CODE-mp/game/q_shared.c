@@ -970,7 +970,7 @@ void Q_strcat( char *dest, int size, const char *src ) {
 }
 
 
-vec3_t defaultColors[10] =
+const vec3_t defaultColors[10] =
 {
 	{0.0f, 0.0f, 0.0f},
 	{1.0f, 0.0f, 0.0f},
@@ -1689,4 +1689,4 @@ int Q_irand(int value1, int value2)
 
 //qboolean demo15detected;
 int demo_protocols[] =
-{ 15, 16, NULL };
+{ 15, 16, 0 };

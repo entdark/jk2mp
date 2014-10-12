@@ -816,10 +816,12 @@ void GfxInfo_f( void )
 	}
 }
 
+#ifdef JEDIACADEMY_GLOW
 void R_AtiHackToggle_f(void)
 {
 	g_bTextureRectangleHack = !g_bTextureRectangleHack;
 }
+#endif
 
 #endif // !DEDICATED
 /*
@@ -1016,7 +1018,9 @@ extern qboolean Sys_LowPhysicalMemory();
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "screenshotPNG", R_ScreenShotPNG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
+#ifdef JEDIACADEMY_GLOW
 	ri.Cmd_AddCommand( "r_atihack", R_AtiHackToggle_f );
+#endif
 	ri.Cmd_AddCommand("r_we", R_WorldEffect_f);
 	ri.Cmd_AddCommand( "imagecacheinfo", RE_RegisterImages_Info_f);
 #endif

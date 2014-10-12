@@ -775,7 +775,7 @@ extern	vec4_t		colorDkGrey;
 extern	vec4_t		colorLtBlue;
 extern	vec4_t		colorDkBlue;
 
-extern vec3_t defaultColors[10];
+extern const vec3_t defaultColors[10];
 int Q_parseColor( const char *p, const vec3_t numberColors[10], float *color );
 
 #define Q_COLOR_ESCAPE	'^'
