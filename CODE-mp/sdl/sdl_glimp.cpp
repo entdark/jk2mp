@@ -721,7 +721,7 @@ static void GLimp_InitExtensions( void )
 		ri.Cvar_Set( "r_ext_texture_filter_anisotropic_avail", "0" );
 	}
 
-	extension = "GL_EXT_clamp_to_edge";
+	extension = "GL_EXT_texture_edge_clamp";
 	glConfig.clampToEdgeAvailable = qfalse;
 	if ( GLimp_HaveExtension( extension ) )
 	{
