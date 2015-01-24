@@ -19,46 +19,37 @@ if (cpu STREQUAL "x86_64")
 	set(cpu "x86")
 endif()
 
-# set( CMAKE_C_COMPILER "${CMAKE_CXX_COMPILER}" )
-# set( CMAKE_C_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT}" )
-
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -g -O2")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-missing-braces")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-overflow")
-# 	# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wstrict-overflow=5")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result") # fixme!!
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-write-strings")
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -msse2 -mmmx")
-	check_c_compiler_flag(-Og cc_has_og)
-	if(cc_has_og)
-		set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Og")
-	endif()
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -Wall -g -O2 -msse2 -mmmx")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
 	if(NOT CMAKE_BUILD_TYPE)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 	endif()
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-overflow")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-missing-braces")
+# 	# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wstrict-overflow=5")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result") # fixme!!
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-write-strings")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -g -O2")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -Wall -g -O2 -msse2 -mmmx")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+	if(NOT CMAKE_BUILD_TYPE)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+	endif()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-overflow")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare")
 #	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-overflow=5")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result") # fixme!!
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-write-strings")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse2 -mmmx")
-	check_cxx_compiler_flag(-Og cxx_has_og)
-	if(cxx_has_og)
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
-	endif()
-	if(NOT CMAKE_BUILD_TYPE)
-		set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -march=native")
-	endif()
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -87,12 +78,11 @@ set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
 add_definitions( -D_M_IX86=1 )  # tested to mean little endian...
-add_definitions( -DNDEBUG )
 add_definitions( -D_JK2 )
-add_definitions( -D_JK2MP )
+add_definitions( -DFINAL_BUILD )
 add_definitions( -DDONT_TYPEDEF_INT32 )
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-	add_definitions( -DFINAL_BUILD )
+if(NOT CMAKE_BUILD_TYPE)
+	add_definitions( -DNDEBUG )
 endif()
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "mme")
@@ -102,9 +92,6 @@ include_directories(${SDL_INCLUDE_DIR})
 
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
-
-find_package(OpenAL REQUIRED)
-include_directories(${OPENAL_INCLUDE_DIR})
 
 # find_package(libmad REQUIRED)
 # include_directories(${LIBMAD_LIBRARY})
@@ -399,7 +386,6 @@ target_link_libraries(jomme
 	m pthread
 	${SDL_LIBRARY}
 	${OPENGL_gl_LIBRARY}
-	${OPENAL_LIBRARY}
 	${LIBMAD_LIBRARY}
 )
 

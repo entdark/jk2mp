@@ -119,6 +119,7 @@ static ID_INLINE float BigFloat(const float *l) { FloatSwap(l); }
 #define LittleFloat
 
 #define	PATH_SEP '\\'
+#define Q3_LITTLE_ENDIAN
 
 #endif
 
@@ -133,10 +134,13 @@ static ID_INLINE float BigFloat(const float *l) { FloatSwap(l); }
 
 #ifdef __ppc__
 #define CPUSTRING	"MacOSX-ppc"
+#define Q3_BIG_ENDIAN
 #elif defined __i386__
 #define CPUSTRING	"MacOSX-i386"
+#define Q3_LITTLE_ENDIAN
 #else
 #define CPUSTRING	"MacOSX-other"
+#define Q3_LITTLE_ENDIAN
 #endif
 
 #define	PATH_SEP	'/'
@@ -196,6 +200,8 @@ static inline int LittleLong (int l) { return LongSwap(l); }
 #define BigFloat
 static inline float LittleFloat (const float l) { return FloatSwap(&l); }
 
+#define Q3_BIG_ENDIAN
+
 #endif
 
 //======================= LINUX DEFINES =================================
@@ -215,6 +221,12 @@ static inline float LittleFloat (const float l) { return FloatSwap(&l); }
 #define	CPUSTRING	"linux-alpha"
 #else
 #define	CPUSTRING	"linux-other"
+#endif
+
+#if __FLOAT_WORD_ORDER == __BIG_ENDIAN
+#define Q3_BIG_ENDIAN
+#else
+#define Q3_LITTLE_ENDIAN
 #endif
 
 #define	PATH_SEP '/'
@@ -264,6 +276,12 @@ inline static float LittleFloat (const float *l) { return FloatSwap(l); }
 #define	CPUSTRING	"openbsd-other"
 #endif
 
+#if BYTE_ORDER == BIG_ENDIAN
+#define Q3_BIG_ENDIAN
+#else
+#define Q3_LITTLE_ENDIAN
+#endif
+
 #define	PATH_SEP '/'
 
 // bk001205 - try
@@ -306,6 +324,12 @@ inline static float LittleFloat (const float *l) { return FloatSwap(l); }
 #define CPUSTRING       "freebsd-other"
 #endif
 
+#if BYTE_ORDER == BIG_ENDIAN
+#define Q3_BIG_ENDIAN
+#else
+#define Q3_LITTLE_ENDIAN
+#endif
+
 #define	PATH_SEP '/'
 
 // bk010116 - omitted Q3STATIC (see Linux above), broken target
@@ -326,6 +350,12 @@ static int LittleLong (int l) { return LongSwap(l); }
 static float LittleFloat (const float *l) { return FloatSwap(l); }
 #endif
 
+#endif
+
+#if defined( Q3_BIG_ENDIAN ) && defined( Q3_LITTLE_ENDIAN )
+#error "Endianness defined as both big and little"
+#elif !defined( Q3_BIG_ENDIAN ) && !defined( Q3_LITTLE_ENDIAN )
+#error "Endianness not defined"
 #endif
 
 //=============================================================

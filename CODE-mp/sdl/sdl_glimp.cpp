@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "sdl_icon.h"
 #endif
 
-#define CLIENT_WINDOW_TITLE	"Jedi Knight 2: Jedi Outcast Movie Maker's Edition"
+#define CLIENT_WINDOW_TITLE	"Jedi Outcast Movie Maker's Edition"
 #define CLIENT_WINDOW_MIN_TITLE	"JOMME"
 
 /* Just hack it for now. */
@@ -444,9 +444,9 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder)
 					CLIENT_WINDOW_ICON.height,
 					CLIENT_WINDOW_ICON.bytes_per_pixel * 8,
 					CLIENT_WINDOW_ICON.bytes_per_pixel * CLIENT_WINDOW_ICON.width,
-#ifdef Q3_LITTLE_ENDIAN
+#if defined( Q3_LITTLE_ENDIAN )
 					0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000
-#else
+#elif defined( Q3_BIG_ENDIAN )
 					0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF
 #endif
 					);

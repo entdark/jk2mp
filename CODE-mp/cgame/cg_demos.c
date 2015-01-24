@@ -1066,7 +1066,7 @@ void demoPlaybackInit(void) {
 	demo.media.regularRain = trap_S_RegisterSound("sound/ambient/rain_mid");
 	demo.media.lightRain = trap_S_RegisterSound("sound/ambient/rain_light");
 
-	// trap_SetUserCmdValue( 0, 1.0f, 0.0f, 0.0f, 0.0f, 0, 0, qfalse );
+	trap_SetUserCmdValue( 0.0f, 1.0f, 0.0f, 0.0f );
 
 	trap_SendConsoleCommand("exec mmedemos.cfg\n");
 //	trap_Cvar_Set( "mov_captureName", "" );
