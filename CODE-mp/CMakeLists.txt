@@ -332,7 +332,7 @@ set(src_sdl
 	sdl/sdl_gamma.cpp
 	sdl/sdl_glimp.cpp
 	sdl/sdl_input.cpp
-	null/null_snddma.cpp
+	sdl/sdl_snd.cpp
 )
 
 set(src_botlib
