@@ -748,6 +748,164 @@ static void GLimp_InitExtensions( void )
 	{
 		ri.Printf( PRINT_ALL, "...GL_EXT_point_parameters not found\n" );
 	}
+
+#ifdef JEDIACADEMY_GLOW
+	extern bool g_bDynamicGlowSupported;
+	GLint iNumGeneralCombiners = 0;
+
+	// GL_NV_register_combiners
+	qglCombinerInputNV = NULL;
+	qglCombinerOutputNV = NULL;
+	qglFinalCombinerInputNV = NULL;
+	qglCombinerParameterfvNV = NULL;
+	qglCombinerParameteriNV = NULL;
+	if ( GLimp_HaveExtension( "GL_NV_register_combiners" ) )
+	{
+		if ( glConfig.maxActiveTextures > 1 ) {
+			ri.Printf( PRINT_ALL, "...using GL_NV_register_combiners\n" );
+			qglCombinerInputNV = ( PFNGLCOMBINERINPUTNVPROC ) SDL_GL_GetProcAddress( "glCombinerInputNV" );
+			qglCombinerOutputNV = ( PFNGLCOMBINEROUTPUTNVPROC ) SDL_GL_GetProcAddress( "glCombinerOutputNV" );
+			qglFinalCombinerInputNV = ( PFNGLFINALCOMBINERINPUTNVPROC ) SDL_GL_GetProcAddress( "glFinalCombinerInputNV" );
+			qglCombinerParameterfvNV = ( PFNGLCOMBINERPARAMETERFVNVPROC ) SDL_GL_GetProcAddress( "glCombinerParameterfvNV" );
+			qglCombinerParameteriNV = ( PFNGLCOMBINERPARAMETERINVPROC ) SDL_GL_GetProcAddress( "glCombinerParameteriNV" );
+
+			// Find out how many general combiners they have.
+			qglGetIntegerv( GL_MAX_GENERAL_COMBINERS_NV, &iNumGeneralCombiners );
+
+
+			if ( !qglCombinerInputNV || !qglCombinerOutputNV || !qglFinalCombinerInputNV
+			     || !qglCombinerParameterfvNV || !qglCombinerParameteriNV )
+			{
+				ri.Printf ( PRINT_ALL, "...GL_NV_register_combiners failed\n" );
+			}
+		}
+		else
+		{
+			ri.Printf ( PRINT_ALL, "...ignoring GL_NV_register_combiners\n" );
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_NV_register_combiners not found\n" );
+	}
+
+	// GL_ARB_vertex_program
+	qboolean bARBVertexProgram;
+	if ( GLimp_HaveExtension( "GL_ARB_vertex_program" ) )
+	{
+		bARBVertexProgram = qtrue;
+	}
+	else
+	{
+		bARBVertexProgram = qfalse;
+		ri.Printf ( PRINT_ALL, "...GL_ARB_vertex_program not found\n" );
+	}
+
+	// GL_ARB_fragment_program
+	qboolean bARBFragmentProgram;
+	if ( GLimp_HaveExtension( "GL_ARB_fragment_program" ) )
+	{
+		bARBFragmentProgram = qtrue;
+	}
+	else
+	{
+		bARBFragmentProgram = qfalse;
+		ri.Printf ( PRINT_ALL, "...GL_ARB_fragment_program not found\n" );
+	}
+
+	// If we support one or the other, load the shared function pointers.
+	qglBindProgramARB = NULL;
+	qglDeleteProgramsARB = NULL;
+	qglGenProgramsARB = NULL;
+	qglProgramEnvParameter4fARB = NULL;
+	qglProgramStringARB = NULL;
+	if ( bARBVertexProgram || bARBFragmentProgram )
+	{
+		if ( bARBVertexProgram )
+			ri.Printf( PRINT_ALL, "...using GL_ARB_vertex_program\n" );
+		else
+			ri.Printf( PRINT_ALL, "...using GL_ARB_fragment_program\n" );
+
+		qglBindProgramARB = ( PFNGLBINDPROGRAMARBPROC ) SDL_GL_GetProcAddress( "glBindProgramARB" );
+		qglDeleteProgramsARB = ( PFNGLDELETEPROGRAMSARBPROC ) SDL_GL_GetProcAddress( "glDeleteProgramsARB" );
+		qglGenProgramsARB = ( PFNGLGENPROGRAMSARBPROC ) SDL_GL_GetProcAddress( "glGenProgramsARB" );
+		qglProgramEnvParameter4fARB = ( PFNGLPROGRAMENVPARAMETER4FARBPROC ) SDL_GL_GetProcAddress( "glProgramEnvParameter4fARB" );
+		qglProgramStringARB = ( PFNGLPROGRAMSTRINGARBPROC ) SDL_GL_GetProcAddress( "glProgramStringARB" );
+		if (!qglBindProgramARB || !qglDeleteProgramsARB || !qglGenProgramsARB
+		    || !qglProgramEnvParameter4fARB || !qglProgramStringARB )
+		{
+			if ( bARBVertexProgram )
+				ri.Printf ( PRINT_ALL, "...ignoring GL_ARB_vertex_program\n" );
+			else
+				ri.Printf ( PRINT_ALL, "...ignoring GL_ARB_fragment_program\n" );
+
+			bARBVertexProgram = qfalse;
+			bARBFragmentProgram = qfalse;
+			//clear ptrs that get checked
+			qglGenProgramsARB = NULL;
+			qglProgramEnvParameter4fARB = NULL;
+
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_ARB_vertex_program GL_ARB_fragment_program not found\n" );
+	}
+
+	// GL_ARB_vertex_buffer_object
+	qglBindBufferARB = NULL;
+	qglBufferDataARB = NULL;
+	qglGenBuffersARB = NULL;
+	qglMapBufferARB = NULL;
+	qglUnmapBufferARB = NULL;
+	if ( GLimp_HaveExtension( "GL_ARB_vertex_buffer_object" ) )
+	{
+		ri.Printf( PRINT_ALL, "...using GL_ARB_vertex_buffer_object\n" );
+		qglBindBufferARB = ( PFNGLBINDBUFFERARBPROC ) SDL_GL_GetProcAddress ( "glBindBufferARB" );
+		qglBufferDataARB = ( PFNGLBUFFERDATAARBPROC ) SDL_GL_GetProcAddress ( "glBufferDataARB" );
+		qglGenBuffersARB = ( PFNGLGENBUFFERSARBPROC ) SDL_GL_GetProcAddress ( "glGenBuffersARB" );
+		qglMapBufferARB = ( PFNGLMAPBUFFERARBPROC ) SDL_GL_GetProcAddress ( "glMapBufferARB" );
+		qglUnmapBufferARB = ( PFNGLUNMAPBUFFERARBPROC ) SDL_GL_GetProcAddress ( "glUnmapBufferARB" );
+		if ( !qglBindBufferARB || !qglBufferDataARB || !qglGenBuffersARB
+		     || !qglMapBufferARB || !qglUnmapBufferARB )
+		{
+			ri.Error (ERR_FATAL, "bad getprocaddress");
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_ARB_vertex_buffer_object not found\n" );
+	}
+
+	// Figure out which texture rectangle extension to use.
+	qboolean bTexRectSupported = qfalse;
+	if ( Q_stricmpn( glConfig.vendor_string, "ATI Technologies",16 )==0
+		&& Q_stricmpn( glConfig.version_string, "1.3.3",5 )==0 
+		&& glConfig.version_string[5] < '9' ) //1.3.34 and 1.3.37 and 1.3.38 are broken for sure, 1.3.39 is not
+	{
+		g_bTextureRectangleHack = true;
+	}
+
+	if ( GLimp_HaveExtension( "GL_NV_texture_rectangle" ) || GLimp_HaveExtension( "GL_EXT_texture_rectangle" ) )
+	{
+		bTexRectSupported = qtrue;
+	}
+
+	// Only allow dynamic glows/flares if they have the hardware
+	if ( bTexRectSupported && bARBVertexProgram && glConfig.maxActiveTextures >= 4 &&
+		( iNumGeneralCombiners >= 2 || bARBFragmentProgram ) )
+	{
+		g_bDynamicGlowSupported = true;
+		// this would overwrite any achived setting gwg
+		// ri.Cvar_Set( "r_DynamicGlow", "1" );
+	}
+	else
+	{
+		g_bDynamicGlowSupported = false;
+		ri.Cvar_Set( "r_DynamicGlow","0" );
+	}
+
+#endif // JEDIACADEMY_GLOW
 }
 
 #define R_MODE_FALLBACK 3 // 640 * 480

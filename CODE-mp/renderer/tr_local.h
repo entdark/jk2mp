@@ -19,9 +19,7 @@ long myftol( float f );
 #define	myftol(x) ((int)(x))
 #endif
 
-#ifndef QSDL
 #define JEDIACADEMY_GLOW
-#endif
 
 // everything that is needed by the backend needs
 // to be double buffered to allow it to run in
