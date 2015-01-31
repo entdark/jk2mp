@@ -32,6 +32,10 @@
 
 #include "linux_local.h" // bk001204
 
+#ifndef DEIDCATED
+#	include <SDL.h>
+#endif
+
 cvar_t *nostdout;
 
 // Structure containing functions exported from refresh DLL
@@ -101,8 +105,7 @@ Restart the input subsystem
 */
 void Sys_In_Restart_f( void ) 
 {
-	IN_Shutdown();
-	IN_Init();
+	IN_Restart();
 }
 
 void Sys_ConsoleOutput (char *string)
@@ -138,18 +141,17 @@ void Sys_Printf (char *fmt, ...)
 	}
 }
 
-// bk010104 - added for abstraction
-void Sys_Exit( int ex ) {
-#ifdef NDEBUG // regular behavior
-  // We can't do this 
-  //  as long as GL DLL's keep installing with atexit...
-  //exit(ex);
-  _exit(ex);
-#else
-  // Give me a backtrace on error exits.
-  assert( ex == 0 );
-  exit(ex);
+static __attribute__ ((noreturn)) void Sys_Exit( int exitCode ) {
+#ifndef DEIDCATED
+	SDL_Quit();
 #endif
+
+	NET_Shutdown();
+
+#ifndef NDEBUG // Give me a backtrace on error exits.
+	assert( exitCode == 0 );
+#endif
+	exit(exitCode);
 }
 
 
@@ -1015,10 +1017,6 @@ sysEvent_t Sys_GetEvent( void ) {
 		return eventQue[ ( eventTail - 1 ) & MASK_QUED_EVENTS ];
 	}
 
-	// pump the message loop
-	// in vga this calls KBD_Update, under X, it calls GetEvent
-	Sys_SendKeyEvents ();
-
 	// check for console commands
 	s = Sys_ConsoleInput();
 	if ( s ) {
@@ -1074,7 +1072,26 @@ void Sys_AppActivate (void)
 
 char *Sys_GetClipboardData(void)
 {
-	return NULL;
+#ifdef DEDICATED
+        return NULL;
+#else
+        char *data = NULL;
+        char *cliptext;
+
+        if ( ( cliptext = SDL_GetClipboardText() ) != NULL ) {
+                if ( cliptext[0] != '\0' ) {
+                        size_t bufsize = strlen( cliptext ) + 1;
+
+                        data = (char *)Z_Malloc( bufsize, TAG_CLIPBOARD );
+                        Q_strncpyz( data, cliptext, bufsize );
+
+                        // find first listed char and set to '\0'
+                        strtok( data, "\n\r\b" );
+                }
+                SDL_free( cliptext );
+        }
+        return data;
+#endif
 }
 
 void	Sys_Print( const char *msg )

@@ -2387,11 +2387,13 @@ void R_SetColorMappings( void ) {
 		tr.overbrightBits = 0;		// need hardware gamma for overbright
 	}
 
+#ifndef QSDL
 	// never overbright in windowed mode
 	if ( !glConfig.isFullscreen ) 
 	{
 		tr.overbrightBits = 0;
 	}
+#endif
 
 	if ( tr.overbrightBits > 1 ) {
 		tr.overbrightBits = 1;

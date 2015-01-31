@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
 
 project(jomme)
 
@@ -21,7 +22,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -Wall -g -O2 -msse2 -mmmx")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Og")
 	if(NOT CMAKE_BUILD_TYPE)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 	endif()
@@ -37,7 +38,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -Wall -g -O2 -msse2 -mmmx")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 	if(NOT CMAKE_BUILD_TYPE)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 	endif()
@@ -48,8 +49,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 #	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-overflow=5")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result") # fixme!!
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-write-strings")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
+	set_source_files_properties(png/png.cpp PROPERTIES COMPILE_FLAGS "-Wno-multichar")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -79,16 +81,20 @@ set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
 add_definitions( -D_M_IX86=1 )  # tested to mean little endian...
 add_definitions( -D_JK2 )
-add_definitions( -DFINAL_BUILD )
+add_definitions( -DQSDL )
+add_definitions( -DUSE_ICON )
 add_definitions( -DDONT_TYPEDEF_INT32 )
-if(NOT CMAKE_BUILD_TYPE)
+add_definitions( -DFINAL_BUILD )
+if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	add_definitions( -DNDEBUG )
+else()
+	set(suffix "-debug")
 endif()
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "mme")
 
-find_package (SDL REQUIRED)
-include_directories(${SDL_INCLUDE_DIR})
+find_package (SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIR})
 
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
@@ -320,13 +326,13 @@ set(src_unix_common
 set(src_main_unix
 	${src_unix_common}
 	unix/unix_glimp_common.cpp
-	null/null_snddma.cpp
 )
 
 set(src_sdl
 	sdl/sdl_gamma.cpp
 	sdl/sdl_glimp.cpp
 	sdl/sdl_input.cpp
+	null/null_snddma.cpp
 )
 
 set(src_botlib
@@ -376,21 +382,21 @@ set(src_jomme
 	${src_sdl}
 )
 
-add_executable(jomme
+add_executable(jomme${suffix}
 	${src_jomme}
 )
 
-set_target_properties(jomme PROPERTIES COMPILE_DEFINITIONS "_JK2EXE;_FF_DISABLE;BOTLIB")
+set_target_properties(jomme${suffix} PROPERTIES COMPILE_DEFINITIONS "_JK2EXE;_FF_DISABLE;BOTLIB")
 
-target_link_libraries(jomme
+target_link_libraries(jomme${suffix}
 	m pthread
-	${SDL_LIBRARY}
+	${SDL2_LIBRARY}
 	${OPENGL_gl_LIBRARY}
 	${LIBMAD_LIBRARY}
 )
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-	target_link_libraries(jomme dl)
+	target_link_libraries(jomme${suffix} dl)
 endif()
 
 set(src_ui_game
@@ -410,13 +416,13 @@ set(src_ui_ui
 	ui/ui_syscalls.c
 )
 
-add_library(ui${cpu} SHARED
+add_library(ui${cpu}${suffix} SHARED
 	${src_ui_game}
 	${src_ui_ui}
 )
 
-set_target_properties(ui${cpu} PROPERTIES PREFIX "")
-set_target_properties(ui${cpu} PROPERTIES COMPILE_DEFINITIONS "_USRDL;UI_EXPORTS;MISSIONPACK")
+set_target_properties(ui${cpu}${suffix} PROPERTIES PREFIX "")
+set_target_properties(ui${cpu}${suffix} PROPERTIES COMPILE_DEFINITIONS "_USRDL;UI_EXPORTS;MISSIONPACK")
 
 set(src_cgame_cgame
 	cgame/bg_demos.c
@@ -482,14 +488,14 @@ set(src_cgame_ui
 	ui/ui_shared.c
 )
 
-add_library(cgame${cpu} SHARED
+add_library(cgame${cpu}${suffix} SHARED
 	${src_cgame_cgame}
 	${src_cgame_game}
 	${src_cgame_ui}
 )
 
-set_target_properties(cgame${cpu} PROPERTIES PREFIX "")
-set_target_properties(cgame${cpu} PROPERTIES COMPILE_DEFINITIONS "CGAME;MISSIONPACK")
+set_target_properties(cgame${cpu}${suffix} PROPERTIES PREFIX "")
+set_target_properties(cgame${cpu}${suffix} PROPERTIES COMPILE_DEFINITIONS "CGAME;MISSIONPACK")
 
 set(src_game_game
 	game/ai_main.c
@@ -532,9 +538,9 @@ set(src_game_game
 	game/w_saber.c
 )
 
-add_library(jk2mpgame${cpu} SHARED
+add_library(jk2mpgame${cpu}${suffix} SHARED
 	${src_game_game}
 )
 
-set_target_properties(jk2mpgame${cpu} PROPERTIES PREFIX "")
-set_target_properties(jk2mpgame${cpu} PROPERTIES COMPILE_DEFINITIONS "QAGAME;MISSIONPACK")
+set_target_properties(jk2mpgame${cpu}${suffix} PROPERTIES PREFIX "")
+set_target_properties(jk2mpgame${cpu}${suffix} PROPERTIES COMPILE_DEFINITIONS "QAGAME;MISSIONPACK")
