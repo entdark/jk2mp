@@ -3467,6 +3467,8 @@ static void CG_PlayerFlag( centity_t *cent, qhandle_t hModel ) {
 	AnglesToAxis(angles, axis);
 
 	memset( &ent, 0, sizeof( ent ) );
+	if ( mov_wallhack.integer & movMaskFlags && cg.demoPlayback )
+		ent.renderfx |= RF_DEPTHHACK;
 	VectorMA( boltOrg, 24, axis[0], ent.origin );
 
 	angles[ROLL] += 20;
@@ -6447,7 +6449,6 @@ void SmoothTrueView(vec3_t eyeAngles) {
 	qboolean	eyeRange = qtrue;
 	qboolean	UseRefDef = qfalse;
 	qboolean	DidSpecial = qfalse;
-	refdef_t	*refdef = &cg.refdef;//CG_GetRefdef();
 
 	if (!cg.playerCent)
 		return;
@@ -6979,7 +6980,6 @@ void CG_Player( centity_t *cent ) {
 	qboolean		dead = qfalse;
 	vec3_t			rootAngles;
 	refEntity_t		seeker;
-	float			angle;
 	vec3_t			angles, dir, elevated, enang, seekorg;
 	int				iwantout = 0, successchange = 0;
 	int				team;
@@ -7161,11 +7161,13 @@ void CG_Player( centity_t *cent ) {
 				return;
 			}
 		}
+		if (mov_wallhack.integer & movMaskClient && cg.demoPlayback) {
+			renderfx |= RF_DEPTHHACK;
+		}
 	} else if (mov_filterMask.integer & movMaskPlayers) {
 		return;
-	}
-	if (mov_wallhack.integer && cg.demoPlayback) {
-		renderfx |= RF_NODEPTH;
+	} else if (mov_wallhack.integer & movMaskPlayers && cg.demoPlayback) {
+		renderfx |= RF_DEPTHHACK;
 	}
 
 	// Update the player's client entity information regarding weapons.

@@ -1277,6 +1277,7 @@ handles will be invalid
 void CL_Snd_Restart_f( void ) {
 	S_Shutdown();
 	S_Init();
+	S_BeginRegistration();	
 
 //	CL_Vid_Restart_f();
 }
@@ -2398,7 +2399,7 @@ void CL_InitRef( void ) {
 	ri.CM_PointContents = CM_PointContents;
 
 	//mme
-	ri.S_MMEAviExport = S_MMEAviExport;
+	ri.S_MMEAviImport = S_MMEAviImport;
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );
 
@@ -2590,7 +2591,7 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("cinematic", CL_PlayCinematic_f);
 	Cmd_AddCommand ("stoprecord", CL_StopRecord_f);
 	cvar_t *fs_game = Cvar_FindVar("fs_game");
-	if (!(fs_game && !Q_stricmp(fs_game->string, "mme")))
+	if (!(fs_game && !Q_stricmpn(fs_game->string, "mme", 3)))
 		Cmd_AddCommand ("connect", CL_Connect_f);
 	Cmd_AddCommand ("reconnect", CL_Reconnect_f);
 	Cmd_AddCommand ("localservers", CL_LocalServers_f);

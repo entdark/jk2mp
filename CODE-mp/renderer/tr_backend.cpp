@@ -1378,9 +1378,6 @@ void RB_ShowImages( void ) {
 
 }
 
-qboolean finishStereo = qfalse;
-qboolean r_capturingDofOrStereo = qfalse;
-qboolean r_latestDofOrStereoFrame = qfalse;
 /*
 =============
 RB_SwapBuffers
@@ -1406,11 +1403,11 @@ const void	*RB_SwapBuffers( const void *data ) {
 	
 	backEnd.projection2D = qfalse;
 
-	r_capturingDofOrStereo = qfalse;
-	r_latestDofOrStereoFrame = qfalse;
+	tr.capturingDofOrStereo = qfalse;
+	tr.latestDofOrStereoFrame = qfalse;
 
 	/* Take and merge DOF frames */
-	if ( r_stereoSeparation->value <= 0.0f && !finishStereo) {
+	if ( r_stereoSeparation->value <= 0.0f && !tr.finishStereo) {
 		if ( R_MME_MultiPassNext() ) {
 			return (const void *)NULL;
 		}
@@ -1438,25 +1435,25 @@ const void	*RB_SwapBuffers( const void *data ) {
 	}
 
 	/* Allow MME to take a screenshot */
-	if ( r_stereoSeparation->value < 0.0f && finishStereo) {
-		r_capturingDofOrStereo = qtrue;
-		r_latestDofOrStereoFrame = qtrue;
+	if ( r_stereoSeparation->value < 0.0f && tr.finishStereo) {
+		tr.capturingDofOrStereo = qtrue;
+		tr.latestDofOrStereoFrame = qtrue;
 		Cvar_SetValue("r_stereoSeparation", -r_stereoSeparation->value);
 		return (const void *)NULL;
 	} else if ( r_stereoSeparation->value <= 0.0f) {
 		if ( R_MME_TakeShot( ) && r_stereoSeparation->value != 0.0f) {
-			r_capturingDofOrStereo = qtrue;
-			r_latestDofOrStereoFrame = qfalse;
+			tr.capturingDofOrStereo = qtrue;
+			tr.latestDofOrStereoFrame = qfalse;
 			Cvar_SetValue("r_stereoSeparation", -r_stereoSeparation->value);
-			finishStereo = qtrue;
+			tr.finishStereo = qtrue;
 			return (const void *)NULL;
 		}
 	} else if ( r_stereoSeparation->value > 0.0f) {
-		if ( finishStereo) {
+		if ( tr.finishStereo) {
 			R_MME_TakeShotStereo( );
 			R_MME_DoNotTake( );
 			Cvar_SetValue("r_stereoSeparation", -r_stereoSeparation->value);
-			finishStereo = qfalse;
+			tr.finishStereo = qfalse;
 		}
 	}
 

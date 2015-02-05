@@ -574,7 +574,8 @@ getFlash:
 	memset (&flash, 0, sizeof(flash));
 	CG_PositionEntityOnTag( &flash, &gun, gun.hModel, "tag_flash");
 
-	VectorCopy(flash.origin, cg.lastFPFlashPoint);
+	if (!thirdPerson && !cg.zoomMode && cg.playerCent && cg.playerCent == cent)
+		VectorCopy(flash.origin, cg.lastFPFlashPoint);
 	if (cg.zoomMode)
 		return;
 

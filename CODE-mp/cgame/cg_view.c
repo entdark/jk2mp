@@ -1605,7 +1605,7 @@ Generates and draws a game scene and status information at the given time.
 */
 extern void CG_SetPredictedThirdPerson(void);
 extern void trap_S_UpdateScale( float scale );
-void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback ) {
+void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, int demoPlayback ) {
 	int		inwater;
 
 	cg.time = serverTime;

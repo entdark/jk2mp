@@ -593,7 +593,7 @@ int CL_CgameSystemCalls( int *args ) {
 		return re.MarkFragments( args[1], (const vec3_t *)VMA(2), (const float *)VMA(3), args[4], (float *)VMA(5), args[6], (markFragment_t *)VMA(7) );
 	case CG_S_MUTESOUND:
 		{cvar_t *fs_game = Cvar_FindVar("fs_game");
-		if (fs_game && !Q_stricmp(fs_game->string, "mme")) {
+		if (fs_game && !Q_stricmpn(fs_game->string, "mme", 3)) {
 			S_StopSound(args[1], args[2], args[3] );
 		} else {
 			S_StopSound(args[1], args[2], -1 );
@@ -651,7 +651,7 @@ int CL_CgameSystemCalls( int *args ) {
 		{float ox, oy;
 		cvar_t *fs_game;
 		fs_game = Cvar_FindVar("fs_game");
-		if (fs_game && !Q_stricmp(fs_game->string, "mme")) {
+		if (fs_game && !Q_stricmpn(fs_game->string, "mme", 3)) {
 			ox = VMF(1); oy = VMF(2);
 		} else {
 			ox = args[1]; oy = args[2];
@@ -908,7 +908,7 @@ int CL_CgameSystemCalls( int *args ) {
 	case CG_FX_ADJUST_TIME:
 		{cvar_t *fs_game;
 		fs_game = Cvar_FindVar("fs_game");
-		if (fs_game && !Q_stricmp(fs_game->string, "mme")) {
+		if (fs_game && !Q_stricmpn(fs_game->string, "mme", 3)) {
 			FX_AdjustTime_Pos(args[1], VMF(2), VMF(3),(float *)VMA(4),(vec3_t *)VMA(5));
 		} else {
 			FX_AdjustTime_Pos(args[1], 50.0f, 0.0f,(float *)VMA(4),(vec3_t *)VMA(5));

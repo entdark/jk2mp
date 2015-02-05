@@ -1128,6 +1128,10 @@ typedef struct {
 	float					sawToothTable[FUNCTABLE_SIZE];
 	float					inverseSawToothTable[FUNCTABLE_SIZE];
 	float					fogTable[FOG_TABLE_SIZE];
+
+	qboolean finishStereo;
+	qboolean capturingDofOrStereo;
+	qboolean latestDofOrStereoFrame;
 } trGlobals_t;
 
 
@@ -1991,7 +1995,4 @@ void R_MME_DoNotTake( );
 
 void R_MME_TimeFraction(float timeFraction);
 
-extern qboolean finishStereo;
-extern qboolean r_capturingDofOrStereo;
-extern qboolean r_latestDofOrStereoFrame;
 extern bool g_bTextureRectangleHack;

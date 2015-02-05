@@ -175,13 +175,13 @@ int R_MME_MultiPassNextStereo( ) {
 	R_MME_GetShot( outAlign );
 	R_MME_BlurAccumAdd( &passData.dof, outAlign );
 	
-	r_capturingDofOrStereo = qtrue;
+	tr.capturingDofOrStereo = qtrue;
 
 	ri.Hunk_FreeTempMemory( outAlloc );
 	if ( ++(control->totalIndex) < control->totalFrames ) {
 		int nextIndex = control->totalIndex;
 		if ( ++(nextIndex) >= control->totalFrames )
-			r_latestDofOrStereoFrame = qtrue;
+			tr.latestDofOrStereoFrame = qtrue;
 		return 1;
 	}
 	control->totalIndex = 0;
@@ -464,7 +464,7 @@ void R_MME_CaptureStereo( const char *shotName, float fps, float focus, float ra
 	if ( !cmd ) {
 		return;
 	}
-	r_capturingDofOrStereo = qtrue;
+	tr.capturingDofOrStereo = qtrue;
 	cmd->commandId = RC_CAPTURE_STEREO;
 	cmd->fps = fps;
 	cmd->focus = focus;

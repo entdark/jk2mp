@@ -163,11 +163,12 @@ void CG_SetPredictedThirdPerson(void) {
 
 static int demoSetupView( void) {
 	vec3_t forward;
-	qboolean zoomFix;	//to see disruptor zoom when we are chasing a player
+	qboolean zoomFix = qfalse;	//to see disruptor zoom when we are chasing a player
 	int inwater = qfalse;
 	int	contents = 0;
 	qboolean behindView = qfalse;
 
+	cg.zoomMode = qfalse;
 	cg.trueView = qfalse;
 	cg.playerPredicted = qfalse;
 	cg.playerCent = 0;
@@ -215,7 +216,6 @@ static int demoSetupView( void) {
 			} else {
 				VectorCopy( cent->lerpOrigin, demo.viewOrigin );
 				VectorCopy( cent->lerpAngles, demo.viewAngles );
-				zoomFix = qfalse;
 			}
 			demo.viewFov = cg_fov.value;
 		} else {
@@ -226,7 +226,6 @@ static int demoSetupView( void) {
 			demo.viewFov = cg_fov.value;
 			demo.viewTarget = demo.chase.target;
 			cg.renderingThirdPerson = qtrue;
-			zoomFix = qfalse;
 			gCGHasFallVector = qfalse;
 		}
 		break;
@@ -238,7 +237,6 @@ static int demoSetupView( void) {
 		demo.viewTarget = demo.camera.target;
 		cg.renderingThirdPerson = qtrue;
 		cameraMove();
-		zoomFix = qfalse;
 		gCGHasFallVector = qfalse;
 		break;
 	default:
@@ -593,8 +591,10 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 			cg.chatItems[i].time = 0;
 		for (i = 0; i < MAX_CLIENTS && mov_dismember.integer; i++)
 			CG_ReattachLimb(&cg_entities[i]);
+		CG_LoadDeferredPlayers();
 	} else if (cg.frametime > 100) {
 		hadSkip = qtrue;
+		CG_LoadDeferredPlayers();
 	} else {
 		hadSkip = qfalse;
 	}
@@ -658,6 +658,8 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		cg.rainNumber = 0;
 		cg.rainTime = INT_MAX;
 	}
+	
+	VectorClear(cg.lastFPFlashPoint);
 
 	CG_CalcScreenEffects();
 		

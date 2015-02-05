@@ -1365,6 +1365,9 @@ Ghoul2 Insert End
 		{
 			ent.renderfx |= RF_FORCE_ENT_ALPHA;
 		}
+		if (mov_wallhack.integer & movMaskItems && cg.demoPlayback) {
+			ent.renderfx |= RF_DEPTHHACK;
+		}
 
 		if ( es->eFlags & EF_ITEMPLACEHOLDER )
 		{
@@ -1582,6 +1585,9 @@ Ghoul2 Insert End
 		ent.shaderRGBA[2] = 85;
 		ent.customShader = cgs.media.itemRespawningPlaceholder;
 	}
+	if (mov_wallhack.integer & movMaskItems && cg.demoPlayback) {
+		ent.renderfx |= RF_DEPTHHACK;
+	}
 
 	// increase the size of the weapons when they are presented as items
 	if ( item->giType == IT_WEAPON ) {
@@ -1650,6 +1656,9 @@ Ghoul2 Insert End
 		*/
 
 		ent.renderfx |= RF_RGB_TINT;
+		if (mov_wallhack.integer & movMaskItems && cg.demoPlayback) {
+			ent.renderfx |= RF_DEPTHHACK;
+		}
 		ent.shaderRGBA[0] = 0;
 		ent.shaderRGBA[1] = 200;
 		ent.shaderRGBA[2] = 85;
@@ -1842,6 +1851,9 @@ Ghoul2 Insert End
 	// flicker between two skins
 	ent.skinNum = cg.clientFrame & 1;
 	ent.renderfx = /*weapon->missileRenderfx | */RF_NOSHADOW;
+	if (mov_wallhack.integer & movMaskMissiles && cg.demoPlayback) {
+		ent.renderfx |= RF_DEPTHHACK;
+	}
 
 	if (s1->weapon != WP_SABER && s1->weapon != G2_MODEL_PART)
 	{
