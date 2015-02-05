@@ -987,7 +987,7 @@ void demoCameraCommand_f(void) {
 		demo.play.time = point->time;
 		demo.play.fraction = 0;
 	} else if (!Q_stricmp(cmd, "lock")) {
-		demo.camera.locked = !demo.camera.locked;
+		demo.camera.locked = (qboolean) !demo.camera.locked;
 		if (demo.camera.locked) 
 			CG_DemosAddLog("Camera view locked");
 		else 
@@ -1071,9 +1071,9 @@ void demoCameraCommand_f(void) {
 		demoCommandValue( CG_Argv(2), oldFov );
 	} else if (!Q_stricmp(cmd, "smoothPos")) {
 		int index = atoi( CG_Argv(2));
-		demoCameraPoint_t *point;	
+		demoCameraPoint_t *point;
 		if ( index >= 0 && index < posLast) {
-			demo.camera.smoothPos = index;
+			demo.camera.smoothPos = (posInterpolate_t) index;
 		} else {
 			Com_Printf("Illegal value %d, 0 - %d\n", index, posLast -1 );
 			return;

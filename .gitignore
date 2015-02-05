@@ -170,5 +170,8 @@ pip-log.txt
 #############
 ## Unix
 #############
+build
+build-release
+build-debug
 *.o
 *.so

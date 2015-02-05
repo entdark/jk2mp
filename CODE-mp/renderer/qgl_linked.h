@@ -333,4 +333,3 @@
 #define qglVertex4sv glVertex4sv
 #define qglVertexPointer glVertexPointer
 #define qglViewport glViewport
-

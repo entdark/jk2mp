@@ -5,8 +5,8 @@
 #ifdef SUPPORT_PNG
 //#include <png.h>
 //#include "png.h"
-#include "libpng/png.h"
-#include "zlib/zlib.h"
+#include "../libpng/png.h"
+#include "../zlib/zlib.h"
 //#pragma comment (lib, "libpng.lib")
 //#pragma comment (lib, "zlib.lib")
 #endif

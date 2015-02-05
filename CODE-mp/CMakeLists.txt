@@ -7,42 +7,56 @@ project(jomme)
 set(cpu ${CMAKE_SYSTEM_PROCESSOR})
 if (cpu MATCHES "i.86")
 	set(cpu "x86")
-elseif(cpu STREQUAL "x86_64")
-	set(cpu "amd64")
 endif()
 
 # until amd64 works...
-if (cpu MATCHES "amd64")
+if (cpu STREQUAL "x86_64")
+	set(CMAKE_LIBRARY_PATH  "/usr/lib32")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
-	set(cpu, "x86")
+	set(CMAKE_C_SIZEOF_DATA_PTR 4) # Forces correct output format for NASM
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -m32")
+	set(cpu "x86")
 endif()
 
-if(CMAKE_COMPILER_IS_GNUC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -O2")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -fno-strict-overflow")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-unknown-pragmas")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-write-strings -Wno-missing-braces")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-switch -Wno-comment")
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -Wall -g -O2 -msse2 -mmmx")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
+	if(NOT CMAKE_BUILD_TYPE)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+	endif()
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-overflow")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-missing-braces")
+# 	# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wstrict-overflow=5")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result") # fixme!!
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-multichar")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-write-strings")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -O2")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing -fno-strict-overflow")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unknown-pragmas")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-write-strings -Wno-missing-braces")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-switch -Wno-comment")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -Wall -g -O2 -msse2 -mmmx")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+	if(NOT CMAKE_BUILD_TYPE)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+	endif()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-overflow")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare")
+#	# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-overflow=5")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result") # fixme!!
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-but-set-variable")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-write-strings")
 endif()
 
+if(CMAKE_COMPILER_IS_GNUCC)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unknown-pragmas")
+endif()
 if(CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-pragmas")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -64,11 +78,14 @@ set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
 add_definitions( -D_M_IX86=1 )  # tested to mean little endian...
-add_definitions( -D_IMMERSION_DISABLE )
-add_definitions( -DNDEBUG )
-add_definitions( -DFINAL_BUILD )
 add_definitions( -D_JK2 )
-add_definitions( -D_JK2MP )
+add_definitions( -DFINAL_BUILD )
+add_definitions( -DDONT_TYPEDEF_INT32 )
+if(NOT CMAKE_BUILD_TYPE)
+	add_definitions( -DNDEBUG )
+endif()
+
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "mme")
 
 find_package (SDL REQUIRED)
 include_directories(${SDL_INCLUDE_DIR})
@@ -76,11 +93,8 @@ include_directories(${SDL_INCLUDE_DIR})
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
-find_package(OpenAL REQUIRED)
-include_directories(${OPENAL_INCLUDE_DIR})
-
-find_package(libmad REQUIRED)
-include_directories(${LIBMAD_LIBRARY})
+# find_package(libmad REQUIRED)
+# include_directories(${LIBMAD_LIBRARY})
 
 set(src_main_client
 	client/FXExport.cpp
@@ -96,16 +110,17 @@ set(src_main_client
 	client/cl_input.cpp
 	client/cl_keys.cpp
 	client/cl_main.cpp
+	client/cl_mme.cpp
 	client/cl_net_chan.cpp
 	client/cl_parse.cpp
 	client/cl_scrn.cpp
 	client/cl_ui.cpp
-	client/snd_demos.cpp
 	client/snd_dma.cpp
+	client/snd_effects.cpp
+	client/snd_main.cpp
 	client/snd_mem.cpp
 	client/snd_mix.cpp
 	client/snd_mme.cpp
-	client/snd_mp3.cpp
 )
 
 set(src_main_encryption
@@ -161,29 +176,6 @@ set(src_main_jpeg
 	jpeg-6/jutils.cpp
 )
 
-set(src_main_mp3code
-	mp3code/cdct.c
-	mp3code/csbt.c
-	mp3code/csbtb.c
-	mp3code/csbtL3.c
-	mp3code/cup.c
-	mp3code/cupini.c
-	mp3code/cupL1.c
-	mp3code/cupl3.c
-	mp3code/cwin.c
-	mp3code/cwinb.c
-	mp3code/cwinm.c
-	mp3code/hwin.c
-	mp3code/l3dq.c
-	mp3code/l3init.c
-	mp3code/mdct.c
-	mp3code/mhead.c
-	mp3code/msis.c
-	mp3code/towave.c
-	mp3code/uph.c
-	mp3code/upsf.c
-	mp3code/wavep.c
-)
 
 set(src_main_png
 	png/rpng.cpp
@@ -260,6 +252,7 @@ set(src_main_renderer
 	renderer/tr_mme.cpp
  	renderer/tr_mme_avi.cpp
 	renderer/tr_mme_common.cpp
+	renderer/tr_mme_font.cpp
 	renderer/tr_mme_sse2.cpp
 	renderer/tr_mme_stereo.cpp
 	renderer/tr_noise.cpp
@@ -372,7 +365,6 @@ set(src_jomme
 	${src_main_encryption}
 	${src_main_ghoul2}
 	${src_main_jpeg}
-	${src_main_mp3code}
 	${src_main_png}
 	${src_main_libpng}
 	${src_main_qcommon}
@@ -394,7 +386,6 @@ target_link_libraries(jomme
 	m pthread
 	${SDL_LIBRARY}
 	${OPENGL_gl_LIBRARY}
-	${OPENAL_LIBRARY}
 	${LIBMAD_LIBRARY}
 )
 
@@ -433,10 +424,13 @@ set(src_cgame_cgame
 	cgame/cg_demos.c
 	cgame/cg_demos_camera.c
 	cgame/cg_demos_capture.c
+	cgame/cg_demos_dism.c
+	cgame/cg_demos_dof.c
 	cgame/cg_demos_hud.c
 	cgame/cg_demos_line.c
 	cgame/cg_demos_math.c
 	cgame/cg_demos_move.c
+	cgame/cg_demos_weather.c
 	cgame/cg_draw.c
 	cgame/cg_drawtools.c
 	cgame/cg_effects.c
@@ -448,6 +442,7 @@ set(src_cgame_cgame
 	cgame/cg_main.c
 	cgame/cg_marks.c
 	cgame/cg_newDraw.c
+	cgame/cg_playeranimate.c
 	cgame/cg_players.c
 	cgame/cg_playerstate.c
 	cgame/cg_predict.c

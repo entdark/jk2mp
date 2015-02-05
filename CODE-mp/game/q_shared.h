@@ -45,8 +45,11 @@
 #include <time.h>
 #include <ctype.h>
 #include <limits.h>
+#include <stddef.h>
 
 #endif
+
+
 
 #if defined(Q3_VM) || defined(CGAME) || defined(QAGAME) || defined(UI_EXPORTS)
 
@@ -116,6 +119,7 @@ static ID_INLINE float BigFloat(const float *l) { FloatSwap(l); }
 #define LittleFloat
 
 #define	PATH_SEP '\\'
+#define Q3_LITTLE_ENDIAN
 
 #endif
 
@@ -130,10 +134,13 @@ static ID_INLINE float BigFloat(const float *l) { FloatSwap(l); }
 
 #ifdef __ppc__
 #define CPUSTRING	"MacOSX-ppc"
+#define Q3_BIG_ENDIAN
 #elif defined __i386__
 #define CPUSTRING	"MacOSX-i386"
+#define Q3_LITTLE_ENDIAN
 #else
 #define CPUSTRING	"MacOSX-other"
+#define Q3_LITTLE_ENDIAN
 #endif
 
 #define	PATH_SEP	'/'
@@ -193,6 +200,8 @@ static inline int LittleLong (int l) { return LongSwap(l); }
 #define BigFloat
 static inline float LittleFloat (const float l) { return FloatSwap(&l); }
 
+#define Q3_BIG_ENDIAN
+
 #endif
 
 //======================= LINUX DEFINES =================================
@@ -212,6 +221,12 @@ static inline float LittleFloat (const float l) { return FloatSwap(&l); }
 #define	CPUSTRING	"linux-alpha"
 #else
 #define	CPUSTRING	"linux-other"
+#endif
+
+#if __FLOAT_WORD_ORDER == __BIG_ENDIAN
+#define Q3_BIG_ENDIAN
+#else
+#define Q3_LITTLE_ENDIAN
 #endif
 
 #define	PATH_SEP '/'
@@ -261,6 +276,12 @@ inline static float LittleFloat (const float *l) { return FloatSwap(l); }
 #define	CPUSTRING	"openbsd-other"
 #endif
 
+#if BYTE_ORDER == BIG_ENDIAN
+#define Q3_BIG_ENDIAN
+#else
+#define Q3_LITTLE_ENDIAN
+#endif
+
 #define	PATH_SEP '/'
 
 // bk001205 - try
@@ -303,6 +324,12 @@ inline static float LittleFloat (const float *l) { return FloatSwap(l); }
 #define CPUSTRING       "freebsd-other"
 #endif
 
+#if BYTE_ORDER == BIG_ENDIAN
+#define Q3_BIG_ENDIAN
+#else
+#define Q3_LITTLE_ENDIAN
+#endif
+
 #define	PATH_SEP '/'
 
 // bk010116 - omitted Q3STATIC (see Linux above), broken target
@@ -323,6 +350,12 @@ static int LittleLong (int l) { return LongSwap(l); }
 static float LittleFloat (const float *l) { return FloatSwap(l); }
 #endif
 
+#endif
+
+#if defined( Q3_BIG_ENDIAN ) && defined( Q3_LITTLE_ENDIAN )
+#error "Endianness defined as both big and little"
+#elif !defined( Q3_BIG_ENDIAN ) && !defined( Q3_LITTLE_ENDIAN )
+#error "Endianness not defined"
 #endif
 
 //=============================================================
@@ -772,7 +805,7 @@ extern	vec4_t		colorDkGrey;
 extern	vec4_t		colorLtBlue;
 extern	vec4_t		colorDkBlue;
 
-extern vec3_t defaultColors[10];
+extern const vec3_t defaultColors[10];
 int Q_parseColor( const char *p, const vec3_t numberColors[10], float *color );
 
 #define Q_COLOR_ESCAPE	'^'
@@ -1131,8 +1164,8 @@ char	*Q_strrchr( const char* string, int c );
 
 // NON-portable (but faster) versions
 #ifdef WIN32
-//static inline int	Q_strnicmp (const char *s1, const char *s2, int n) { return strnicmp(s1, s2, n); }
-//static inline int	Q_strcmpi (const char *s1, const char *s2) { return strcmpi(s1, s2); }
+static __inline int	Q_strnicmp (const char *s1, const char *s2, int n) { return strnicmp(s1, s2, n); }
+static __inline int	Q_strcmpi (const char *s1, const char *s2) { return strcmpi(s1, s2); }
 #else
 static inline int	Q_strnicmp (const char *s1, const char *s2, int n) { return strncasecmp(s1, s2, n); }
 static inline int	Q_strcmpi (const char *s1, const char *s2) { return strcasecmp(s1, s2); }

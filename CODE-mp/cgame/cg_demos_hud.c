@@ -187,40 +187,38 @@ static int hudGetChecked( hudItem_t *item, vec4_t color ) {
 
 static void hudToggleButton( hudItem_t *item, int change ) {
 	demoCameraPoint_t *point;
-	if (!change)
-		return;
-	switch ( item->handler ) {
-	case hudCamSmoothAngles:
-		if ( change < 0 ) {
-			if ( demo.camera.smoothAngles > 0)
-				demo.camera.smoothAngles--;
-			else
-				demo.camera.smoothAngles = angleLast - 1;
-		} else {
-			if ( demo.camera.smoothAngles < angleLast - 1)
-				demo.camera.smoothAngles++;
-			else
-				demo.camera.smoothAngles = 0;
+
+	if ( change ) {
+		switch ( item->handler ) {
+		case hudCamSmoothAngles:
+			switch ( demo.camera.smoothAngles ) {
+			case angleLinear:
+				demo.camera.smoothAngles = angleQuat;
+				return;
+			case angleQuat:
+				demo.camera.smoothAngles = angleLinear;
+				return;
+			}
+			return;
+		case hudCamSmoothPos:
+			switch ( demo.camera.smoothPos ) {
+			case posLinear:
+				demo.camera.smoothPos = posCatmullRom;
+				return;
+			case posCatmullRom:
+				demo.camera.smoothPos = posBezier;
+				return;
+			case posBezier:
+				demo.camera.smoothPos = posLinear;
+				return;
+			}
+			point = demo.camera.points;
+			while (point) {
+				cameraPointReset( point );
+				point = point->next;
+			}
+			return;
 		}
-		return;
-	case hudCamSmoothPos:
-		if ( change < 0 ) {
-			if ( demo.camera.smoothPos > 0)
-				demo.camera.smoothPos--;
-			else
-				demo.camera.smoothPos = posLast - 1;
-		} else {
-			if ( demo.camera.smoothPos < posLast - 1)
-				demo.camera.smoothPos++;
-			else
-				demo.camera.smoothPos = 0;
-		}
-		point = demo.camera.points;
-		while (point) {
-			cameraPointReset( point );
-			point = point->next;
-		}
-		return;
 	}
 }
 

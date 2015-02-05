@@ -2,7 +2,7 @@
 
 #include "cg_demos.h"
 #include "cg_lights.h"
-#include "game/bg_saga.h"
+#include "../game/bg_saga.h"
 
 demoMain_t demo;
 
@@ -134,7 +134,7 @@ static void FX_VibrateView( const float scale, vec3_t origin, vec3_t angles ) {
 }
 
 void CG_SetPredictedThirdPerson(void) {
-	cg.renderingThirdPerson = ((cg_thirdPerson.integer
+	cg.renderingThirdPerson = (qboolean) (((cg_thirdPerson.integer
 		|| (cg.snap->ps.stats[STAT_HEALTH] <= 0)
 
 		|| (cg.playerCent->currentState.weapon == WP_SABER && !cg.trueView)
@@ -151,13 +151,13 @@ void CG_SetPredictedThirdPerson(void) {
 		)
 
 		&& !(cg_fpls.integer && cg.predictedPlayerState.weapon == WP_SABER))
-		&& !cg.zoomMode;
+					      && !cg.zoomMode);
 
 	if (cg.predictedPlayerState.pm_type == PM_SPECTATOR) { //always first person for spec
-		cg.renderingThirdPerson = 0;
+		cg.renderingThirdPerson = qfalse;
 	}
 	if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) {
-		cg.renderingThirdPerson = 0;
+		cg.renderingThirdPerson = qfalse;
 	}
 }
 
@@ -182,27 +182,27 @@ static int demoSetupView( void) {
 			
 			if ( cent->currentState.number < MAX_CLIENTS ) {
 				int weapon = cent->currentState.weapon;
-				cg.trueView = (weapon == WP_SABER && cg_trueSaber.integer)
-					|| (weapon != WP_SABER && cg_trueGuns.integer);
+				cg.trueView = (qboolean) ( (weapon == WP_SABER && cg_trueSaber.integer)
+							   || (weapon != WP_SABER && cg_trueGuns.integer) );
 				cg.playerCent = cent;
-				cg.playerPredicted = cent == &cg_entities[cg.snap->ps.clientNum];
+				cg.playerPredicted = (qboolean) (cent == &cg_entities[cg.snap->ps.clientNum]);
 				if (!cg.playerPredicted ) {
 					//Make sure lerporigin of playercent is val
 					CG_CalcEntityLerpPositions( cg.playerCent );
 				}
 				if (cg.playerPredicted) {
-					cg.zoomMode = cg.snap->ps.zoomMode || cg.predictedPlayerState.zoomMode;
+					cg.zoomMode = (qboolean) (cg.snap->ps.zoomMode || cg.predictedPlayerState.zoomMode);
 					CG_SetPredictedThirdPerson();
 				} else {
 					int torsoAnim = cg.playerCent->currentState.torsoAnim & ~ANIM_TOGGLEBIT;
-					cg.zoomMode = ((torsoAnim == TORSO_WEAPONREADY4
+					cg.zoomMode = (qboolean) (((torsoAnim == TORSO_WEAPONREADY4
 						|| torsoAnim == BOTH_ATTACK4) && !demo15detected)
 						||
 						((torsoAnim == TORSO_WEAPONREADY4_15
-						|| torsoAnim == BOTH_ATTACK4_15) && demo15detected);
-					cg.renderingThirdPerson = ((cg_thirdPerson.integer || cent->currentState.eFlags & EF_DEAD
+						  || torsoAnim == BOTH_ATTACK4_15) && demo15detected));
+					cg.renderingThirdPerson = (qboolean) ((cg_thirdPerson.integer || cent->currentState.eFlags & EF_DEAD
 						|| (weapon == WP_SABER && !cg.trueView) || cg.fallingToDeath) && !cg.zoomMode
-						&& !(cg_fpls.integer && weapon == WP_SABER));
+									      && !(cg_fpls.integer && weapon == WP_SABER));
 				}
 				inwater = CG_DemosCalcViewValues();
 				// first person blend blobs, done after AnglesToAxis
@@ -439,7 +439,7 @@ void CG_DemosDrawActiveFrame(int serverTime, stereoFrame_t stereoView) {
 		return;
 	}
 
-	captureFrame = demo.capture.active && !demo.play.paused;
+	captureFrame = (qboolean) (demo.capture.active && !demo.play.paused);
 	if ( captureFrame ) {
 		trap_MME_BlurInfo( &blurTotal, &blurIndex );
 		captureFPS = mov_captureFPS.value;
@@ -820,14 +820,29 @@ static void demoViewCommand_f(void) {
 	} else if (!Q_stricmp(cmd, "camera")) {
 		demo.viewType = viewCamera;
 	} else if (!Q_stricmp(cmd, "prev")) {
-		if (demo.viewType == 0)
-			demo.viewType = viewLast - 1;
-		else 
-			demo.viewType--;
+		switch(demo.viewType) {
+		case viewCamera:
+			demo.viewType = viewLast;
+			break;
+		case viewChase:
+			demo.viewType = viewCamera;
+			break;
+		case viewLast:
+			demo.viewType = viewChase;
+			break;
+		}
 	} else if (!Q_stricmp(cmd, "next")) {
-		demo.viewType++;
-		if (demo.viewType >= viewLast)
-			demo.viewType = 0;
+		switch(demo.viewType) {
+		case viewCamera:
+			demo.viewType = viewChase;
+			break;
+		case viewChase:
+			demo.viewType = viewLast;
+			break;
+		case viewLast:
+			demo.viewType = viewCamera;
+			break;
+		}
 	} else {
 		Com_Printf("view usage:\n" );
 		Com_Printf("view camera, Change to camera view.\n" );
@@ -969,7 +984,7 @@ void demoPlaybackInit(void) {
 	demo.play.lastTime = 0;
 	demo.play.fraction = 0;
 	demo.play.speed = 1.0f;
-	demo.play.paused = 0;
+	demo.play.paused = qfalse;
 
 	demo.move.acceleration = 8;
 	demo.move.friction = 8;
@@ -1051,7 +1066,7 @@ void demoPlaybackInit(void) {
 	demo.media.regularRain = trap_S_RegisterSound("sound/ambient/rain_mid");
 	demo.media.lightRain = trap_S_RegisterSound("sound/ambient/rain_light");
 
-	trap_SetUserCmdValue( 0, 1.0f, 0.0f, 0.0f, 0.0f, 0, 0, qfalse );
+	trap_SetUserCmdValue( 0.0f, 1.0f, 0.0f, 0.0f );
 
 	trap_SendConsoleCommand("exec mmedemos.cfg\n");
 //	trap_Cvar_Set( "mov_captureName", "" );
@@ -1167,7 +1182,7 @@ qboolean CG_DemosConsoleCommand( void ) {
 		}
 		CG_DemosAddLog("Play speed %f", demo.play.speed );
 	} else if (!Q_stricmp(cmd, "pause")) {
-		demo.play.paused = !demo.play.paused;
+		demo.play.paused = (qboolean) !demo.play.paused;
 		if ( demo.play.paused )
 			demo.find = findNone;
 	} else if (!Q_stricmp(cmd, "dof")) {

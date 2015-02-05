@@ -17,6 +17,11 @@
 #include "qcommon.h"
 #include "unzip.h"
 
+#ifdef __linux__
+#include <unistd.h>
+#define _unlink unlink
+#endif
+
 /*
 =============================================================================
 

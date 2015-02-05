@@ -5,7 +5,7 @@
 #include "client.h"
 #include "../server/server.h"
 #include "cl_demos.h"
-#include "qcommon/game_version.h"
+#include "../qcommon/game_version.h"
 #include "../ghoul2/G2_local.h"
 
 #define DEMOLISTSIZE 1024
