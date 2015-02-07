@@ -54,6 +54,47 @@ void CG_BuildSolidList( void ) {
 			continue;
 		}
 	}
+
+	//ent from JA:
+	//rww - Horrible, terrible, awful hack.
+	//We don't send your client entity from the server,
+	//so it isn't added into the solid list from the snapshot,
+	//and in addition, it has no solid data. So we will force
+	//adding it in based on a hardcoded player bbox size.
+	//This will cause issues if the player box size is ever
+	//changed..
+	if (cg_numSolidEntities < MAX_ENTITIES_IN_SNAPSHOT)
+	{
+		vec3_t	playerMins = {-15, -15, DEFAULT_MINS_2};
+		vec3_t	playerMaxs = {15, 15, DEFAULT_MAXS_2};
+		int i, j, k;
+
+		i = playerMaxs[0];
+		if (i<1)
+			i = 1;
+		if (i>255)
+			i = 255;
+
+		// z is not symetric
+		j = (-playerMins[2]);
+		if (j<1)
+			j = 1;
+		if (j>255)
+			j = 255;
+
+		// and z playerMaxs can be negative...
+		k = (playerMaxs[2]+32);
+		if (k<1)
+			k = 1;
+		if (k>255)
+			k = 255;
+
+		cg_solidEntities[cg_numSolidEntities] = &cg_entities[cg.predictedPlayerState.clientNum];
+		cg_solidEntities[cg_numSolidEntities]->currentState.solid = (k<<16) | (j<<8) | i;
+
+		cg_numSolidEntities++;
+	}
+
 }
 
 /*
