@@ -1279,6 +1279,9 @@ void CL_Snd_Restart_f( void ) {
 	S_Init();
 	S_BeginRegistration();	
 
+	extern qboolean s_soundMuted;
+	s_soundMuted = qfalse;
+
 //	CL_Vid_Restart_f();
 }
 

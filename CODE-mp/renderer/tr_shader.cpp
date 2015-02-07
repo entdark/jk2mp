@@ -852,7 +852,7 @@ static void ParseSurfaceSprites( const char *_text, shaderStage_t *stage )
 	stage->ss.facing = SURFSPRITE_FACING_NORMAL;
 
 	// A vertical parameter that needs a default regardless
-	stage->ss.vertSkew;
+	stage->ss.vertSkew = 0.0;
 
 	// These are effect parameters that need defaults nonetheless.
 	stage->ss.fxDuration = 1000;		// 1 second

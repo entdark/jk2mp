@@ -911,7 +911,7 @@ int CL_CgameSystemCalls( int *args ) {
 		if (fs_game && !Q_stricmpn(fs_game->string, "mme", 3)) {
 			FX_AdjustTime_Pos(args[1], VMF(2), VMF(3),(float *)VMA(4),(vec3_t *)VMA(5));
 		} else {
-			FX_AdjustTime_Pos(args[1], 50.0f, 0.0f,(float *)VMA(4),(vec3_t *)VMA(5));
+			FX_AdjustTime_Pos(args[1], 50.0f, 0.0f,(float *)VMA(2),(vec3_t *)VMA(3));
 		}}
 		return 0;
 

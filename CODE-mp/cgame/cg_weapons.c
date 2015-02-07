@@ -2207,8 +2207,7 @@ void CG_CopyG2WeaponInstance(centity_t *cent, int weaponNum, void *toGhoul2) {
 			clientInfo_t *ci = &cgs.clientinfo[cent->currentState.number];
 			const char *saberModel = ci->saberModel;
 			if (saberModel && saberModel[0]) {
-				void *ghoul2sab;
-				memset(&ghoul2sab, 0, sizeof(&ghoul2sab));
+				void *ghoul2sab = NULL;
 				trap_G2API_InitGhoul2Model(&ghoul2sab, va("models/weapons2/%s/saber_w.glm", saberModel), 0, 0, 0, 0, 0);
 				trap_G2API_SetBoltInfo(ghoul2sab, 0, 0);
 				trap_G2API_AddBolt(ghoul2sab, 0, "*flash");

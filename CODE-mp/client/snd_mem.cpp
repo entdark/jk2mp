@@ -9,8 +9,10 @@
 #include "snd_local.h"
 
 #define HAVE_LIBMAD
+#ifndef QSDL
 #define HAVE_LIBOGG
 #define HAVE_LIBFLAC
+#endif
 
 const char *ext[] = {
 	".wav",
@@ -33,11 +35,11 @@ qboolean S_FileExists(char *fileName) {
 	fileHandle_t f;
 	int i;
 	if (voice && s_language) {
-		if (stricmp("DEUTSCH",s_language->string)==0) {				
+		if (Q_stricmp("DEUTSCH",s_language->string)==0) {
 			strncpy(voice,"chr_d",5);	// same number of letters as "chars"
-		} else if (stricmp("FRANCAIS",s_language->string)==0) {				
+		} else if (Q_stricmp("FRANCAIS",s_language->string)==0) {
 			strncpy(voice,"chr_f",5);	// same number of letters as "chars"
-		} else if (stricmp("ESPANOL",s_language->string)==0) {				
+		} else if (Q_stricmp("ESPANOL",s_language->string)==0) {
 			strncpy(voice,"chr_e",5);	// same number of letters as "chars"
 		} else {
 			voice = NULL;	// use this ptr as a flag as to whether or not we substituted with a foreign version
@@ -360,11 +362,12 @@ static openSound_t * S_WavOpen( const char *fileName ) {
 //=============================================================================
 
 #ifdef HAVE_LIBMAD 
-#ifdef MACOS_X
-#include <mad.h>
-#elif defined _WIN32
+
+#ifdef _WIN32
 #include "mad.h"
 #pragma comment (lib, "libmad.lib")
+#else
+#include <mad.h>
 #endif
 #define MP3_SEEKINTERVAL 16 
 #define MP3_SEEKMAX 4096
