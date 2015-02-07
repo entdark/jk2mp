@@ -115,7 +115,7 @@ public:
 		if ( !max )
 			max = vec3_origin;
 
-		memset(td, sizeof(*td), 0);
+		memset(td, 0, sizeof(*td));
 		VectorCopy(start, td->mStart);
 		VectorCopy(min, td->mMins);
 		VectorCopy(max, td->mMaxs);

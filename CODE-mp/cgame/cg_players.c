@@ -177,8 +177,8 @@ qboolean CG_ParseSurfsFile( const char *modelName, const char *skinName, char *s
 	// parse the text
 	text_p = text;
 
-	memset( (char *)surfOff, 0, sizeof(surfOff) );
-	memset( (char *)surfOn, 0, sizeof(surfOn) );
+	surfOff[0] = '\0';
+	surfOn[0] = '\0';
 
 	// read information for surfOff and surfOn
 	while ( 1 ) 
@@ -196,7 +196,7 @@ qboolean CG_ParseSurfsFile( const char *modelName, const char *skinName, char *s
 			{
 				continue;
 			}
-			if ( surfOff && surfOff[0] )
+			if ( surfOff[0] )
 			{
 				Q_strcat( surfOff, MAX_SURF_LIST_SIZE, "," );
 				Q_strcat( surfOff, MAX_SURF_LIST_SIZE, value );
@@ -215,7 +215,7 @@ qboolean CG_ParseSurfsFile( const char *modelName, const char *skinName, char *s
 			{
 				continue;
 			}
-			if ( surfOn && surfOn[0] )
+			if ( surfOn[0] )
 			{
 				Q_strcat( surfOn, MAX_SURF_LIST_SIZE, ",");
 				Q_strcat( surfOn, MAX_SURF_LIST_SIZE, value );
@@ -414,7 +414,7 @@ retryModel:
 		const char	*p;
 
 		//Now turn on/off any surfaces
-		if ( surfOff && surfOff[0] ) {
+		if ( surfOff[0] ) {
 			p = surfOff;
 			while ( 1 ) {
 				token = COM_ParseExt( &p, qtrue );
@@ -426,7 +426,7 @@ retryModel:
 				trap_G2API_SetSurfaceOnOff( ci->ghoul2Model, token, 0x00000002/*G2SURFACEFLAG_OFF*/ );
 			}
 		}
-		if ( surfOn && surfOn[0] ) {
+		if ( surfOn[0] ) {
 			p = surfOn;
 			while ( 1 ) {
 				token = COM_ParseExt( &p, qtrue );

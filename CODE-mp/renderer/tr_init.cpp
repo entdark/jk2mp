@@ -1018,6 +1018,7 @@ extern qboolean Sys_LowPhysicalMemory();
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "screenshotPNG", R_ScreenShotPNG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
+	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 #ifdef JEDIACADEMY_GLOW
 	ri.Cmd_AddCommand( "r_atihack", R_AtiHackToggle_f );
 #endif
@@ -1185,6 +1186,7 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand ("shaderlist");
 	ri.Cmd_RemoveCommand ("skinlist");
 	ri.Cmd_RemoveCommand ("gfxinfo");
+	ri.Cmd_RemoveCommand ("minimize");
 	ri.Cmd_RemoveCommand ("modelist");
 	ri.Cmd_RemoveCommand ("shaderstate");
 	ri.Cmd_RemoveCommand ("r_we");

@@ -6,10 +6,10 @@ void Sys_SendKeyEvents (void);
 
 // Input subsystem
 
-void IN_Init (void);
+void IN_Init (void *windowData);
 void IN_Frame (void);
 void IN_Shutdown (void);
-
+void IN_Restart (void);
 
 void IN_JoyMove( void );
 void IN_StartupJoystick( void );
