@@ -531,7 +531,6 @@ typedef struct {
 	int			time;				// time in milliseconds for shader effects and other time dependent rendering issues
 	int			frametime;
 	int			rdflags;			// RDF_NOWORLDMODEL, etc
-	float		timeFraction;
 
 	// 1 bits will prevent the associated area from rendering at all
 	byte		areamask[MAX_MAP_AREA_BYTES];
@@ -554,7 +553,8 @@ typedef struct {
 
 	int			numDrawSurfs;
 	struct drawSurf_s	*drawSurfs;
-
+	
+	float		timeFraction;
 
 } trRefdef_t;
 
