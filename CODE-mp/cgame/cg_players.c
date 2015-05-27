@@ -4664,9 +4664,10 @@ static void CG_G2SaberEffects(vec3_t start, vec3_t end, centity_t *owner) {
 
 #define SABER_TRAIL_TIME	40.0f
 #define FX_USE_ALPHA		0x08000000
-
+#include "cg_demos_math.h"
+const vec3_t container = { -8.0f, 8.0f, 8.0f };
 void CG_AddSaberBlade( centity_t *cent, centity_t *scent, refEntity_t *saber, int renderfx, int modelIndex, vec3_t origin, vec3_t angles, qboolean fromSaber) {
-	vec3_t	org_, end, v, axis_[3] = {0,0,0, 0,0,0, 0,0,0}; // shut the compiler up
+	vec3_t	org_, mid, end, v, axis_[3] = {0,0,0, 0,0,0, 0,0,0}; // shut the compiler up
 	trace_t	trace;
 	int i = 0;
 	float saberLen, dualSaberLen;
@@ -4762,10 +4763,17 @@ Ghoul2 Insert Start
 	if (cent->currentState.bolt2)
 	{
 		VectorMA( org_, saberLen*dualLen, axis_[0], end );
+		VectorMA( org_, saberLen*dualLen/2.0f, axis_[0], mid );
 	}
 	else
 	{
 		VectorMA( org_, saberLen, axis_[0], end );
+		VectorMA( org_, saberLen/2.0f, axis_[0], mid );
+	}
+	if (cg_debugSaber.integer) {
+		demoLimitDrawDistance(qfalse);
+		demoDrawBox(mid, container, colorRed);
+		demoLimitDrawDistance(qtrue);
 	}
 	
 	VectorAdd( end, axis_[0], end );

@@ -423,6 +423,10 @@ float dsplineCalc(float x, vec3_t dx, vec3_t dy, float *deriv ) {
 }
 
 /* Some line drawing functions */
+static qboolean demoDrawLimit = qtrue;
+void demoLimitDrawDistance(const qboolean limit) {
+	demoDrawLimit = limit;
+}
 void demoDrawSetupVerts( polyVert_t *verts, const vec4_t color ) {
 	int i;
 	for (i = 0; i<4;i++) {
@@ -440,7 +444,7 @@ void demoDrawRawLine(const vec3_t start, const vec3_t end, float width, polyVert
 
 	VectorScale( start, 0.5, middle ) ;
 	VectorMA( middle, 0.5, end, middle );
-	if ( VectorDistance( middle, cg.refdef.vieworg ) < 100 )
+	if ( VectorDistance( middle, cg.refdef.vieworg ) < 100 && demoDrawLimit )
 		return;
 	GetPerpendicularViewVector( cg.refdef.vieworg, start, end, up );
 	VectorMA( start, width, up, verts[0].xyz);

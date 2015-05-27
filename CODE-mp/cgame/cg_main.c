@@ -574,6 +574,8 @@ vmCvar_t	cg_singlePlayerActive;
 vmCvar_t	cg_recordSPDemo;
 vmCvar_t	cg_recordSPDemoName;
 
+vmCvar_t	cg_debugSaber;
+
 vmCvar_t	ui_myteam;
 
 //JA
@@ -778,6 +780,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_smallFont, "ui_smallFont", "0.25", NULL, CVAR_ARCHIVE},
 	{ &cg_bigFont, "ui_bigFont", "0.4", NULL, CVAR_ARCHIVE},
 	{ &cg_trueLightning, "cg_trueLightning", "0.0", NULL, CVAR_ARCHIVE},
+	
+	{ &cg_debugSaber, "cg_debugSaber", "0", NULL, CVAR_ARCHIVE},
 
 	{ &ui_myteam, "ui_myteam", "0", NULL, CVAR_ROM|CVAR_INTERNAL},
 
