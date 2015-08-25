@@ -760,7 +760,6 @@ static int demoFindNext(const char *fileName) {
 	int i;
 	const int len = strlen(fileName);
 	char name[MAX_OSPATH], seekName[MAX_OSPATH];
-	fileHandle_t demoHandle = 0;
 	qboolean tryAgain = qtrue;
 	if (isdigit(fileName[len-1]) && ((fileName[len-2] == '.'))) {
 		Com_sprintf(seekName, len-1, fileName);
@@ -774,8 +773,7 @@ static int demoFindNext(const char *fileName) {
 tryAgain:
 	for (i = demoNextNum + 1; i < 99; i++) {
 		Com_sprintf(name, MAX_OSPATH, "mmedemos/%s.%d.mme", seekName, i);
-		FS_FOpenFileRead(name, &demoHandle, qtrue);
-		if (demoHandle) {
+		if (FS_FileExists(name)) {
 			Com_Printf("Next demo file: %s\n", name);
 			return i;
 		}
