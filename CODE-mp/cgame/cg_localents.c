@@ -6,7 +6,7 @@
 
 #include "cg_local.h"
 
-#define	MAX_LOCAL_ENTITIES	512
+#define	MAX_LOCAL_ENTITIES	2048 //ent: Raz: was 512
 localEntity_t	cg_localEntities[MAX_LOCAL_ENTITIES];
 localEntity_t	cg_activeLocalEntities;		// double linked list
 localEntity_t	*cg_freeLocalEntities;		// single linked list
@@ -496,7 +496,7 @@ static void CG_AddFadeScaleModel( localEntity_t *le )
 {
 	refEntity_t	*ent = &le->refEntity;
 
-	float frac = ( cg.time - le->startTime )/((float)( le->endTime - le->startTime ));
+	float frac = (( cg.time - le->startTime ) + cg.timeFraction)/((float)( le->endTime - le->startTime ));
 
 	frac *= frac * frac; // yes, this is completely ridiculous...but it causes the shell to grow slowly then "explode" at the end
 
@@ -815,8 +815,8 @@ void CG_AddScorePlum( localEntity_t *le ) {
 	// so it doesn't add too much overdraw
 	VectorSubtract( origin, cg.refdef.vieworg, delta );
 	len = VectorLength( delta );
-	if ( len < 20 ) {
-		CG_FreeLocalEntity( le );
+	if ( len < 7*7 ) {
+//		CG_FreeLocalEntity( le );
 		return;
 	}
 
