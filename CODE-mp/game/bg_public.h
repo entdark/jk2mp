@@ -838,6 +838,8 @@ typedef enum {
 // rww - Moved all this to bg_public so that we can access the saberMoveData stuff on the cgame
 // which is currently used for determining if a saber trail should be rendered in a given frame
 
+#define BOOT_SABERMOVES 16
+
 typedef enum {
 	// Invalid, or saber not armed
 	LS_NONE		= 0,
@@ -983,7 +985,11 @@ typedef enum {
 	LS_REFLECT_LR,
 	LS_REFLECT_LL,
 
-	LS_MOVE_MAX//
+	//Boot
+	BOOT_LS_PARRY_DIAG_LEFT,
+	BOOT_LS_PARRY_DIAG_RIGHT,
+
+	LS_MOVE_MAX = LS_REFLECT_LL + BOOT_SABERMOVES + 1//
 } saberMoveName_t;
 
 typedef enum {

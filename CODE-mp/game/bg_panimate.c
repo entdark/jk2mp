@@ -619,7 +619,9 @@ qboolean PM_SaberInDeflect( int move ) {
 }
 
 qboolean PM_SaberInParry( int move ) {
-	if ( move >= LS_PARRY_UP && move <= LS_PARRY_LL ) {
+	if (saberShenanigans && move >= LS_PARRY_UP && move <= BOOT_LS_PARRY_DIAG_RIGHT) {
+		return qtrue;
+	} else if ( move >= LS_PARRY_UP && move <= LS_PARRY_LL ) {
 		return qtrue;
 	}
 	return qfalse;
