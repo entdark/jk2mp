@@ -461,7 +461,8 @@ void CL_ReadDemoMessage( void ) {
 CL_WalkDemoExt
 ====================
 */
-static void CL_WalkDemoExt(const char *arg, char *name, int *demofile) {
+static char *CL_WalkDemoExt(const char *arg, char *name, int *demofile) {
+	static char demoExt[8];
 	int i = 0;
 	*demofile = 0;
 	while(demo_protocols[i]) {
@@ -471,12 +472,14 @@ static void CL_WalkDemoExt(const char *arg, char *name, int *demofile) {
 			Com_Printf("Demo file: %s\n", name);
 			if (demo_protocols[i] == 15)
 				demo15detected = qtrue;
-			break;
+			Com_sprintf(demoExt, sizeof(demoExt), ".dm_%d", demo_protocols[i]);
+			return demoExt;
 		}
 		else
 			Com_Printf("Not found: %s\n", name);
 		i++;
 	}
+	return "";
 }
 
 /*
@@ -488,31 +491,69 @@ demo <demoname>
 ====================
 */
 void CL_PlayDemo_f( void ) {
-	char		name[MAX_OSPATH], testName[MAX_OSPATH];
-	char		*ext;
-	qboolean	haveConvert;
+	char		name[MAX_OSPATH], *testName, testNameActual[MAX_OSPATH];
+	char		*ext = NULL;
+	qboolean	haveConvert, del = qfalse;
 	cvar_t		*fs_game;
 
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() < 2) {
 		Com_Printf ("demo <demoname>\n");
 		return;
+	}
+	if (Cmd_Argc() >= 3 && !Q_stricmp(Cmd_Argv(2), "del")) {
+		del = qtrue;
 	}
 
 	fs_game = Cvar_FindVar ("fs_game" );
 	if (!fs_game)
 		return;
 	haveConvert = (qboolean)(mme_demoConvert->integer && !Q_stricmp( fs_game->string, "mme" ));
+	
+	if (del) {
+		ext = strstr(Cmd_Argv(1), ".mme");
+		if (!ext) {
+			int i = 0;
+			while (demo_protocols[i]) {
+				ext = strstr(Cmd_Argv(1), va(".dm_%d", demo_protocols[i]));
+				if (ext && *ext) {
+					break;
+				}
+				i++;
+			}
+		}
+		if (ext && *ext) {
+			char temp[MAX_OSPATH] = "_";
+			char *demos = (!Q_stricmp(ext, ".mme")) ? "mmedemos" : "demos";
+			while (FS_FileExists(va("%s/%s%s", demos, temp, ext))) {
+				if (strlen(temp) >= MAX_OSPATH)
+					break;
+				Q_strcat(temp, sizeof(temp), "_");
+			}
+			if (FS_CopyFileAbsolute(Cmd_Argv(1), va("%s/%s%s", demos, temp, ext))) {
+				Q_strncpyz(testNameActual, temp, sizeof(testNameActual));
+			}
+			else {
+				Q_strncpyz(testNameActual, Cmd_Argv(1), sizeof(testNameActual));
+			}
+		}
+	}
+	else {
+		Q_strncpyz(testNameActual, Cmd_Argv(1), sizeof(testNameActual));
+	}
+
 	// make sure a local server is killed
 	Cvar_Set( "sv_killserver", "1" );
 	CL_Disconnect( qtrue );
 
-	// open the demo file
-	Q_strncpyz( testName, Cmd_Argv(1), sizeof( testName ) );
+	testName = testNameActual;
 	// check for an extension .dm_?? (?? is protocol)
 	ext = testName + strlen(testName) - 6;
-	if ((strlen(testName) > 6) && (ext[0] == '.') && ((ext[1] == 'd') || (ext[1] == 'D')) && ((ext[2] == 'm') || (ext[2] == 'M')) && (ext[3] == '_'))
-	{
-		ext[0] = 0;	
+	if ((strlen(testName) > 6) && (ext[0] == '.') && ((ext[1] == 'd') || (ext[1] == 'D')) && ((ext[2] == 'm') || (ext[2] == 'M')) && (ext[3] == '_')) {
+		Cvar_Set("mme_demoExt", ext);
+		ext[0] = 0;
+	}
+	else {
+		Cvar_Set("mme_demoExt", "");
 	}
 
 	Cvar_Set( "mme_demoFileName", testName );
@@ -524,13 +565,13 @@ void CL_PlayDemo_f( void ) {
 			char empty1[MAX_OSPATH];
 			int empty2;
 			CL_WalkDemoExt( testName, empty1, &empty2 ); //do that to set demo15detected if needed
-			if (demoPlay( name ))
+			if (demoPlay( name, del))
 				return;
 		}
 	}
 
 	demo15detected = qfalse; //reset
-	CL_WalkDemoExt( testName, name, &clc.demofile );
+	Cvar_Set("mme_demoExt", CL_WalkDemoExt(testName, name, &clc.demofile));
 	if (!clc.demofile) {
 		Com_Error( ERR_DROP, "couldn't open %s", name);
 		return;
@@ -543,7 +584,7 @@ void CL_PlayDemo_f( void ) {
 		Com_sprintf( mmeName, sizeof( mmeName ), "mmedemos/%s", testName );
 		demoConvert( name, mmeName, (qboolean)mme_demoSmoothen->integer );
 		Q_strcat( mmeName , sizeof( mmeName ), ".mme" );
-		if (demoPlay( mmeName ))
+		if (demoPlay( mmeName, del ))
 			return;
 		Com_Printf("Can't seem to play demo %s\n", testName );
 
@@ -2577,6 +2618,7 @@ void CL_Init( void ) {
 	mme_demoRemove = Cvar_Get ("mme_demoRemove", "0", CVAR_ARCHIVE );
 	mme_demoPrecache = Cvar_Get ("mme_demoPrecache", "0", CVAR_ARCHIVE );
 	mme_demoAutoNext = Cvar_Get ("mme_demoAutoNext", "1", CVAR_ARCHIVE );
+	Cvar_Get("mme_demoExt", "0", CVAR_INTERNAL);
 
 	demo15detected = qfalse;
 

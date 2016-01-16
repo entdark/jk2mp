@@ -762,10 +762,10 @@ static int demoFindNext(const char *fileName) {
 	char name[MAX_OSPATH], seekName[MAX_OSPATH];
 	qboolean tryAgain = qtrue;
 	if (isdigit(fileName[len-1]) && ((fileName[len-2] == '.'))) {
-		Com_sprintf(seekName, len-1, fileName);
+		Com_sprintf(seekName, len-1+1, fileName);
 		demoNextNum = fileName[len-1] - '0';
 	} else if (isdigit(fileName[len-1]) && (isdigit(fileName[len-2]) && (fileName[len-3] == '.'))) {
-		Com_sprintf(seekName, len-2, fileName);
+		Com_sprintf(seekName, len-2+1, fileName);
 		demoNextNum = (fileName[len-2] - '0')*10 + (fileName[len-1] - '0');
 	} else {
 		Com_sprintf(seekName, MAX_OSPATH, fileName);
@@ -778,7 +778,7 @@ tryAgain:
 			return i;
 		}
 	}
-	Com_sprintf(seekName, len, "%s", fileName);
+	Com_sprintf(seekName, len+1, "%s", fileName);
 	if (tryAgain) {
 		tryAgain = qfalse;
 		goto tryAgain;
@@ -865,9 +865,21 @@ errorreturn:
 
 static void demoPlayStop( demoPlay_t *play ) {
 	FS_FCloseFile( play->fileHandle );
-	if (mme_demoRemove->integer && FS_FileExists( play->fileName ))
+	if ((mme_demoRemove->integer || demo.del) && FS_FileExists( play->fileName )) {
 		FS_FileErase( play->fileName );
+	}
+	if (demo.del) {
+		char demoPath[MAX_QPATH];
+		char *ext = Cvar_FindVar("mme_demoExt")->string;
+		if (!*ext)
+			ext = ".dm_16";
+		Com_sprintf(demoPath, sizeof(demoPath), "demos/%s%s", mme_demoFileName->string, ext);
+		if (FS_FileExists(demoPath)) {
+			FS_FileErase(demoPath);
+		}
+	}
 	Z_Free( play );
+	demo.del = qfalse;
 }
 
 extern void CL_ConfigstringModified( void );
@@ -1026,7 +1038,7 @@ static void demoPrecache( void ) {
 	demoPlaySetIndex(play, 0);
 }
 
-qboolean demoPlay( const char *fileName ) {
+qboolean demoPlay( const char *fileName, qboolean del) {
 	demo.play.handle = demoPlayOpen( fileName );
 	if (demo.play.handle) {
 		demoPlay_t *play = demo.play.handle;
@@ -1063,6 +1075,7 @@ qboolean demoPlay( const char *fileName ) {
 		}
 		CL_InitCGame();
 		cls.state = CA_ACTIVE;
+		demo.del = del;
 		return qtrue;
 	} else {
 		return qfalse;
