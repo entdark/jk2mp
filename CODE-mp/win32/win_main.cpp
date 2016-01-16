@@ -1131,12 +1131,12 @@ bool RegisterFileType(const char *key, const char *value) {
 		if (nError == ERROR_SUCCESS) {
 			RegSetValueEx(hkey, "", 0, REG_SZ, (BYTE*)value, strlen(value) + 1);
 			ret = true;
+			RegCloseKey(hkey);
 		}
 		else {
 			Com_DPrintf(S_COLOR_RED"RegCreateKeyEx(%s,%s) error: %d\n", key, value, nError);
 		}
 	}
-	RegCloseKey(hkey);
 	return ret;
 }
 
