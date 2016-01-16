@@ -492,6 +492,8 @@ issues.
 
 #define	MAX_FILE_HANDLES	64
 
+qboolean FS_CopyFileAbsolute(char *fromOSPath, char *toOSPath);
+
 qboolean FS_Initialized();
 
 void	FS_InitFilesystem (void);
@@ -932,6 +934,8 @@ void	Sys_Quit (void);
 char	*Sys_GetClipboardData( void );	// note that this isn't journaled...
 
 void	Sys_Print( const char *msg );
+
+const char *Sys_Dirname(char *path);
 
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps

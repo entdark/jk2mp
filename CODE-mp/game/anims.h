@@ -2,6 +2,7 @@
 #define __ANIMS_H__
 // playerAnimations
 
+#define BOOT_ANIMS 16
 
 typedef enum //# animNumber_e
 {
@@ -2596,8 +2597,13 @@ typedef enum //# animNumber_e
 	FACE_FROWN_15,				//# 
 	FACE_DEAD_15,				//# 
 
+	//Boot
+	BOOT_BLOCK_DIAG_LEFT,
+	BOOT_BLOCK_DIAG_RIGHT,
+	//
+
 	//# #eol
-	MAX_ANIMATIONS_15,
+	MAX_ANIMATIONS_15 = FACE_DEAD_15 + 1 + BOOT_ANIMS,
 	MAX_TOTALANIMATIONS_15
 } animNumber15_t;
 

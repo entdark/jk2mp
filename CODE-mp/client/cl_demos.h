@@ -81,5 +81,6 @@ typedef struct {
 		int					oldFrameNumber;
 		int					serverTime;
 	} play;
+	qboolean				del;
 } demo_t;
 

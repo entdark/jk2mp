@@ -244,6 +244,7 @@ static	cvar_t		*fs_basegame;
 static	cvar_t		*fs_cdpath;
 static	cvar_t		*fs_copyfiles;
 static	cvar_t		*fs_gamedirvar;
+static	cvar_t		*fs_extragamedirs;
 static	cvar_t		*fs_restrict;
 static	searchpath_t	*fs_searchpaths;
 static	int			fs_readCount;			// total bytes read
@@ -508,6 +509,53 @@ static qboolean FS_CreatePath (char *OSPath) {
 =================
 FS_CopyFile
 
+Copy a fully specified file from one place to another
+=================
+*/
+qboolean FS_CopyFileAbsolute(char *fromOSPath, char *toOSPath) {
+	FILE	*f;
+	int		len;
+	byte	*buf;
+
+	Com_DPrintf("copy %s to %s\n", fromOSPath, toOSPath);
+
+	if (strstr(fromOSPath, "journal.dat") || strstr(fromOSPath, "journaldata.dat")) {
+		Com_Printf("Ignoring journal files\n");
+		return qfalse;
+	}
+
+	f = fopen(fromOSPath, "rb");
+	if (!f) {
+		return qfalse;
+	}
+	fseek(f, 0, SEEK_END);
+	len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	// we are using direct malloc instead of Z_Malloc here, so it
+	// probably won't work on a mac... Its only for developers anyway...
+	buf = (unsigned char *)malloc(len);
+	if (fread(buf, 1, len, f) != len)
+		Com_Error(ERR_FATAL, "Short read in FS_Copyfiles()\n");
+	fclose(f);
+
+	if (FS_CreatePath(toOSPath)) {
+		return qfalse;
+	}
+
+	f = fopen(FS_BuildOSPath(fs_homepath->string, fs_gamedir, toOSPath), "wb");
+	if (!f) {
+		return qfalse;
+	}
+	if (fwrite(buf, 1, len, f) != len)
+		Com_Error(ERR_FATAL, "Short write in FS_Copyfiles()\n");
+	fclose(f);
+	free(buf);
+	return qtrue;
+}
+/*
+=================
+FS_CopyFile
 Copy a fully specified file from one place to another
 =================
 */
@@ -2799,6 +2847,7 @@ static void FS_Startup( const char *gameName ) {
 	}
 	fs_homepath = Cvar_Get ("fs_homepath", homePath, CVAR_INIT );
 	fs_gamedirvar = Cvar_Get ("fs_game", "", CVAR_INIT|CVAR_SYSTEMINFO );
+	fs_extragamedirs = Cvar_Get("fs_extragames", "", CVAR_INIT);
 	fs_restrict = Cvar_Get ("fs_restrict", "", CVAR_INIT );
 
 	// add search path elements in reverse priority order
@@ -2824,6 +2873,24 @@ static void FS_Startup( const char *gameName ) {
 		}
 		if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string,fs_basepath->string)) {
 			FS_AddGameDirectory(fs_homepath->string, fs_basegame->string);
+		}
+	}
+
+	/* Read the fs_extragames after the base */
+	if (fs_extragamedirs->string[0]) {
+		int i;
+		Cmd_TokenizeString(fs_extragamedirs->string);
+		for (i = 0; i<Cmd_Argc(); i++) {
+			const char *newPath = Cmd_Argv(i);
+			if (fs_cdpath->string[0]) {
+				FS_AddGameDirectory(fs_cdpath->string, newPath);
+			}
+			if (fs_basepath->string[0]) {
+				FS_AddGameDirectory(fs_basepath->string, newPath);
+			}
+			if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string, fs_basepath->string)) {
+				FS_AddGameDirectory(fs_homepath->string, newPath);
+			}
 		}
 	}
 

@@ -403,6 +403,10 @@ saberMoveData_t	saberMoveData15[LS_MOVE_MAX] = {//							NB:randomized
 	{"Reflect UL",	BOTH_P1_S1_TR_15,		Q_R,	Q_TL,	AFLAG_ACTIVE,	50,		BLK_WIDE,	LS_R_BL2TR,		LS_A_TR2BL,		300	},	// LS_PARRY_UL,
 	{"Reflect LR",	BOTH_P1_S1_BR_15,		Q_R,	Q_BL,	AFLAG_ACTIVE,	50,		BLK_WIDE,	LS_R_TR2BL,		LS_A_BL2TR,		300	},	// LS_PARRY_LR
 	{"Reflect LL",	BOTH_P1_S1_BL_15,		Q_R,	Q_BR,	AFLAG_ACTIVE,	50,		BLK_WIDE,	LS_R_TL2BR,		LS_A_BR2TL,		300	},	// LS_PARRY_LL,
+
+																																	//Boot
+	{ "BOOT_Parry DL", BOOT_BLOCK_DIAG_LEFT, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_A_TL2BR, 150 },	// BOOT diag left
+	{ "BOOT_Parry DR", BOOT_BLOCK_DIAG_RIGHT, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_TR2BL, 150 },	// BOOT diag right
 };
 
 
@@ -1738,6 +1742,14 @@ void PM_WeaponLightsaber(void)
 			case BLOCKED_TOP_PROJ:
 				PM_SetSaberMove( LS_REFLECT_UP );
 				break;
+				//Boot
+			case BOOT_BLOCKED_DIAG_LEFT:
+				PM_SetSaberMove(BOOT_LS_PARRY_DIAG_LEFT);
+				break;
+			case BOOT_BLOCKED_DIAG_RIGHT:
+				PM_SetSaberMove(BOOT_LS_PARRY_DIAG_RIGHT);
+				break;
+				//
 			default:
 				pm->ps->saberBlocked = BLOCKED_NONE;
 				break;
@@ -1828,7 +1840,11 @@ weapChecks:
 	if(!delayed_fire)
 	{
 		// Start with the current move, and cross index it with the current control states.
-		if ( pm->ps->saberMove > LS_NONE && pm->ps->saberMove < LS_MOVE_MAX )
+		if (!saberShenanigans && pm->ps->saberMove > LS_NONE && pm->ps->saberMove < LS_MOVE_MAX - BOOT_SABERMOVES)
+		{
+			curmove = pm->ps->saberMove;
+		}
+		else if (saberShenanigans && pm->ps->saberMove > LS_NONE && pm->ps->saberMove < LS_MOVE_MAX)
 		{
 			curmove = pm->ps->saberMove;
 		}

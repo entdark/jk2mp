@@ -12,6 +12,60 @@
 #include <io.h>
 #include <conio.h>
 
+static char binaryPath[MAX_OSPATH] = { 0 };
+static char installPath[MAX_OSPATH] = { 0 };
+
+/*
+=================
+Sys_SetBinaryPath
+=================
+*/
+void Sys_SetBinaryPath(const char *path)
+{
+	Q_strncpyz(binaryPath, path, sizeof(binaryPath));
+}
+
+/*
+=================
+Sys_BinaryPath
+=================
+*/
+char *Sys_BinaryPath(void)
+{
+	return binaryPath;
+}
+
+/*
+=================
+Sys_SetDefaultInstallPath
+=================
+*/
+void Sys_SetDefaultInstallPath(const char *path)
+{
+	Q_strncpyz(installPath, path, sizeof(installPath));
+}
+
+/*
+==============
+Sys_Dirname
+==============
+*/
+const char *Sys_Dirname(char *path)
+{
+	static char dir[MAX_OSPATH] = { 0 };
+	int length;
+
+	Q_strncpyz(dir, path, sizeof(dir));
+	length = strlen(dir) - 1;
+
+	while (length > 0 && dir[length] != '\\')
+		length--;
+
+	dir[length] = '\0';
+
+	return dir;
+}
+
 /*
 ================
 Sys_Milliseconds
@@ -312,7 +366,10 @@ char	*Sys_DefaultHomePath(void) {
 
 char *Sys_DefaultInstallPath(void)
 {
-	return Sys_Cwd();
+	if (*installPath)
+		return installPath;
+	else
+		return Sys_Cwd();
 }
 
 int Sys_GetPhysicalMemory( void ) 

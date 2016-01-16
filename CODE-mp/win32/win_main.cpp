@@ -21,6 +21,10 @@
 
 static char		sys_cmdline[MAX_STRING_CHARS];
 
+/* win_shared.cpp */
+void Sys_SetBinaryPath(const char *path);
+char *Sys_BinaryPath(void);
+
 /*
 ==================
 Sys_LowPhysicalMemory()
@@ -1075,6 +1079,93 @@ void QuickMemTest(void)
 	}
 }
 
+#ifndef DEFAULT_BASEDIR
+#	ifdef MACOS_X
+#		define DEFAULT_BASEDIR Sys_StripAppBundle(Sys_BinaryPath())
+#	else
+#		define DEFAULT_BASEDIR Sys_BinaryPath()
+#	endif
+#endif
+
+#include <Shlobj.h>
+
+typedef struct {
+	string extension;
+	string desc;
+} extensionsTable_t;
+
+static extensionsTable_t et[] = {
+	//should we reg it? q3mme and other mme mods use it too
+	//	{".mme", "MovieMaker's Edition Demo"},
+	{ ".dm_15", "Jedi Outcast Demo (v1.02a/v1.03)" },
+	{ ".dm_16", "Jedi Outcast Demo (v1.04)" },
+};
+
+char *GetStringRegKey(HKEY hkey) {
+	if (!hkey) {
+		return NULL;
+	}
+	static CHAR szBuffer[512];
+	DWORD dwBufferSize = sizeof(szBuffer);
+	LSTATUS nError = RegQueryValueEx(hkey, NULL, 0, NULL, (LPBYTE)szBuffer, &dwBufferSize);
+	if (ERROR_SUCCESS == nError) {
+		return szBuffer;
+	}
+	return NULL;
+}
+
+bool RegisterFileType(const char *key, const char *value) {
+	Com_DPrintf(S_COLOR_YELLOW"RegisterFileType(%s,%s)\n", key, value);
+	HKEY hkey;
+	LSTATUS nError = RegOpenKeyEx(HKEY_CLASSES_ROOT, key, 0, KEY_READ, &hkey);
+	if (nError != ERROR_SUCCESS && nError != ERROR_FILE_NOT_FOUND) {
+		Com_DPrintf(S_COLOR_RED"RegOpenKeyEx(%s,%s) error: %d\n", key, value, nError);
+		return false;
+	}
+	bool ret = false;
+	const char *setValue = GetStringRegKey(hkey);
+	RegCloseKey(hkey);
+	//ignore the same value
+	if (!setValue || Q_stricmp(setValue, value)) {
+		nError = RegCreateKeyEx(HKEY_CLASSES_ROOT, key, 0, 0, 0, KEY_ALL_ACCESS, 0, &hkey, 0);
+		if (nError == ERROR_SUCCESS) {
+			RegSetValueEx(hkey, "", 0, REG_SZ, (BYTE*)value, strlen(value) + 1);
+			ret = true;
+			RegCloseKey(hkey);
+		}
+		else {
+			Com_DPrintf(S_COLOR_RED"RegCreateKeyEx(%s,%s) error: %d\n", key, value, nError);
+		}
+	}
+	return ret;
+}
+
+void RegisterFileTypes(char *program) {
+	string action = "joMME";
+	bool refresh = false; //once true - forever true
+	for (int i = 0; i < ARRAY_LEN(et); i++) {
+		string app = "\"" + string(program) + "\"" + string(" +set fs_game \"mme\" +set fs_extraGames \"SaberShenanigans\" +demo \"%1\" del");
+		string extension = et[i].extension;
+		string desc = et[i].desc;
+		string icon = extension + string("\\DefaultIcon");
+
+		string path = extension +
+			"\\shell\\" +
+			action +
+			"\\command\\";
+
+		//using | to be able to call all 3 functions even if true got returned
+		//register the filetype extension
+		refresh |= RegisterFileType(extension.c_str(), desc.c_str())
+			//register application association
+			| RegisterFileType(path.c_str(), app.c_str())
+			//register icon for the filetype
+			| RegisterFileType(icon.c_str(), program);
+	}
+	if (refresh) {
+		SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+	}
+}
 
 //=======================================================================
 //int	totalMsec, countMsec;
@@ -1108,6 +1199,14 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	Sys_InitStreamThread();
 
+	CHAR path[512];
+	if (GetModuleFileName(NULL, path, sizeof(path))) {
+		RegisterFileTypes(path);
+	}
+
+	Sys_SetBinaryPath(Sys_Dirname(path));
+	Sys_SetDefaultInstallPath(DEFAULT_BASEDIR);
+
 #if 0
 	CheckProcessTime();
 #endif 
@@ -1130,6 +1229,8 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	if ( !com_dedicated->integer && !com_viewlog->integer ) {
 		Sys_ShowConsole( 0, qfalse );
 	}
+
+//	__asm int 3;
 
     // main game loop
 	while( 1 ) {
