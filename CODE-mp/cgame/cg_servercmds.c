@@ -152,12 +152,16 @@ void CG_ParseServerinfo( void ) {
 	mapname = Info_ValueForKey( info, "mapname" );
 	
 	cg.ntModDetected = qfalse;
+	saberShenanigans = qfalse;
 	cgs.gamename = Info_ValueForKey(info, "gamename");
 	if (!Q_stricmp(cgs.gamename, "< NT XII >")
 		|| !Q_stricmp(cgs.gamename, "< NT XIII >")
 		|| !Q_stricmp(cgs.gamename, "< NT XIV >")
 		/* || !Q_stricmp(gamename, "JDFix.")*/) {
 		Com_Printf("\nNT mod detected\n\n");
+	} else if (!Q_stricmp(cgs.gamename, "SaberShenanigans")) {
+		saberShenanigans = qtrue;
+		Com_Printf("\nSaberShenanigans mod detected\n\n");
 	}
 	CG_ForceNTDemo();
 

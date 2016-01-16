@@ -20,6 +20,7 @@
 #endif
 
 qboolean demo15detected;
+qboolean saberShenanigans;
 
 //rww - not putting @ in front of these because
 //we don't need them in a cgame striped lookup.

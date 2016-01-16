@@ -397,7 +397,15 @@ retryModel:
 					goto retryModel;
 				}
 			}
-			for(i = 0; demo15detected && i < MAX_ANIMATIONS_15; i++) {
+			for(i = 0; !saberShenanigans && demo15detected && i < MAX_ANIMATIONS_15 - BOOT_ANIMS; i++) {
+				if (!bgGlobalAnimations15[i].firstFrame && !bgGlobalAnimations15[i].numFrames && CG_NeedAnimSequence(i))
+				{ //using default for this animation so it obviously never got filled in.
+					//if it's a sequence that we need, this model must be an unsupported one.
+					badModel = qtrue;
+					goto retryModel;
+				}
+			}
+			for (i = 0; saberShenanigans && demo15detected && i < MAX_ANIMATIONS_15; i++) {
 				if (!bgGlobalAnimations15[i].firstFrame && !bgGlobalAnimations15[i].numFrames && CG_NeedAnimSequence(i))
 				{ //using default for this animation so it obviously never got filled in.
 					//if it's a sequence that we need, this model must be an unsupported one.
@@ -1773,8 +1781,10 @@ static void CG_SetLerpFrameAnimation( centity_t *cent, clientInfo_t *ci, lerpFra
 
 	if (!demo15detected && (newAnimation < 0 || newAnimation >= MAX_TOTALANIMATIONS)) {
 		CG_Error( "Bad animation number: %i", newAnimation );
-	} else if (demo15detected && (newAnimation < 0 || newAnimation >= MAX_TOTALANIMATIONS_15)) {
-		CG_Error( "Bad animation number: %i", newAnimation );
+	} else if (!saberShenanigans && demo15detected && (newAnimation < 0 || newAnimation >= MAX_TOTALANIMATIONS_15 - BOOT_ANIMS)) {
+		CG_Error("Bad animation number: %i", newAnimation);
+	} else if (saberShenanigans && demo15detected && (newAnimation < 0 || newAnimation >= MAX_TOTALANIMATIONS_15)) {
+		CG_Error("Bad animation number: %i", newAnimation);
 	}
 
 	if (demo15detected)
@@ -5389,7 +5399,9 @@ static void CG_G2EntSetLerpFrameAnimation( centity_t *cent, lerpFrame_t *lf, int
 
 	if (!demo15detected && (newAnimation < 0 || newAnimation >= MAX_TOTALANIMATIONS)) {
 		return;
-	} else if (demo15detected && (newAnimation < 0 || newAnimation >= MAX_TOTALANIMATIONS_15)) {
+	} else if (!saberShenanigans && demo15detected && (newAnimation < 0 || newAnimation >= MAX_TOTALANIMATIONS_15 - BOOT_ANIMS)) {
+		return;
+	} else if (saberShenanigans && demo15detected && (newAnimation < 0 || newAnimation >= MAX_TOTALANIMATIONS_15)) {
 		return;
 	}
 

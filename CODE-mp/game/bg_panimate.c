@@ -992,7 +992,9 @@ int PM_AnimLength( int index, animNumber_t anim ) {
 }
 
 int PM_AnimLength15( int index, animNumber15_t anim ) {
-	if (anim >= MAX_ANIMATIONS_15) {
+	if (saberShenanigans && anim >= MAX_ANIMATIONS_15) {
+		return -1;
+	} else if (!saberShenanigans && anim >= MAX_ANIMATIONS_15 - BOOT_ANIMS) {
 		return -1;
 	}
 	return pm->animations[anim].numFrames * fabs(pm->animations[anim].frameLerp);
@@ -1002,11 +1004,16 @@ void PM_DebugLegsAnim(int anim) {
 	int oldAnim = (pm->ps->legsAnim & ~ANIM_TOGGLEBIT);
 	int newAnim = (anim & ~ANIM_TOGGLEBIT);
 
-	if ((!demo15detected && oldAnim < MAX_TOTALANIMATIONS && oldAnim >= BOTH_DEATH1 &&
+	if (
+		(!demo15detected && oldAnim < MAX_TOTALANIMATIONS && oldAnim >= BOTH_DEATH1 &&
 		newAnim < MAX_TOTALANIMATIONS && newAnim >= BOTH_DEATH1)
 		||
-		(demo15detected && oldAnim < MAX_TOTALANIMATIONS_15 && oldAnim >= BOTH_DEATH1_15 &&
-		newAnim < MAX_TOTALANIMATIONS_15 && newAnim >= BOTH_DEATH1_15)) {
+		(!saberShenanigans && demo15detected && oldAnim < MAX_TOTALANIMATIONS_15 - BOOT_ANIMS && oldAnim >= BOTH_DEATH1_15 &&
+		newAnim < MAX_TOTALANIMATIONS_15 && newAnim >= BOTH_DEATH1_15)
+		||
+		(saberShenanigans && demo15detected && oldAnim < MAX_TOTALANIMATIONS_15 && oldAnim >= BOTH_DEATH1_15 &&
+		newAnim < MAX_TOTALANIMATIONS_15 && newAnim >= BOTH_DEATH1_15)
+	) {
 		Com_Printf("OLD: %s\n", demo15detected?animTable15[oldAnim]:animTable[oldAnim]);
 		Com_Printf("NEW: %s\n", demo15detected?animTable15[newAnim]:animTable[newAnim]);
 	}
@@ -1108,7 +1115,14 @@ qboolean BG_ParseAnimationFile(const char *filename) {
 		bgGlobalAnimations[i].frameLerp = 100;
 		bgGlobalAnimations[i].initialLerp = 100;
 	}
-	for(i = 0; demo15detected && i < MAX_ANIMATIONS_15; i++) {
+	for(i = 0; !saberShenanigans && demo15detected && i < MAX_ANIMATIONS_15 - BOOT_ANIMS; i++) {
+		bgGlobalAnimations15[i].firstFrame = 0;
+		bgGlobalAnimations15[i].numFrames = 0;
+		bgGlobalAnimations15[i].loopFrames = -1;
+		bgGlobalAnimations15[i].frameLerp = 100;
+		bgGlobalAnimations15[i].initialLerp = 100;
+	}
+	for (i = 0; saberShenanigans && demo15detected && i < MAX_ANIMATIONS_15; i++) {
 		bgGlobalAnimations15[i].firstFrame = 0;
 		bgGlobalAnimations15[i].numFrames = 0;
 		bgGlobalAnimations15[i].loopFrames = -1;
@@ -1200,7 +1214,7 @@ qboolean BG_ParseAnimationFile(const char *filename) {
 			}
 		}
 	}
-	for(i = 0; demo15detected && i < MAX_ANIMATIONS_15; i++) {	
+	for(i = 0; !saberShenanigans && demo15detected && i < MAX_ANIMATIONS_15 - BOOT_ANIMS; i++) {
 		if (animTable15[i].name != NULL) {
 			// This animation reference exists.
 			if (bgGlobalAnimations15[i].firstFrame <= 0 && bgGlobalAnimations15[i].numFrames <=0) {
@@ -1208,6 +1222,15 @@ qboolean BG_ParseAnimationFile(const char *filename) {
 				Com_Printf("***ANIMTABLE reference #%d (%s) is empty!\n", i, animTable15[i].name);
 			}
 		}
+	}
+	for (i = 0; saberShenanigans && demo15detected && i < MAX_ANIMATIONS_15; i++) {
+		if (animTable15[i].name != NULL) {
+			// This animation reference exists.
+			if (bgGlobalAnimations15[i].firstFrame <= 0 && bgGlobalAnimations15[i].numFrames <= 0) {
+				// This is an empty animation reference.
+				Com_Printf("***ANIMTABLE reference #%d (%s) is empty!\n", i, animTable15[i].name);
+		}
+	}
 	}
 #endif // _DEBUG
 

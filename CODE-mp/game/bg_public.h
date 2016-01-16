@@ -169,6 +169,7 @@ movement on the server game.
 */
 
 extern qboolean demo15detected;
+extern qboolean saberShenanigans;
 
 
 typedef struct animation_s {
