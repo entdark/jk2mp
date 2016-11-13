@@ -2061,7 +2061,7 @@ void ParseMaterial( const char **text )
 
 typedef struct {
 	char	*name;
-	int		clearSolid, surfaceFlags, contents;
+	unsigned int		clearSolid, surfaceFlags, contents;
 } infoParm_t;
 
 
@@ -2074,32 +2074,32 @@ infoParm_t	infoParms[] = {
 	{"water",		~CONTENTS_SOLID,	0,				CONTENTS_WATER },
 	{"fog",			~CONTENTS_SOLID,	0,				CONTENTS_FOG},				// carves surfaces entering
 	{"shotclip",	~CONTENTS_SOLID,	0,				CONTENTS_SHOTCLIP },		/* block shots, but not people */
-	{"playerclip",	~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_PLAYERCLIP },	   	/* block only the player */ 
-	{"monsterclip",	~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_MONSTERCLIP },		
-	{"botclip",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_BOTCLIP },		   	/* for bots */															
+	{"playerclip",	~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_PLAYERCLIP },	   	/* block only the player */
+	{"monsterclip",	~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_MONSTERCLIP },
+	{"botclip",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_BOTCLIP },		   	/* for bots */
 	{"trigger",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_TRIGGER },
 	{"nodrop",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_NODROP },			// don't drop items or leave bodies (death fog, lava, etc)
-	{"terrain",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_TERRAIN },		   	/* use special terrain collsion */										
+	{"terrain",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_TERRAIN },		   	/* use special terrain collsion */
 	{"ladder",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_LADDER },			// climb up in it like water
 	{"abseil",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_ABSEIL },			// can abseil down this brush
 	{"outside",		~(CONTENTS_SOLID|CONTENTS_OPAQUE),0,CONTENTS_OUTSIDE },			// volume is considered to be in the outside (i.e. not indoors)
-																		
-	{"detail",		-1,					0,				CONTENTS_DETAIL },			// don't include in structural bsp
-	{"trans",		-1,					0,				CONTENTS_TRANSLUCENT },		// surface has an alpha component
-	
-	/* Game surface flags */
-	{"sky",			-1,					SURF_SKY,		0 },					   	/* emit light from an environment map */
-	{"slick",		-1,					SURF_SLICK,		0 },
 
-	{"nodamage",	-1,					SURF_NODAMAGE,	0 },					   	   																	
-	{"noimpact",	-1,					SURF_NOIMPACT,	0 },					   	/* don't make impact explosions or marks */
-	{"nomarks",		-1,					SURF_NOMARKS,	0 },					   	/* don't make impact marks, but still explode */
-	{"nodraw",		-1,					SURF_NODRAW,	0 },					   	/* don't generate a drawsurface (or a lightmap) */
-	{"nosteps",		-1,					SURF_NOSTEPS,	0 },
-	{"nodlight",	-1,					SURF_NODLIGHT,	0 },					   	/* don't ever add dynamic lights */
-	{"metalsteps",	-1,					SURF_METALSTEPS,0 },
-	{"nomiscents",	-1,					SURF_NOMISCENTS,0 },						/* No misc ents on this surface */
-	{"forcefield",	-1,					SURF_FORCEFIELD,0 },
+	{"detail",		CONTENTS_ALL,		0,				CONTENTS_DETAIL },			// don't include in structural bsp
+	{"trans",		CONTENTS_ALL,		0,				CONTENTS_TRANSLUCENT },		// surface has an alpha component
+
+	/* Game surface flags */
+	{"sky",			CONTENTS_ALL,		SURF_SKY,		0 },					   	/* emit light from an environment map */
+	{"slick",		CONTENTS_ALL,		SURF_SLICK,		0 },
+
+	{"nodamage",	CONTENTS_ALL,		SURF_NODAMAGE,	0 },
+	{"noimpact",	CONTENTS_ALL,		SURF_NOIMPACT,	0 },					   	/* don't make impact explosions or marks */
+	{"nomarks",		CONTENTS_ALL,		SURF_NOMARKS,	0 },					   	/* don't make impact marks, but still explode */
+	{"nodraw",		CONTENTS_ALL,		SURF_NODRAW,	0 },					   	/* don't generate a drawsurface (or a lightmap) */
+	{"nosteps",		CONTENTS_ALL,		SURF_NOSTEPS,	0 },
+	{"nodlight",	CONTENTS_ALL,		SURF_NODLIGHT,	0 },					   	/* don't ever add dynamic lights */
+	{"metalsteps",	CONTENTS_ALL,		SURF_METALSTEPS,0 },
+	{"nomiscents",	CONTENTS_ALL,		SURF_NOMISCENTS,0 },						/* No misc ents on this surface */
+	{"forcefield",	CONTENTS_ALL,		SURF_FORCEFIELD,0 },
 };
 
 
