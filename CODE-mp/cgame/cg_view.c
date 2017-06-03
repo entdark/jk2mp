@@ -217,7 +217,7 @@ static void CG_StepOffset( void ) {
 }
 
 #define CAMERA_DAMP_INTERVAL	50
-#define CAMERA_MIN_FPS			15
+#define CAMERA_MIN_FPS			1
 
 static vec3_t	cameramins = { -CAMERA_SIZE, -CAMERA_SIZE, -CAMERA_SIZE };
 static vec3_t	cameramaxs = { CAMERA_SIZE, CAMERA_SIZE, CAMERA_SIZE };
