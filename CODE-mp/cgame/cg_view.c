@@ -678,13 +678,10 @@ static void CG_OffsetThirdPersonView( void )
 	VectorNormalize(diff);
 	vectoangles(diff, cg.refdefViewAngles);*/
 	VectorSubtract(cameraCurTarget, cameraCurLoc, diff);
+	if (VectorLengthSquared(diff) < 0.01f * 0.01f)
 	{
-		float dist = VectorNormalize(diff);
-		//under normal circumstances, should never be 0.00000 and so on.
-		if ( !dist || (diff[0] == 0 || diff[1] == 0) )
-		{//must be hitting something, need some value to calc angles, so use cam forward
-			VectorCopy( camerafwd, diff );
-		}
+	    //must be hitting something, need some value to calc angles, so use cam forward
+	    VectorCopy( camerafwd, diff );
 	}
 	vectoangles(diff, cg.refdefViewAngles);
 
