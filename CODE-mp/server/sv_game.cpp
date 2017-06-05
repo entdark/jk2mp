@@ -922,23 +922,23 @@ int SV_GameSystemCalls( int *args ) {
 		return 0;
 
 	case G_G2_HAVEWEGHOULMODELS:
-		return G2API_HaveWeGhoul2Models( *((CGhoul2Info_v *)args[1]) );
+		return G2API_HaveWeGhoul2Models( (CGhoul2Info_v *)args[1] );
 
 	case G_G2_SETMODELS:
-		G2API_SetGhoul2ModelIndexes( *((CGhoul2Info_v *)args[1]),(qhandle_t *)VMA(2),(qhandle_t *)VMA(3));
+		G2API_SetGhoul2ModelIndexes( (CGhoul2Info_v *)args[1],(qhandle_t *)VMA(2),(qhandle_t *)VMA(3));
 		return 0;
 
 	case G_G2_GETBOLT:
-		return G2API_GetBoltMatrix(*((CGhoul2Info_v *)args[1]), args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
+		return G2API_GetBoltMatrix((CGhoul2Info_v *)args[1], args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
 
 	case G_G2_GETBOLT_NOREC:
 		gG2_GBMNoReconstruct = qtrue;
-		return G2API_GetBoltMatrix(*((CGhoul2Info_v *)args[1]), args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
+		return G2API_GetBoltMatrix((CGhoul2Info_v *)args[1], args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
 
 	case G_G2_GETBOLT_NOREC_NOROT:
 		gG2_GBMNoReconstruct = qtrue;
 		gG2_GBMUseSPMethod = qtrue;
-		return G2API_GetBoltMatrix(*((CGhoul2Info_v *)args[1]), args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
+		return G2API_GetBoltMatrix((CGhoul2Info_v *)args[1], args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
 
 	case G_G2_INITGHOUL2MODEL:
 		RicksCrazyOnServer=true;
@@ -946,26 +946,26 @@ int SV_GameSystemCalls( int *args ) {
 									  (qhandle_t) args[5], args[6], args[7]);
 
 	case G_G2_ADDBOLT:
-		return	G2API_AddBolt(*((CGhoul2Info_v *)args[1]), args[2], (const char *)VMA(3));
+		return	G2API_AddBolt((CGhoul2Info_v *)args[1], args[2], (const char *)VMA(3));
 
 	case G_G2_SETBOLTINFO:
-		G2API_SetBoltInfo(*((CGhoul2Info_v *)args[1]), args[2], args[3]);
+		G2API_SetBoltInfo((CGhoul2Info_v *)args[1], args[2], args[3]);
 		return 0;
 
 	case G_G2_ANGLEOVERRIDE:
-		return G2API_SetBoneAngles(*((CGhoul2Info_v *)args[1]), args[2], (const char *)VMA(3), (float *)VMA(4), args[5],
+		return G2API_SetBoneAngles((CGhoul2Info_v *)args[1], args[2], (const char *)VMA(3), (float *)VMA(4), args[5],
 							 (const Eorientations) args[6], (const Eorientations) args[7], (const Eorientations) args[8],
 							 (qhandle_t *)VMA(9), args[10], args[11] );
 	
 	case G_G2_PLAYANIM:
-		return G2API_SetBoneAnim(*((CGhoul2Info_v *)args[1]), args[2], (const char *)VMA(3), args[4], args[5],
+		return G2API_SetBoneAnim((CGhoul2Info_v *)args[1], args[2], (const char *)VMA(3), args[4], args[5],
 								args[6], VMF(7), args[8], VMF(9), args[10]);
 	case G_G2_GETGLANAME:
 		//return (int)G2API_GetGLAName(*((CGhoul2Info_v *)args[1]), args[2]);
 		{ //Since returning a pointer in such a way to a VM seems to cause MASSIVE FAILURE<tm>, we will shove data into the pointer the vm passes instead
 			char *point = ((char *)VMA(3));
 			char *local;
-			local = G2API_GetGLAName(*((CGhoul2Info_v *)args[1]), args[2]);
+			local = G2API_GetGLAName((CGhoul2Info_v *)args[1], args[2]);
 			if (local)
 			{
 				strcpy(point, local);
@@ -975,14 +975,14 @@ int SV_GameSystemCalls( int *args ) {
 		return 0;
 
 	case G_G2_COPYGHOUL2INSTANCE:
-		return (int)G2API_CopyGhoul2Instance(*((CGhoul2Info_v *)args[1]), *((CGhoul2Info_v *)args[2]), args[3]);
+		return (int)G2API_CopyGhoul2Instance((CGhoul2Info_v *)args[1], (CGhoul2Info_v *)args[2], args[3]);
 
 	case G_G2_COPYSPECIFICGHOUL2MODEL:
-		G2API_CopySpecificG2Model(*((CGhoul2Info_v *)args[1]), args[2], *((CGhoul2Info_v *)args[3]), args[4]);
+		G2API_CopySpecificG2Model((CGhoul2Info_v *)args[1], args[2], (CGhoul2Info_v *)args[3], args[4]);
 		return 0;
 
 	case G_G2_DUPLICATEGHOUL2INSTANCE:
-		G2API_DuplicateGhoul2Instance(*((CGhoul2Info_v *)args[1]), (CGhoul2Info_v **)VMA(2));
+		G2API_DuplicateGhoul2Instance((CGhoul2Info_v *)args[1], (CGhoul2Info_v **)VMA(2));
 		return 0;
 
 	case G_G2_HASGHOUL2MODELONINDEX:
@@ -1000,7 +1000,7 @@ int SV_GameSystemCalls( int *args ) {
 
 	case G_G2_COLLISIONDETECT:
 #ifdef G2_COLLISION_ENABLED
-		G2API_CollisionDetect ( (CollisionRecord_t*)VMA(1), *((CGhoul2Info_v *)args[2]), 
+		G2API_CollisionDetect ( (CollisionRecord_t*)VMA(1), (CGhoul2Info_v *)args[2],
 								   (const float*)VMA(3),
 								   (const float*)VMA(4),
 								   args[5],
