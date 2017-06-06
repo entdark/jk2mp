@@ -1023,24 +1023,24 @@ Ghoul2 Insert Start
 		return 0;
 
 	case CG_G2_HAVEWEGHOULMODELS:
-		return G2API_HaveWeGhoul2Models( *((CGhoul2Info_v *)args[1]) );
+		return G2API_HaveWeGhoul2Models( (CGhoul2Info_v *)args[1] );
 
 	case CG_G2_SETMODELS:
-		G2API_SetGhoul2ModelIndexes( *((CGhoul2Info_v *)args[1]),(qhandle_t *)VMA(2),(qhandle_t *)VMA(3));
+		G2API_SetGhoul2ModelIndexes( (CGhoul2Info_v *)args[1],(qhandle_t *)VMA(2),(qhandle_t *)VMA(3));
 		return 0;
 
 	case CG_G2_GETBOLT:
 		gG2_GBMNoReconstruct = qfalse;
-		return G2API_GetBoltMatrix(*((CGhoul2Info_v *)args[1]), args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
+		return G2API_GetBoltMatrix((CGhoul2Info_v *)args[1], args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
 
 	case CG_G2_GETBOLT_NOREC:
 		gG2_GBMNoReconstruct = qtrue;
-		return G2API_GetBoltMatrix(*((CGhoul2Info_v *)args[1]), args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
+		return G2API_GetBoltMatrix((CGhoul2Info_v *)args[1], args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
 
 	case CG_G2_GETBOLT_NOREC_NOROT:
 		gG2_GBMNoReconstruct = qtrue;
 		gG2_GBMUseSPMethod = qtrue;
-		return G2API_GetBoltMatrix(*((CGhoul2Info_v *)args[1]), args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
+		return G2API_GetBoltMatrix((CGhoul2Info_v *)args[1], args[2], args[3], (mdxaBone_t *)VMA(4), (const float *)VMA(5),(const float *)VMA(6), args[7], (qhandle_t *)VMA(8), (float *)VMA(9));
 
 	case CG_G2_INITGHOUL2MODEL:
 		RicksCrazyOnServer=false;
@@ -1050,7 +1050,7 @@ Ghoul2 Insert Start
 
 	case CG_G2_COLLISIONDETECT:
 #ifdef G2_COLLISION_ENABLED
-		G2API_CollisionDetect ( (CollisionRecord_t*)VMA(1), *((CGhoul2Info_v *)args[2]), 
+		G2API_CollisionDetect ( (CollisionRecord_t*)VMA(1), (CGhoul2Info_v *)args[2],
 								   (const float*)VMA(3),
 								   (const float*)VMA(4),
 								   args[5],
@@ -1066,7 +1066,7 @@ Ghoul2 Insert Start
 		return 0;
 
 	case CG_G2_ANGLEOVERRIDE:
-		return G2API_SetBoneAngles(*((CGhoul2Info_v *)args[1]), args[2], (const char *)VMA(3), (float *)VMA(4), args[5],
+		return G2API_SetBoneAngles((CGhoul2Info_v *)args[1], args[2], (const char *)VMA(3), (float *)VMA(4), args[5],
 							 (const Eorientations) args[6], (const Eorientations) args[7], (const Eorientations) args[8],
 							 (qhandle_t *)VMA(9), args[10], args[11] );
 	
@@ -1076,14 +1076,14 @@ Ghoul2 Insert Start
 		return 0;
 
 	case CG_G2_PLAYANIM:
-		return G2API_SetBoneAnim(*((CGhoul2Info_v *)args[1]), args[2], (const char *)VMA(3), args[4], args[5],
+		return G2API_SetBoneAnim((CGhoul2Info_v *)args[1], args[2], (const char *)VMA(3), args[4], args[5],
 								args[6], VMF(7), args[8], VMF(9), args[10]);
 	case CG_G2_GETGLANAME:
 		//	return (int)G2API_GetGLAName(*((CGhoul2Info_v *)VMA(1)), args[2]);
 		{
 			char *point = ((char *)VMA(3));
 			char *local;
-			local = G2API_GetGLAName(*((CGhoul2Info_v *)args[1]), args[2]);
+			local = G2API_GetGLAName((CGhoul2Info_v *)args[1], args[2]);
 			if (local)
 			{
 				strcpy(point, local);
@@ -1092,14 +1092,14 @@ Ghoul2 Insert Start
 		return 0;
 
 	case CG_G2_COPYGHOUL2INSTANCE:
-		return (int)G2API_CopyGhoul2Instance(*((CGhoul2Info_v *)args[1]), *((CGhoul2Info_v *)args[2]), args[3]);
+		return (int)G2API_CopyGhoul2Instance((CGhoul2Info_v *)args[1], (CGhoul2Info_v *)args[2], args[3]);
 
 	case CG_G2_COPYSPECIFICGHOUL2MODEL:
-		G2API_CopySpecificG2Model(*((CGhoul2Info_v *)args[1]), args[2], *((CGhoul2Info_v *)args[3]), args[4]);
+		G2API_CopySpecificG2Model((CGhoul2Info_v *)args[1], args[2], (CGhoul2Info_v *)args[3], args[4]);
 		return 0;
 
 	case CG_G2_DUPLICATEGHOUL2INSTANCE:
-		G2API_DuplicateGhoul2Instance(*((CGhoul2Info_v *)args[1]), (CGhoul2Info_v **)VMA(2));
+		G2API_DuplicateGhoul2Instance((CGhoul2Info_v *)args[1], (CGhoul2Info_v **)VMA(2));
 		return 0;
 
 	case CG_G2_HASGHOUL2MODELONINDEX:
@@ -1111,13 +1111,13 @@ Ghoul2 Insert Start
 		//return (int)G2API_RemoveGhoul2Model((CGhoul2Info_v **)args[1], args[2]);
 
 	case CG_G2_ADDBOLT:
-		return G2API_AddBolt(*((CGhoul2Info_v *)args[1]), args[2], (const char *)VMA(3));
+		return G2API_AddBolt((CGhoul2Info_v *)args[1], args[2], (const char *)VMA(3));
 
 //	case CG_G2_REMOVEBOLT:
 //		return G2API_RemoveBolt(*((CGhoul2Info_v *)VMA(1)), args[2]);
 
 	case CG_G2_SETBOLTON:
-		G2API_SetBoltInfo(*((CGhoul2Info_v *)args[1]), args[2], args[3]);
+		G2API_SetBoltInfo((CGhoul2Info_v *)args[1], args[2], args[3]);
 		return 0;
 
 #ifdef _SOF2	
@@ -1133,13 +1133,13 @@ Ghoul2 Insert End
 		return 0;
 
 	case CG_G2_SETROOTSURFACE:
-		return G2API_SetRootSurface(*((CGhoul2Info_v *)args[1]), args[2], (const char *)VMA(3));
+		return G2API_SetRootSurface((CGhoul2Info_v *)args[1], args[2], (const char *)VMA(3));
 
 	case CG_G2_SETSURFACEONOFF:
-		return G2API_SetSurfaceOnOff(*((CGhoul2Info_v *)args[1]), (const char *)VMA(2), /*(const int)VMA(3)*/args[3]);
+		return G2API_SetSurfaceOnOff((CGhoul2Info_v *)args[1], (const char *)VMA(2), /*(const int)VMA(3)*/args[3]);
 
 	case CG_G2_SETNEWORIGIN:
-		return G2API_SetNewOrigin(*((CGhoul2Info_v *)args[1]), /*(const int)VMA(2)*/args[2]);
+		return G2API_SetNewOrigin((CGhoul2Info_v *)args[1], /*(const int)VMA(2)*/args[2]);
 
 	case CG_SP_GETSTRINGTEXTSTRING:
 //	case CG_SP_GETSTRINGTEXT:

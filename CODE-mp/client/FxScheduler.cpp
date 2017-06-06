@@ -1318,7 +1318,7 @@ void CFxScheduler::CreateEffect( CPrimitiveTemplate *fx, CFxBoltInterface *obj, 
 
 	g2Handle = obj->GetG2Handle();
 
-	if (!g2Handle || !G2API_HaveWeGhoul2Models(*((CGhoul2Info_v *)g2Handle)))
+	if (!g2Handle || !G2API_HaveWeGhoul2Models((CGhoul2Info_v *)g2Handle))
 	{
 		return;
 	}
@@ -1327,7 +1327,7 @@ void CFxScheduler::CreateEffect( CPrimitiveTemplate *fx, CFxBoltInterface *obj, 
 	obj->GetForward(objAng);
 	obj->GetScale(objScale);
 
-	G2API_GetBoltMatrix(*((CGhoul2Info_v *)g2Handle), obj->GetModelNum(), obj->GetBoltNum(), &boltMatrix, objAng, objOrg, theFxHelper.mTime, /*MODELLIST*/NULL, objScale);
+	G2API_GetBoltMatrix((CGhoul2Info_v *)g2Handle, obj->GetModelNum(), obj->GetBoltNum(), &boltMatrix, objAng, objOrg, theFxHelper.mTime, /*MODELLIST*/NULL, objScale);
 
 	G2API_GiveMeVectorFromMatrix(&boltMatrix, ORIGIN, origin);
 	G2API_GiveMeVectorFromMatrix(&boltMatrix, NEGATIVE_Y, ang);
@@ -1957,7 +1957,7 @@ void CFxScheduler::AddScheduledEffects( void )
 					VectorCopy(data->mPoint, modelScale);
 
 					// go away and get me the bolt position for this frame please
-					doesBoltExist = G2API_GetBoltMatrix(*((CGhoul2Info_v *)VM_Call( cgvm, CG_GET_GHOUL2, (*itr)->mEntNum)), (*itr)->mModelNum, (*itr)->mBoltNum, &boltMatrix, lerpAngles, lerpOrigin, cls.realtime, (int *)VM_Call( cgvm, CG_GET_MODEL_LIST, (*itr)->mEntNum), modelScale);
+					doesBoltExist = G2API_GetBoltMatrix((CGhoul2Info_v *)VM_Call( cgvm, CG_GET_GHOUL2, (*itr)->mEntNum), (*itr)->mModelNum, (*itr)->mBoltNum, &boltMatrix, lerpAngles, lerpOrigin, cls.realtime, (int *)VM_Call( cgvm, CG_GET_MODEL_LIST, (*itr)->mEntNum), modelScale);
 
 					if (doesBoltExist)
 					{	// set up the axis and origin we need for the actual effect spawning

@@ -1185,7 +1185,7 @@ int CL_UISystemCalls( int *args ) {
 Ghoul2 Insert Start
 */
 	case UI_G2_ANGLEOVERRIDE:
-		return G2API_SetBoneAngles(*((CGhoul2Info_v *)VMA(1)), args[2], (const char *)VMA(3), (float *)VMA(4), args[5],
+		return G2API_SetBoneAngles((CGhoul2Info_v *)VMA(1), args[2], (const char *)VMA(3), (float *)VMA(4), args[5],
 							 (const Eorientations) args[6], (const Eorientations) args[7], (const Eorientations) args[8],
 							 (qhandle_t *)VMA(9), args[10], args[11] );
 /*
