@@ -605,6 +605,7 @@ vmCvar_t	mov_captureCvars;
 vmCvar_t	mov_ratioFix;
 vmCvar_t	mov_saberTeamColour;
 vmCvar_t	mov_wallhack;
+vmCvar_t	mov_camerafps;
 
 vmCvar_t	mov_dismember;
 vmCvar_t	mov_forceNTdemo;
@@ -817,6 +818,7 @@ Ghoul2 Insert End
 	{ &mov_ratioFix,		"mov_ratioFix",			"1",   CG_Set2DRatio,	CVAR_ARCHIVE	},
 	{ &mov_saberTeamColour,	"mov_saberTeamColour",	"1",			NULL,	CVAR_ARCHIVE	},
 	{ &mov_wallhack,		"mov_wallhack",			"0",			NULL,	CVAR_ARCHIVE	},
+	{ &mov_camerafps,		"mov_camerafps",		"125",			NULL,	CVAR_ARCHIVE	},
 	{ &mov_dismember,		"mov_dismember",		"0",			NULL,	CVAR_ARCHIVE	},
 	{ &mov_forceNTdemo,		"mov_forceNTdemo",		"0",  CG_ForceNTDemo,	CVAR_ARCHIVE	},
 	{ &mov_absorbVisibility,"mov_absorbVisibility",	"0",			NULL,	CVAR_ARCHIVE	},

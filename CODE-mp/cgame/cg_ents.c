@@ -2359,6 +2359,7 @@ void CG_PreparePacketEntities( void ) {
 	} else {
 		cg.frameInterpolation = 0;	// actually, it should never be used, because 
 									// no entities should be marked as interpolating
+		cg.predictedTimeFrac = 0.0f;
 	}
 
 	// the auto-rotating items will all have the same axis

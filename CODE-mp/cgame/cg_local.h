@@ -719,6 +719,7 @@ typedef struct {
 //	snapshot_t	activeSnapshots[2];
 
 	float		frameInterpolation;	// (float)( cg.time - cg.frame->serverTime ) / (cg.nextFrame->serverTime - cg.frame->serverTime)
+	float		predictedTimeFrac;	// frameInterpolation * (next->commandTime - prev->commandTime)
 
 	qboolean	mMapChange;
 
@@ -1730,6 +1731,7 @@ extern	vmCvar_t	mov_captureCvars;
 extern	vmCvar_t	mov_ratioFix;
 extern	vmCvar_t	mov_saberTeamColour;
 extern	vmCvar_t	mov_wallhack;
+extern	vmCvar_t	mov_camerafps;
 
 extern	vmCvar_t	mov_dismember;
 extern	vmCvar_t	mov_forceNTdemo;
