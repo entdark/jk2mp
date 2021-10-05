@@ -63,6 +63,8 @@ local.properties
 *.tmp
 *.vspscc
 .builds
+.vs
+.build
 *.dotCover
 
 winquake.res
