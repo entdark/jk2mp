@@ -57,7 +57,7 @@
     <OutDir>..\build\</OutDir>
     <IntDir>.build\$(Configuration)\$(Platform)\$(ProjectName)\</IntDir>
     <IncludePath>$(WindowsSDK_IncludePath);$(ProjectDir)\libs\win32\include;$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
-    <LibraryPath>$(WindowsSDK_LibraryPath);$(ProjectDir)\libs\win32\lib;$(VC_LibraryPath_x86);$(WindowsSdk_71A_LibraryPath_x86);</LibraryPath>
+    <LibraryPath>$(WindowsSDK_LibraryPath_x86);$(ProjectDir)\libs\win32\lib;$(VC_LibraryPath_x86);$(WindowsSdk_71A_LibraryPath_x86);</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
